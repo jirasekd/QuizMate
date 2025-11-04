@@ -1,15 +1,15 @@
 <!DOCTYPE html>
 <html lang="cs">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>QuizMate</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <div class="app">
-    <!-- Sidebar -->
+    <!-- Sidebar (hlavní, pro předměty) -->
     <aside class="sidebar">
       <div class="profile">
         <div class="avatar">U</div>
@@ -32,18 +32,41 @@
         <button class="tab-btn" data-tab="flashcards">🧠 Flashcards</button>
       </div>
 
-      <!-- CHAT -->
+      <!-- CHAT (nové rozložení: vlevo seznam chatů, vpravo konverzace) -->
       <section id="chat" class="tab-content active">
-        <div class="chat-header">
-          <button class="btn outline small">+ New Chat</button>
-          <h2>Trigonometry</h2>
-        </div>
-        <div class="chat-messages" id="messages"></div>
-        <div class="chat-input">
-          <textarea id="chatInput" placeholder="Type here..."></textarea>
-          <button id="sendBtn" class="btn primary">Send</button>
+        <div class="chat-layout">
+          <!-- Levý sloupec: vlákna/chaty -->
+          <aside class="chat-threads">
+            <div class="threads-header">
+              <h3>Chats</h3>
+              <button class="btn primary small" id="newThreadBtn">+ New Chat</button>
+            </div>
+            <ul id="threadList" class="thread-list"></ul>
+          </aside>
+
+          <!-- Pravý sloupec: samotný chat -->
+          <div class="chat-pane">
+            <div class="chat-header">
+              <h2 id="chatTitle">Trigonometry</h2>
+            </div>
+
+            <div class="chat-messages" id="messages"></div>
+
+            <div class="chat-input">
+              <textarea id="chatInput" placeholder="Type here..."></textarea>
+              <button id="sendBtn" class="btn primary">Send</button>
+            </div>
+          </div>
         </div>
       </section>
+
+      <form id="chat-form">
+        <input id="chat-input" placeholder="Napiš zprávu..." />
+        <button type="submit">Odeslat</button>
+      </form>
+
+      <div id="chat-list"></div>
+
 
       <!-- FILES -->
       <section id="files" class="tab-content">
