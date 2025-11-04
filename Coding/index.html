@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QuizMate</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="profile">
+        <div class="avatar">U</div>
+        <div class="username">Username</div>
+      </div>
+      <button class="btn primary full">+ New Subject</button>
+      <ul class="subject-list">
+        <li class="subject active">📘 Mathematics</li>
+        <li class="subject">🧬 Biology</li>
+        <li class="subject">📜 History</li>
+      </ul>
+    </aside>
+
+    <!-- Main area -->
+    <main class="main">
+      <!-- Tabs -->
+      <div class="tabs">
+        <button class="tab-btn active" data-tab="chat">💬 Chat</button>
+        <button class="tab-btn" data-tab="files">📂 Files</button>
+        <button class="tab-btn" data-tab="flashcards">🧠 Flashcards</button>
+      </div>
+
+      <!-- CHAT -->
+      <section id="chat" class="tab-content active">
+        <div class="chat-header">
+          <button class="btn outline small">+ New Chat</button>
+          <h2>Trigonometry</h2>
+        </div>
+        <div class="chat-messages" id="messages"></div>
+        <div class="chat-input">
+          <textarea id="chatInput" placeholder="Type here..."></textarea>
+          <button id="sendBtn" class="btn primary">Send</button>
+        </div>
+      </section>
+
+      <!-- FILES -->
+      <section id="files" class="tab-content">
+        <h2>Uploaded Files</h2>
+        <div class="upload-card">
+          <p>Drag and drop files here, or click to browse</p>
+          <input type="file" id="fileUpload" multiple>
+          <button class="btn primary small">Select Files</button>
+        </div>
+        <div id="fileList"></div>
+      </section>
+
+      <!-- FLASHCARDS -->
+      <section id="flashcards" class="tab-content">
+        <div class="flash-header">
+          <h2>Flashcards for Trigonometry</h2>
+          <button class="btn primary small">+ Add Flashcard</button>
+        </div>
+        <div class="flashcard" id="flashcard">
+          <div class="front">
+            <p class="small">Question</p>
+            <h3>What is the value of sin(90°)?</h3>
+            <p class="hint">Click to reveal answer</p>
+          </div>
+          <div class="back">
+            <p class="small">Answer</p>
+            <p class="answer">The value of sin(90°) is 1.</p>
+          </div>
+        </div>
+        <div class="flash-nav">
+          <button class="btn outline small" id="prevCard">◀ Previous</button>
+          <p class="counter">1 / 5</p>
+          <button class="btn outline small" id="nextCard">Next ▶</button>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="main.js"></script>
+</body>
+</html>

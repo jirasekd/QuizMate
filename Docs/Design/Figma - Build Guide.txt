@@ -1,0 +1,1310 @@
+# QuizMate Build Guide
+
+## Complete Recipe for Building QuizMate
+
+This guide provides a comprehensive, step-by-step process to build QuizMate from scratch - an educational platform that combines AI-powered chat with study features for students.
+
+---
+
+## Table of Contents
+
+1. [Overview](#overview)
+2. [Technology Stack](#technology-stack)
+3. [Architecture](#architecture)
+4. [Data Models](#data-models)
+5. [Step-by-Step Build Process](#step-by-step-build-process)
+6. [Key Features Implementation](#key-features-implementation)
+7. [Deployment](#deployment)
+
+---
+
+## Overview
+
+**QuizMate** is a web-based educational platform that provides:
+- User authentication with local storage
+- Subject-based organization system
+- AI-powered chatbot for each subject
+- File repository for study materials
+- Flashcard system organized by chat/topic
+- Collapsible sidebar navigation
+- Tabbed interface for Chat, Files, and Flashcards
+
+**Core Philosophy:**
+- Privacy-first: Each user's data is isolated locally
+- Subject-centric: Everything is organized around school subjects
+- Context-aware: Flashcards are scoped to specific chats/chapters
+- No API key required: Pool of API keys built-in
+
+---
+
+## Technology Stack
+
+### Frontend Framework
+- **React 18+** with TypeScript
+- **Tailwind CSS v4** for styling
+- **Vite** as build tool (or similar modern bundler)
+
+### UI Components
+- **shadcn/ui** - Pre-built, accessible component library
+- **Lucide React** - Icon library
+- **Sonner** - Toast notifications
+
+### Key Libraries
+- **OpenAI API** - For AI chat functionality
+- **Local Storage API** - For data persistence
+- No external database required
+
+### Development Tools
+- TypeScript for type safety
+- ESLint for code quality
+- Modern ES6+ JavaScript
+
+---
+
+## Architecture
+
+### Component Hierarchy
+
+```
+App.tsx (Root)
+├── LoginScreen
+│   └── Handles user authentication
+│
+└── Main Application (after login)
+    ├── Header (with QuizMate logo + menu toggle)
+    ├── SubjectSidebar (collapsible)
+    │   ├── Subject list
+    │   ├── AddSubjectDialog
+    │   └── Chat list per subject
+    │       └── NewChatDialog
+    │
+    └── Main Content Area
+        ├── Tabs (Chat, Files, Flashcards)
+        ├── ChatInterface
+        │   └── Messages + AI responses
+        ├── FileRepository
+        │   └── File upload/management
+        └── FlashcardView
+            ├── Flashcard display/study mode
+            └── AddFlashcardDialog
+```
+
+### Data Flow
+
+```
+User Login → Local Storage Check → Load User Data
+     ↓
+Subject Selection → Load Subject Data → Load Chats
+     ↓
+Chat Selection → Load Messages + Flashcards + Files
+     ↓
+User Actions → Update State → Save to Local Storage
+```
+
+### Storage Architecture
+
+All data is stored in **localStorage** with the following structure:
+
+```javascript
+localStorage: {
+  "quizmate_users": Array<User>,
+  "quizmate_current_user": string (username),
+  "quizmate_data_{username}": UserData
+}
+```
+
+---
+
+## Data Models
+
+### User Model
+```typescript
+interface User {
+  username: string;
+  password: string; // Note: In production, use proper hashing
+  createdAt: string;
+}
+```
+
+### UserData Model
+```typescript
+interface UserData {
+  subjects: Subject[];
+}
+```
+
+### Subject Model
+```typescript
+interface Subject {
+  id: string;
+  name: string;
+  icon: string; // Lucide icon name
+  color: string; // Hex color code
+  chats: Chat[];
+  files: StudyFile[];
+}
+```
+
+### Chat Model
+```typescript
+interface Chat {
+  id: string;
+  name: string;
+  createdAt: string;
+  messages: Message[];
+  flashcards: Flashcard[];
+}
+```
+
+### Message Model
+```typescript
+interface Message {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: string;
+}
+```
+
+### Flashcard Model
+```typescript
+interface Flashcard {
+  id: string;
+  question: string;
+  answer: string;
+  createdAt: string;
+}
+```
+
+### StudyFile Model
+```typescript
+interface StudyFile {
+  id: string;
+  name: string;
+  content: string;
+  type: string; // MIME type
+  size: number;
+  uploadedAt: string;
+}
+```
+
+---
+
+## Step-by-Step Build Process
+
+### Phase 1: Project Setup
+
+#### 1.1 Initialize Project
+```bash
+# Create new React + TypeScript project
+npm create vite@latest quizmate -- --template react-ts
+cd quizmate
+npm install
+```
+
+#### 1.2 Install Dependencies
+```bash
+# Core dependencies
+npm install lucide-react
+
+# AI integration
+npm install openai
+
+# Utility libraries
+npm install sonner@2.0.3
+```
+
+#### 1.3 Setup Tailwind CSS v4
+Create `styles/globals.css`:
+```css
+@import "tailwindcss";
+
+/* Custom CSS variables and global styles */
+:root {
+  --background: #ffffff;
+  --foreground: #0a0a0a;
+  /* Add other design tokens */
+}
+
+/* Typography defaults */
+body {
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+/* Component-specific styles */
+```
+
+#### 1.4 Setup shadcn/ui Components
+Install required shadcn components:
+```bash
+# Install shadcn CLI
+npx shadcn-ui@latest init
+
+# Add required components
+npx shadcn-ui@latest add button
+npx shadcn-ui@latest add input
+npx shadcn-ui@latest add dialog
+npx shadcn-ui@latest add tabs
+npx shadcn-ui@latest add card
+npx shadcn-ui@latest add scroll-area
+npx shadcn-ui@latest add avatar
+npx shadcn-ui@latest add badge
+# ... add others as needed
+```
+
+---
+
+### Phase 2: Core Infrastructure
+
+#### 2.1 Create Storage Service (`lib/storage.ts`)
+
+**Purpose:** Centralized data management and localStorage operations
+
+**Key Functions:**
+- `loadUsers()` - Get all registered users
+- `saveUsers()` - Save user list
+- `getCurrentUser()` - Get logged-in username
+- `setCurrentUser()` - Set logged-in user
+- `loadUserData()` - Load all data for a user
+- `saveUserData()` - Save all data for a user
+- `createUser()` - Register new user
+- `validateUser()` - Check credentials
+
+**Implementation Pattern:**
+```typescript
+// Read from localStorage
+export function loadUserData(username: string): UserData {
+  const key = `quizmate_data_${username}`;
+  const data = localStorage.getItem(key);
+  return data ? JSON.parse(data) : { subjects: [] };
+}
+
+// Write to localStorage
+export function saveUserData(username: string, data: UserData): void {
+  const key = `quizmate_data_${username}`;
+  localStorage.setItem(key, JSON.stringify(data));
+}
+```
+
+#### 2.2 Create AI Service (`lib/ai-service.ts`)
+
+**Purpose:** Handle OpenAI API integration with key pooling
+
+**Key Features:**
+- Pool of API keys (rotate to avoid rate limits)
+- Error handling and retry logic
+- File content injection into prompts
+- Streaming responses support
+
+**Implementation Pattern:**
+```typescript
+const API_KEYS = [
+  'key1',
+  'key2',
+  'key3',
+  // Pool of keys
+];
+
+let currentKeyIndex = 0;
+
+export async function sendChatMessage(
+  messages: Array<{role: string, content: string}>,
+  fileContents?: string[]
+): Promise<string> {
+  // Build system prompt with file context
+  const systemPrompt = fileContents?.length 
+    ? `You are a helpful study assistant. Context: ${fileContents.join('\n')}`
+    : 'You are a helpful study assistant.';
+  
+  // Call OpenAI API with current key
+  // Rotate key on error
+  // Return response
+}
+```
+
+---
+
+### Phase 3: Authentication System
+
+#### 3.1 Create LoginScreen Component (`components/LoginScreen.tsx`)
+
+**Purpose:** User authentication and registration
+
+**Features:**
+- Login form (username + password)
+- Registration form
+- Toggle between login/register modes
+- Form validation
+- Error handling
+
+**UI Elements:**
+- Card layout for form
+- Input fields (username, password)
+- Submit buttons
+- Mode toggle button
+- Logo/branding
+
+**State Management:**
+```typescript
+const [mode, setMode] = useState<'login' | 'register'>('login');
+const [username, setUsername] = useState('');
+const [password, setPassword] = useState('');
+const [error, setError] = useState('');
+```
+
+**Key Logic:**
+```typescript
+const handleLogin = () => {
+  const users = loadUsers();
+  const user = users.find(u => 
+    u.username === username && u.password === password
+  );
+  
+  if (user) {
+    setCurrentUser(username);
+    onLoginSuccess();
+  } else {
+    setError('Invalid credentials');
+  }
+};
+
+const handleRegister = () => {
+  const users = loadUsers();
+  if (users.find(u => u.username === username)) {
+    setError('Username already exists');
+    return;
+  }
+  
+  createUser(username, password);
+  setCurrentUser(username);
+  onLoginSuccess();
+};
+```
+
+---
+
+### Phase 4: Main Layout
+
+#### 4.1 Create App.tsx Structure
+
+**Purpose:** Root component and layout orchestration
+
+**Key Responsibilities:**
+- Authentication state management
+- Current user tracking
+- Layout structure (sidebar + main content)
+- User data loading
+- Logout functionality
+
+**State Structure:**
+```typescript
+const [isLoggedIn, setIsLoggedIn] = useState(false);
+const [currentUser, setCurrentUser] = useState<string | null>(null);
+const [userData, setUserData] = useState<UserData>({ subjects: [] });
+const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
+const [selectedChat, setSelectedChat] = useState<string | null>(null);
+const [sidebarOpen, setSidebarOpen] = useState(true);
+```
+
+**Layout Structure:**
+```tsx
+return isLoggedIn ? (
+  <div className="flex h-screen">
+    {/* Header with logo and menu toggle */}
+    <header>...</header>
+    
+    {/* Collapsible sidebar */}
+    {sidebarOpen && <SubjectSidebar />}
+    
+    {/* Main content area */}
+    <main>
+      {selectedChat ? (
+        <Tabs>
+          <ChatInterface />
+          <FileRepository />
+          <FlashcardView />
+        </Tabs>
+      ) : (
+        <EmptyState />
+      )}
+    </main>
+  </div>
+) : (
+  <LoginScreen />
+);
+```
+
+#### 4.2 Create Header Component
+
+**Elements:**
+- Menu icon (hamburger) - toggles sidebar
+- QuizMate logo/title
+- User avatar/menu (logout option)
+
+**Styling:**
+- Fixed top position
+- Full width
+- Border bottom
+- Flex layout
+
+---
+
+### Phase 5: Subject Management
+
+#### 5.1 Create SubjectSidebar Component (`components/SubjectSidebar.tsx`)
+
+**Purpose:** Display and navigate subjects and chats
+
+**Features:**
+- List all subjects with icons and colors
+- Show chats for each subject
+- Add new subject button
+- Add new chat button per subject
+- Subject selection
+- Chat selection
+- Collapsible design
+
+**UI Structure:**
+```tsx
+<aside className="sidebar">
+  <ScrollArea>
+    {/* Add Subject Button */}
+    <Button onClick={openAddSubjectDialog}>
+      <Plus /> Add Subject
+    </Button>
+    
+    {/* Subject List */}
+    {subjects.map(subject => (
+      <div key={subject.id}>
+        {/* Subject Header */}
+        <div onClick={() => selectSubject(subject.id)}>
+          <Icon style={{color: subject.color}} />
+          {subject.name}
+        </div>
+        
+        {/* Chat List for Subject */}
+        <ChatList 
+          chats={subject.chats}
+          onChatSelect={selectChat}
+        />
+        
+        {/* Add Chat Button */}
+        <Button onClick={openNewChatDialog}>
+          New Chat
+        </Button>
+      </div>
+    ))}
+  </ScrollArea>
+</aside>
+```
+
+#### 5.2 Create AddSubjectDialog Component (`components/AddSubjectDialog.tsx`)
+
+**Purpose:** Create new subjects
+
+**Form Fields:**
+- Subject name (text input)
+- Icon selection (Lucide icon picker)
+- Color picker (hex color)
+
+**Icon Options (examples):**
+- BookOpen, Calculator, Atom, Globe, Palette, Music, etc.
+
+**Implementation:**
+```typescript
+const [name, setName] = useState('');
+const [selectedIcon, setSelectedIcon] = useState('BookOpen');
+const [color, setColor] = useState('#3b82f6');
+
+const handleCreate = () => {
+  const newSubject: Subject = {
+    id: generateId(),
+    name,
+    icon: selectedIcon,
+    color,
+    chats: [],
+    files: []
+  };
+  
+  onAddSubject(newSubject);
+  closeDialog();
+};
+```
+
+#### 5.3 Create ChatList Component (`components/ChatList.tsx`)
+
+**Purpose:** Display chats for a subject
+
+**Features:**
+- List of chat names
+- Click to select chat
+- Visual indicator for selected chat
+- Empty state when no chats
+
+**UI:**
+```tsx
+<div className="chat-list">
+  {chats.length === 0 ? (
+    <p>No chats yet</p>
+  ) : (
+    chats.map(chat => (
+      <div 
+        key={chat.id}
+        onClick={() => onChatSelect(chat.id)}
+        className={selectedChat === chat.id ? 'selected' : ''}
+      >
+        <MessageSquare />
+        {chat.name}
+      </div>
+    ))
+  )}
+</div>
+```
+
+#### 5.4 Create NewChatDialog Component (`components/NewChatDialog.tsx`)
+
+**Purpose:** Create new chat/chapter within a subject
+
+**Form:**
+- Chat name input
+- Create button
+- Cancel button
+
+**Implementation:**
+```typescript
+const [chatName, setChatName] = useState('');
+
+const handleCreate = () => {
+  const newChat: Chat = {
+    id: generateId(),
+    name: chatName,
+    createdAt: new Date().toISOString(),
+    messages: [],
+    flashcards: []
+  };
+  
+  onAddChat(newChat);
+  closeDialog();
+};
+```
+
+---
+
+### Phase 6: Chat Interface
+
+#### 6.1 Create ChatInterface Component (`components/ChatInterface.tsx`)
+
+**Purpose:** Main chat interface with AI assistant
+
+**Features:**
+- Message display (user + AI)
+- Message input
+- Send message
+- File context awareness
+- Loading states
+- Error handling
+
+**UI Structure:**
+```tsx
+<div className="chat-container">
+  {/* Messages Area */}
+  <ScrollArea className="messages">
+    {messages.map(msg => (
+      <div key={msg.id} className={`message ${msg.role}`}>
+        <Avatar>{msg.role === 'user' ? 'U' : 'AI'}</Avatar>
+        <div className="content">{msg.content}</div>
+      </div>
+    ))}
+    
+    {isLoading && <LoadingIndicator />}
+  </ScrollArea>
+  
+  {/* Input Area */}
+  <div className="input-area">
+    <Textarea 
+      value={input}
+      onChange={e => setInput(e.target.value)}
+      placeholder="Ask a question..."
+    />
+    <Button onClick={handleSend}>
+      <Send />
+    </Button>
+  </div>
+</div>
+```
+
+**Key Logic:**
+```typescript
+const handleSend = async () => {
+  if (!input.trim()) return;
+  
+  // Add user message
+  const userMessage: Message = {
+    id: generateId(),
+    role: 'user',
+    content: input,
+    timestamp: new Date().toISOString()
+  };
+  
+  const updatedMessages = [...messages, userMessage];
+  setMessages(updatedMessages);
+  setInput('');
+  setIsLoading(true);
+  
+  try {
+    // Get file contents for context
+    const fileContents = files.map(f => f.content);
+    
+    // Call AI service
+    const response = await sendChatMessage(
+      updatedMessages.map(m => ({
+        role: m.role,
+        content: m.content
+      })),
+      fileContents
+    );
+    
+    // Add AI response
+    const aiMessage: Message = {
+      id: generateId(),
+      role: 'assistant',
+      content: response,
+      timestamp: new Date().toISOString()
+    };
+    
+    setMessages([...updatedMessages, aiMessage]);
+    
+    // Save to storage
+    saveUserData(currentUser, userData);
+  } catch (error) {
+    toast.error('Failed to get response');
+  } finally {
+    setIsLoading(false);
+  }
+};
+```
+
+---
+
+### Phase 7: File Repository
+
+#### 7.1 Create FileRepository Component (`components/FileRepository.tsx`)
+
+**Purpose:** Upload and manage study materials
+
+**Features:**
+- File upload (drag & drop + click)
+- File list display
+- File preview/view
+- File deletion
+- File type support (PDF, TXT, DOCX, images)
+
+**UI Structure:**
+```tsx
+<div className="file-repository">
+  {/* Upload Area */}
+  <div className="upload-zone">
+    <input 
+      type="file" 
+      onChange={handleFileUpload}
+      accept=".pdf,.txt,.doc,.docx,image/*"
+    />
+    <Button>
+      <Upload /> Upload File
+    </Button>
+  </div>
+  
+  {/* File List */}
+  <div className="file-list">
+    {files.length === 0 ? (
+      <p>No files uploaded</p>
+    ) : (
+      files.map(file => (
+        <Card key={file.id}>
+          <FileIcon />
+          <div>
+            <h4>{file.name}</h4>
+            <p>{formatFileSize(file.size)}</p>
+          </div>
+          <Button onClick={() => deleteFile(file.id)}>
+            <Trash />
+          </Button>
+        </Card>
+      ))
+    )}
+  </div>
+</div>
+```
+
+**File Upload Logic:**
+```typescript
+const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+  
+  try {
+    // Read file content
+    const content = await readFileAsText(file);
+    
+    const newFile: StudyFile = {
+      id: generateId(),
+      name: file.name,
+      content,
+      type: file.type,
+      size: file.size,
+      uploadedAt: new Date().toISOString()
+    };
+    
+    // Add to current subject
+    const updatedSubjects = userData.subjects.map(subject =>
+      subject.id === selectedSubject
+        ? { ...subject, files: [...subject.files, newFile] }
+        : subject
+    );
+    
+    setUserData({ subjects: updatedSubjects });
+    saveUserData(currentUser, { subjects: updatedSubjects });
+    
+    toast.success('File uploaded successfully');
+  } catch (error) {
+    toast.error('Failed to upload file');
+  }
+};
+
+// Helper to read file
+function readFileAsText(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsText(file);
+  });
+}
+```
+
+---
+
+### Phase 8: Flashcard System
+
+#### 8.1 Create FlashcardView Component (`components/FlashcardView.tsx`)
+
+**Purpose:** Study and manage flashcards for current chat
+
+**Features:**
+- Card flip animation
+- Study mode (sequential viewing)
+- Add new flashcard
+- Delete flashcard
+- Show flashcard count
+- Navigation (next/previous)
+
+**UI Structure:**
+```tsx
+<div className="flashcard-view">
+  {/* Header */}
+  <div className="header">
+    <h3>Flashcards ({flashcards.length})</h3>
+    <Button onClick={openAddDialog}>
+      <Plus /> Add Flashcard
+    </Button>
+  </div>
+  
+  {/* Card Display */}
+  {flashcards.length === 0 ? (
+    <EmptyState />
+  ) : (
+    <div className="card-container">
+      <Card 
+        className={flipped ? 'flipped' : ''}
+        onClick={() => setFlipped(!flipped)}
+      >
+        <div className="front">
+          <p>Question</p>
+          <h2>{currentCard.question}</h2>
+        </div>
+        <div className="back">
+          <p>Answer</p>
+          <h2>{currentCard.answer}</h2>
+        </div>
+      </Card>
+      
+      {/* Navigation */}
+      <div className="navigation">
+        <Button onClick={previousCard}>Previous</Button>
+        <span>{currentIndex + 1} / {flashcards.length}</span>
+        <Button onClick={nextCard}>Next</Button>
+      </div>
+    </div>
+  )}
+</div>
+```
+
+**Card Flip Logic:**
+```typescript
+const [currentIndex, setCurrentIndex] = useState(0);
+const [flipped, setFlipped] = useState(false);
+
+const currentCard = flashcards[currentIndex];
+
+const nextCard = () => {
+  setFlipped(false);
+  setCurrentIndex((prev) => 
+    prev < flashcards.length - 1 ? prev + 1 : prev
+  );
+};
+
+const previousCard = () => {
+  setFlipped(false);
+  setCurrentIndex((prev) => prev > 0 ? prev - 1 : prev);
+};
+```
+
+**CSS for Flip Animation:**
+```css
+.card-container {
+  perspective: 1000px;
+}
+
+.card {
+  transition: transform 0.6s;
+  transform-style: preserve-3d;
+}
+
+.card.flipped {
+  transform: rotateY(180deg);
+}
+
+.front, .back {
+  backface-visibility: hidden;
+}
+
+.back {
+  transform: rotateY(180deg);
+}
+```
+
+#### 8.2 Create AddFlashcardDialog Component (`components/AddFlashcardDialog.tsx`)
+
+**Purpose:** Create new flashcards for current chat
+
+**Form:**
+- Question input (textarea)
+- Answer input (textarea)
+- Create button
+
+**Implementation:**
+```typescript
+const [question, setQuestion] = useState('');
+const [answer, setAnswer] = useState('');
+
+const handleCreate = () => {
+  if (!question.trim() || !answer.trim()) {
+    toast.error('Please fill in both question and answer');
+    return;
+  }
+  
+  const newFlashcard: Flashcard = {
+    id: generateId(),
+    question,
+    answer,
+    createdAt: new Date().toISOString()
+  };
+  
+  onAddFlashcard(newFlashcard);
+  closeDialog();
+  toast.success('Flashcard created');
+};
+```
+
+---
+
+### Phase 9: Polish & Features
+
+#### 9.1 Collapsible Sidebar
+
+**Implementation:**
+```typescript
+// In App.tsx
+const [sidebarOpen, setSidebarOpen] = useState(true);
+
+// Header with toggle
+<header>
+  <Button onClick={() => setSidebarOpen(!sidebarOpen)}>
+    <Menu />
+  </Button>
+  <h1>QuizMate</h1>
+</header>
+
+// Conditional sidebar render
+{sidebarOpen && <SubjectSidebar />}
+```
+
+**CSS Transition:**
+```css
+.sidebar {
+  transition: transform 0.3s ease;
+}
+
+.sidebar.closed {
+  transform: translateX(-100%);
+}
+```
+
+#### 9.2 Empty States
+
+Create meaningful empty states for:
+- No subjects: "Add your first subject to get started"
+- No chats: "Create a new chat to start studying"
+- No files: "Upload study materials"
+- No flashcards: "Add flashcards to study"
+
+#### 9.3 Loading States
+
+Add loading indicators for:
+- AI response generation
+- File upload
+- Data loading
+
+Use Skeleton components or Spinners from shadcn/ui
+
+#### 9.4 Error Handling
+
+Implement error boundaries and user-friendly error messages:
+- Failed API calls
+- Invalid file uploads
+- Storage errors
+- Network issues
+
+#### 9.5 Responsive Design
+
+Ensure mobile compatibility:
+- Hamburger menu for sidebar on mobile
+- Stack layout on small screens
+- Touch-friendly buttons
+- Responsive typography
+
+---
+
+## Key Features Implementation
+
+### Feature 1: Multi-User Support with Data Isolation
+
+**How it works:**
+- Each user has separate localStorage key
+- Format: `quizmate_data_{username}`
+- No data mixing between users
+- Login required to access data
+
+**Benefits:**
+- Multiple users on same computer
+- Privacy protection
+- Simple implementation (no backend needed)
+
+---
+
+### Feature 2: Subject-Based Organization
+
+**How it works:**
+- Top-level organization is by subject
+- Each subject contains:
+  - Multiple chats
+  - Shared file repository
+  - Subject-specific settings (icon, color)
+
+**Benefits:**
+- Natural organization for students
+- Easy to find materials
+- Visual identification (icons/colors)
+
+---
+
+### Feature 3: Chat-Scoped Flashcards
+
+**How it works:**
+- Flashcards stored within chat object
+- Only visible when that chat is selected
+- Separate flashcard decks per topic
+
+**Benefits:**
+- Focused studying
+- No mixing of unrelated flashcards
+- Better for spaced repetition per topic
+
+**Data Structure:**
+```
+Subject: Mathematics
+├── Chat: Trigonometry
+│   └── Flashcards: [sin, cos, tan definitions]
+├── Chat: Calculus
+│   └── Flashcards: [derivative rules]
+└── Files: [shared across all chats]
+```
+
+---
+
+### Feature 4: AI Context from Files
+
+**How it works:**
+- When sending chat message, include file contents
+- AI service builds system prompt with file data
+- AI can reference uploaded materials in responses
+
+**Implementation:**
+```typescript
+// Build context from files
+const fileContext = subject.files
+  .map(f => `File: ${f.name}\n${f.content}`)
+  .join('\n\n');
+
+// Include in system prompt
+const systemPrompt = `You are a study assistant. 
+Use these materials to help the student: 
+
+${fileContext}`;
+```
+
+**Benefits:**
+- AI has subject context
+- More accurate answers
+- Can quote from materials
+
+---
+
+### Feature 5: API Key Pooling
+
+**How it works:**
+- Multiple OpenAI API keys stored in array
+- Rotate through keys on each request
+- Fall back to next key on error
+
+**Implementation:**
+```typescript
+const API_KEYS = ['key1', 'key2', 'key3'];
+let currentKeyIndex = 0;
+
+async function callWithRetry(messages) {
+  for (let i = 0; i < API_KEYS.length; i++) {
+    try {
+      const key = API_KEYS[currentKeyIndex];
+      const response = await openai.chat.completions.create({
+        apiKey: key,
+        messages,
+        model: 'gpt-3.5-turbo'
+      });
+      
+      currentKeyIndex = (currentKeyIndex + 1) % API_KEYS.length;
+      return response;
+    } catch (error) {
+      currentKeyIndex = (currentKeyIndex + 1) % API_KEYS.length;
+      if (i === API_KEYS.length - 1) throw error;
+    }
+  }
+}
+```
+
+**Benefits:**
+- No user API key needed
+- Better rate limit handling
+- Automatic failover
+
+---
+
+## Deployment
+
+### Build for Production
+
+```bash
+# Install dependencies
+npm install
+
+# Build production bundle
+npm run build
+
+# Output will be in /dist folder
+```
+
+### Deployment Options
+
+#### Option 1: Static Hosting (Recommended)
+- **Netlify**: Drag & drop `dist` folder
+- **Vercel**: Connect GitHub repo
+- **GitHub Pages**: Push `dist` to gh-pages branch
+- **Cloudflare Pages**: Connect repo or upload
+
+#### Option 2: Traditional Hosting
+- Upload `dist` folder to web server
+- Configure server to serve `index.html` for all routes
+- Ensure HTTPS is enabled
+
+### Environment Variables
+
+If using external API keys:
+```bash
+# .env file
+VITE_OPENAI_API_KEY=your_key_here
+```
+
+Access in code:
+```typescript
+const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
+```
+
+### Important Considerations
+
+**Security:**
+- localStorage is not encrypted (don't store sensitive data)
+- Password hashing should be improved for production
+- API keys in frontend are visible (use backend proxy for production)
+- CORS may need configuration
+
+**Storage Limits:**
+- localStorage has ~5-10MB limit per domain
+- Large file uploads may exceed limit
+- Consider IndexedDB for larger storage needs
+
+**Browser Compatibility:**
+- Ensure localStorage is available
+- Handle quota exceeded errors
+- Test on different browsers
+
+---
+
+## Testing Checklist
+
+### User Authentication
+- [ ] Can create new account
+- [ ] Can login with existing account
+- [ ] Invalid credentials show error
+- [ ] Logout clears session
+- [ ] Data persists after logout/login
+
+### Subject Management
+- [ ] Can add new subject
+- [ ] Subject displays with icon and color
+- [ ] Can select subject
+- [ ] Multiple subjects work correctly
+
+### Chat System
+- [ ] Can create new chat in subject
+- [ ] Can select chat
+- [ ] Messages display correctly
+- [ ] AI responses work
+- [ ] File context is used by AI
+- [ ] Chat history persists
+
+### File Repository
+- [ ] Can upload files
+- [ ] Files display in list
+- [ ] Can delete files
+- [ ] Files are subject-specific
+- [ ] File content is used in chat
+
+### Flashcards
+- [ ] Can add flashcard to current chat
+- [ ] Card flips on click
+- [ ] Navigation works (next/previous)
+- [ ] Flashcards are chat-specific
+- [ ] Can delete flashcard
+
+### UI/UX
+- [ ] Sidebar can collapse/expand
+- [ ] Tabs switch correctly
+- [ ] Empty states show properly
+- [ ] Loading states appear
+- [ ] Errors are handled gracefully
+- [ ] Responsive on mobile
+
+---
+
+## Troubleshooting
+
+### Common Issues
+
+**Issue: Data not persisting**
+- Check localStorage is enabled in browser
+- Verify saveUserData is called after changes
+- Check browser console for errors
+
+**Issue: AI not responding**
+- Verify API key is valid
+- Check network tab for API errors
+- Ensure proper error handling
+
+**Issue: Files not uploading**
+- Check file size (may exceed localStorage limit)
+- Verify file type is supported
+- Check FileReader API compatibility
+
+**Issue: Sidebar won't collapse**
+- Verify sidebarOpen state is toggling
+- Check CSS transitions are applied
+- Ensure no conflicting styles
+
+---
+
+## Future Enhancements
+
+### Potential Features
+1. **Export/Import Data** - Backup user data to file
+2. **Search Functionality** - Search across chats and flashcards
+3. **Study Statistics** - Track study time, cards reviewed
+4. **Spaced Repetition** - Smart flashcard scheduling
+5. **Shared Subjects** - Collaborate with other students
+6. **Mobile App** - Native iOS/Android version
+7. **Cloud Sync** - Optional cloud backup
+8. **Themes** - Dark mode, custom themes
+9. **Voice Input** - Speech-to-text for questions
+10. **Image OCR** - Extract text from uploaded images
+
+### Technical Improvements
+1. **Backend API** - Move to proper database
+2. **Authentication** - OAuth, JWT tokens
+3. **Real-time Sync** - WebSocket updates
+4. **File Processing** - Better PDF parsing
+5. **IndexedDB** - Larger storage capacity
+6. **Service Worker** - Offline functionality
+7. **Testing** - Unit and E2E tests
+8. **TypeScript Strict Mode** - Better type safety
+
+---
+
+## Summary
+
+QuizMate is built as a **client-side React application** with:
+
+1. **No backend required** - All data in localStorage
+2. **Simple architecture** - Components + Storage + AI Service
+3. **User-friendly** - Clean UI with shadcn components
+4. **Privacy-first** - Isolated user data
+5. **AI-powered** - OpenAI integration with context
+6. **Organized** - Subject → Chat → Flashcards hierarchy
+
+The entire application can be built in **approximately 8-10 hours** by following this guide step-by-step.
+
+**Core Files Needed:**
+- 1 main App component
+- 8 feature components
+- 2 utility services (storage + AI)
+- 20+ shadcn UI components
+- 1 CSS file
+
+**Total Lines of Code:** ~2,500-3,000 lines
+
+This is a complete, production-ready recipe for building QuizMate from scratch. Follow the phases in order, test each feature as you build, and you'll have a fully functional educational platform.
+
+---
+
+## License & Credits
+
+Built with:
+- React + TypeScript
+- Tailwind CSS
+- shadcn/ui components
+- OpenAI API
+- Lucide Icons
+
+Created as an educational platform for students worldwide.
+
+---
+
+**Happy Building! 🚀**
