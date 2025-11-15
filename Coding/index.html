@@ -16,7 +16,7 @@
 </head>
 <body>
   <div class="app">
-    <!-- Sidebar (hlavní, pro předměty) -->
+    <!-- Sidebar - Main -->
     <aside class="sidebar">
       <div class="profile">
         <div class="avatar">U</div>
@@ -37,6 +37,7 @@
         <button class="tab-btn active" data-tab="chat">💬 Chat</button>
         <button class="tab-btn" data-tab="files">📂 Files</button>
         <button class="tab-btn" data-tab="flashcards">🧠 Flashcards</button>
+        <button class="tab-btn" data-tab="notes">📝 Notes</button>
       </div>
 
       <!-- CHAT (nové rozložení: vlevo seznam chatů, vpravo konverzace) -->
@@ -99,6 +100,16 @@
           <button class="btn outline small" id="prevCard">◀ Previous</button>
           <p class="counter">1 / 5</p>
           <button class="btn outline small" id="nextCard">Next ▶</button>
+        </div>
+      </section>
+
+      <!-- NOTES -->
+      <section id="notes" class="tab-content">
+        <div class="notes-header">
+          <h2>Notes</h2>
+        </div>
+        <div id="notesList" class="notes-list">
+          <!-- Notes will be dynamically added here -->
         </div>
       </section>
     </main>

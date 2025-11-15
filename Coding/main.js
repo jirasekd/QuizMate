@@ -235,8 +235,17 @@ const api = {
   },
 
   async askAI(messages) {
+    // Build a helpful system message using the current chat's topic
+    const currentName = (chatState.getCurrent && chatState.getCurrent()?.name) || "(téma)";
+    const systemMessage = {
+      role: "system",
+      content: `Odpovídej vždy výhradně česky. Nikdy nepoužívej jiný jazyk. ` +
+               `Jsi asistent, který pomáhá studentovi v tématu: "${currentName}". ` +
+               `Drž konverzaci v kontextu tohoto tématu a v případě nejasností se ptej.`
+    };
+
     const payload = {
-      messages: messages.map(m => ({ role: m.role, content: m.content }))
+      messages: [systemMessage, ...messages.map(m => ({ role: m.role, content: m.content }))]
     };
 
     const resp = await fetch("/api/chat", {
@@ -246,9 +255,17 @@ const api = {
     });
 
     if (!resp.ok) {
-      const err = await resp.text();
-      throw new Error(`API error ${resp.status}: ${err}`);
+      // Try to parse JSON error body, fall back to text
+      let bodyText = await resp.text().catch(() => "");
+      try {
+        const json = JSON.parse(bodyText || "{}");
+        const errMsg = json.error || json.message || bodyText;
+        throw new Error(`API error ${resp.status}: ${errMsg}`);
+      } catch (parseErr) {
+        throw new Error(`API error ${resp.status}: ${bodyText}`);
+      }
     }
+
     const data = await resp.json();
     return data.reply;
   }
@@ -257,6 +274,7 @@ const api = {
 // ─────────────────────────────────────────────────
 // 6. Event handlers
 // ─────────────────────────────────────────────────
+
 const events = {
   initTabs() {
     DOM.tabs.forEach(btn => {
@@ -310,7 +328,9 @@ const events = {
       ui.addMessage(reply, "assistant");
     } catch (e) {
       console.error(e);
-      ui.addMessage("⚠️ Nepodařilo se získat odpověď od AI.", "assistant");
+      // Show the actual error message returned from the server when possible
+      const msg = e && e.message ? `⚠️ ${e.message}` : "⚠️ Nepodařilo se získat odpověď od AI.";
+      ui.addMessage(msg, "assistant");
     }
   },
 
