@@ -160,7 +160,7 @@ body {
 
 .chat-layout {
   display: grid;
-  grid-template-columns: 280px minmax(0, 1500px);
+  grid-template-columns: 280px minmax(0, 2000px);
   height: 100%;
   min-height: 0;
 }
@@ -191,6 +191,7 @@ body {
 .thread-item {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 8px;
   padding: 10px 12px;
   border-radius: 8px;
@@ -203,6 +204,19 @@ body {
 .thread-item.active {
   background: linear-gradient(135deg, var(--primary-1), var(--primary-2));
   color: white;
+}
+
+.delete-thread-btn {
+  opacity: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  transition: opacity 0.2s ease;
+}
+
+.thread-item:hover .delete-thread-btn {
+  opacity: 1;
 }
 
 /* Right chat pane */
@@ -290,9 +304,74 @@ body {
   background: var(--card);
   border-top: 1px solid var(--border);
   padding: 14px 16px;
-  display: grid;
-  grid-template-columns: 1fr auto;
+  
+  display: flex;
+  align-items: center;
   gap: 12px;
+}
+
+.chat-actions {
+  flex-shrink: 0;
+  position: relative;
+}
+
+#sendBtn {
+  flex-shrink: 0;
+}
+
+.plus-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: #fff;
+  font-size: 20px;
+  line-height: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+}
+
+.plus-btn:hover {
+  background: var(--muted-bg);
+}
+
+/* dropdown menu */
+.action-menu {
+  position: absolute;
+  bottom: 40px;
+  left: 0;
+  transform-origin: bottom left;
+  background: white;
+  border: 1px solid var(--border);
+  padding: 10px;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  z-index: 10;
+  min-width: 220px;
+}
+
+.action-menu.hidden {
+  display: none;
+}
+
+.action-item {
+  padding: 8px 12px;
+  background: white;
+  border-radius: var(--radius-sm);
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s;
+}
+
+.action-item:hover {
+  background: var(--muted-bg);
 }
 
 .chat-input textarea {
@@ -304,6 +383,8 @@ body {
   outline: none;
   font-size: 15px;
   resize: none; /* auto-resize handled via JS */
+  flex : 1;
+  width: 100%;
 }
 
 #sendBtn.btn.primary {
@@ -313,6 +394,33 @@ body {
   font-weight: 600;
   color: #fff;
 }
+
+/* ----------------------
+    Notes
+    ---------------------- */
+
+    .topic-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+    }
+
+    .topic-card {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 18px;
+      border: 1px solid var(--border);
+      font-weight: 600;
+      color: #111827;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      transition: background .15s ease, transform .1s ease;
+    }
+
+    .topic-card:hover {
+      background: #eef2ff;
+      transform: translateY(-2px);
+    }
+
 
 /* ----------------------
    Buttons (reusable)
@@ -331,19 +439,6 @@ body {
 .upload-card { margin: 30px auto; border: 2px dashed #cbd5e1; border-radius: var(--radius); text-align: center; padding: 40px; max-width: 500px; color: var(--muted); }
 .upload-card input { margin: 10px 0; }
 .file-item { margin-top: 10px; padding: 10px; border-radius: var(--radius-sm); background: var(--muted-bg); }
-
-/* ----------------------
-   Flashcards
-   ---------------------- */
-.flash-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; }
-.flashcard { width: 90%; max-width: 400px; height: 250px; margin: 40px auto; position: relative; perspective: 1000px; cursor: pointer; }
-.flashcard .front, .flashcard .back {
-  position: absolute; width: 100%; height: 100%; background: var(--bg); border-radius: var(--radius); box-shadow: 0 5px 15px rgba(0,0,0,0.1); display: flex; flex-direction: column; align-items: center; justify-content: center; backface-visibility: hidden; transition: transform 0.6s;
-}
-.flashcard.flipped .front { transform: rotateY(180deg); }
-.flashcard .back { transform: rotateY(180deg); }
-.flashcard.flipped .back { transform: rotateY(0deg); }
-.flash-nav { display: flex; justify-content: center; align-items: center; gap: 16px; }
 
 /* small helpers */
 .sr-only { position: absolute; left: -9999px; }

@@ -38,6 +38,7 @@
         <button class="tab-btn" data-tab="files">📂 Files</button>
         <button class="tab-btn" data-tab="flashcards">🧠 Flashcards</button>
         <button class="tab-btn" data-tab="notes">📝 Notes</button>
+        <button class="tab-btn" data-tab="tests">🧪 Tests</button>
       </div>
 
       <!-- CHAT (nové rozložení: vlevo seznam chatů, vpravo konverzace) -->
@@ -61,8 +62,18 @@
             <div class="chat-messages" id="messages"></div>
 
             <div class="chat-input">
+              <div class="chat-actions">
+                <button id="chatPlusBtn" class="plus-btn">+</button>
+                <div id="actionMenu" class="action-menu hidden">
+                  <button class="action-item" data-action="notes">📄 Generate Notes</button>
+                  <button class="action-item" data-action="flashcards">🧠 Generate Flashcards</button>
+                  <button class="action-item" data-action="files">📂 Upload File</button>
+                </div>
+              </div>
+              
               <textarea id="chatInput" placeholder="Type here..."></textarea>
               <button id="sendBtn" class="btn primary">Send</button>
+              
             </div>
           </div>
         </div>
@@ -79,39 +90,23 @@
         <div id="fileList"></div>
       </section>
 
-      <!-- FLASHCARDS -->
-      <section id="flashcards" class="tab-content">
-        <div class="flash-header">
-          <h2>Flashcards for Trigonometry</h2>
-          <button class="btn primary small">+ Add Flashcard</button>
-        </div>
-        <div class="flashcard" id="flashcard">
-          <div class="front">
-            <p class="small">Question</p>
-            <h3>What is the value of sin(90°)?</h3>
-            <p class="hint">Click to reveal answer</p>
-          </div>
-          <div class="back">
-            <p class="small">Answer</p>
-            <p class="answer">The value of sin(90°) is 1.</p>
-          </div>
-        </div>
-        <div class="flash-nav">
-          <button class="btn outline small" id="prevCard">◀ Previous</button>
-          <p class="counter">1 / 5</p>
-          <button class="btn outline small" id="nextCard">Next ▶</button>
-        </div>
-      </section>
-
       <!-- NOTES -->
       <section id="notes" class="tab-content">
-        <div class="notes-header">
-          <h2>Notes</h2>
-        </div>
-        <div id="notesList" class="notes-list">
+        <h2>Notes</h2>
+        <div id="noteList" class="note-list">
           <!-- Notes will be dynamically added here -->
         </div>
       </section>
+      
+      
+          <!-- TESTS -->
+      <section id="tests" class="tab-content">
+        <div class="tests-header">
+          <h2>Tests</h2>
+        </div>
+        <div id="testList" class="tests-list">
+          <!-- Tests will be dynamically added here -->
+        </div>
     </main>
   </div>
 

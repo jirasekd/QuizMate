@@ -1,8 +1,3 @@
-/* ===================================================
-   QuizMate Main App
-   Organized: DOM refs, state, storage, UI, events
-   =================================================== */
-
 // ─────────────────────────────────────────────────
 // 1. Utilities
 // ─────────────────────────────────────────────────
@@ -85,6 +80,8 @@ const DOM = {
     this.threadListEl = document.getElementById("threadList");
     this.newThreadBtn = document.getElementById("newThreadBtn");
     this.chatTitleEl = document.getElementById("chatTitle");
+    this.plusBtn = document.getElementById("chatPlusBtn");
+    this.actionMenu = document.getElementById("actionMenu");
 
     // File upload
     this.upload = document.getElementById("fileUpload");
@@ -94,7 +91,7 @@ const DOM = {
     this.flashcard = document.getElementById("flashcard");
 
     // Validate essential chat elements
-    if (!this.messages || !this.input || !this.sendBtn || !this.threadListEl || !this.newThreadBtn || !this.chatTitleEl) {
+    if (!this.messages || !this.input || !this.sendBtn || !this.threadListEl || !this.newThreadBtn || !this.chatTitleEl || !this.plusBtn || !this.actionMenu) {
       console.warn("Chat UI elements not found – check IDs in index.html");
       return false;
     }
@@ -113,9 +110,8 @@ const chatState = {
     this.chats = JSON.parse(localStorage.getItem("quizmate_chats") || "[]");
     if (this.chats.length === 0) {
       this.chats = [
-        { id: util.genId(), name: "Trigonometry", messages: [] },
-        { id: util.genId(), name: "Algebra", messages: [] },
-        { id: util.genId(), name: "Calculus", messages: [] }
+        { id: util.genId(), name: "Vektory", messages: [] },
+        { id: util.genId(), name: "Lineární rovnice", messages: [] }
       ];
       this.save();
     }
@@ -167,9 +163,67 @@ const ui = {
     chatState.chats.forEach(chat => {
       const li = document.createElement("li");
       li.className = "thread-item" + (chat.id === chatState.currentChatId ? " active" : "");
-      li.textContent = chat.name;
+
+      //název chatu
+      const nameSpan = document.createElement("span");
+      nameSpan.className = "thread-name";
+      nameSpan.textContent = chat.name;
+
+      //koš
+      const deleteBtn = document.createElement("button");
+      deleteBtn.className = "delete-thread-btn";
+      deleteBtn.textContent = "🗑️";
+      deleteBtn.dataset.chatId = chat.id;
+
+      //klik na chat
       li.addEventListener("click", () => chatState.selectChat(chat.id));
+
+      //klik na koš
+      deleteBtn.addEventListener("click", (e) => {
+        e.stopPropagation();              //zabráníme výběru chatu
+
+        const id = deleteBtn.dataset.chatId;
+
+        //smazaní chatu
+        chatState.chats = chatState.chats.filter(c => c.id !== id);
+        chatState.save();
+
+        //pokud byl smazaný aktuální chat, přepneme na jiný
+        if (chatState.currentChatId === id) {
+          if (chatState.chats.length > 0) {
+            chatState.currentChatId = chatState.chats[0].id;
+          } else {
+            chatState.currentChatId = null;
+          }
+        }
+
+        ui.renderThreads();
+        ui.renderMessages();
+      });
+
+      li.appendChild(nameSpan);
+      li.appendChild(deleteBtn);
+
+      
       DOM.threadListEl.appendChild(li);
+    });
+  },
+
+  renderNotes() {
+
+    const chat = chatState.getCurrent();
+    const notes = chat.notes || [];
+    const notesContainer = document.getElementById("notesContainer");
+    notesContainer.innerHTML = "";
+    if (notes.length === 0) {
+      notesContainer.innerHTML = "<p>Žádné poznámky k zobrazení.</p>";
+      return;
+    }
+    notes.forEach(note => {
+      const div = document.createElement("div");
+      div.className = "note-item";
+      div.innerHTML = util.markdownToHtml(note.content);
+      notesContainer.appendChild(div);
     });
   },
 
@@ -308,6 +362,37 @@ const events = {
       e.preventDefault();
       this.sendMessage();
     });
+    
+    DOM.plusBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      DOM.actionMenu.classList.toggle("hidden");
+    });
+
+    // Prevent clicks inside the menu from closing it immediately
+    DOM.actionMenu.addEventListener("click", (e) => {
+      e.stopPropagation();
+    });
+  
+    //kliknutí mimo menu zavře menu
+    document.addEventListener("click", () => {
+      DOM.actionMenu.classList.add("hidden");
+    });
+
+    // klik na akci v menu
+    DOM.actionMenu.addEventListener("click", (e) => {
+      const action = e.target.dataset.action;
+      if (!action) return;
+
+      if (action === "notes") {
+        events.generateNotes();
+      } else if (action === "flashcards") {
+        events.generateFlashcards();
+      } else if (action === "files") {
+        DOM.upload.click();
+      }
+
+      DOM.actionMenu.classList.add("hidden");
+    });
 
     // Auto-resize textarea
     DOM.input.addEventListener("input", () => util.autoResize(DOM.input));
@@ -353,7 +438,9 @@ const events = {
     DOM.flashcard.addEventListener("click", () => {
       DOM.flashcard.classList.toggle("flipped");
     });
-  }
+  },
+
+  
 };
 
 // ─────────────────────────────────────────────────
