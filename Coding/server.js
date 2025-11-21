@@ -106,7 +106,7 @@ async function callGemini(openAiMessages) {
       temperature: 0.7,
       topP: 0.95,
       topK: 40,
-      maxOutputTokens: 4096  // Increased from 1024 for longer responses
+      maxOutputTokens: 16000  // Increased to 16k for comprehensive notes
     }
   };
 
@@ -124,6 +124,14 @@ async function callGemini(openAiMessages) {
 
   const data = await resp.json();
   console.log("Gemini response:", JSON.stringify(data, null, 2)); // DEBUG: log full response
+
+  // Check for finish reason to see if response was truncated
+  if (data?.candidates?.[0]) {
+    const cand = data.candidates[0];
+    if (cand.finishReason && cand.finishReason !== "STOP") {
+      console.warn(`⚠️ Response finished with reason: ${cand.finishReason} (may be truncated)`);
+    }
+  }
 
   // Check for safety block first
   if (data?.promptFeedback?.safetyRatings) {

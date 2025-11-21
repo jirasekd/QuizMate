@@ -1,121 +1,130 @@
-// ─────────────────────────────────────────────────
-// 1. Utilities
-// ─────────────────────────────────────────────────
+/****************************************************
+ * 1 UTILITIES
+ ****************************************************/
 const util = {
   genId: () => Math.random().toString(36).slice(2, 10),
-  
-  escapeHtml: (str) => str
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;"),
-  
-  // Simple Markdown to HTML converter
-  markdownToHtml: (md) => {
+
+  escapeHtml(str) {
+    return str
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
+  },
+
+  // Markdown → HTML (math-safe)
+  markdownToHtml(md) {
     if (!md) return "";
-    
-    let html = util.escapeHtml(md);
-    
-    // Bold: **text** → <strong>text</strong>
+
+    const placeholders = [];
+    let html = md;
+
+    // Protect display math
+    html = html.replace(/\$\$(.+?)\$\$/gs, (m) => {
+      const key = `__MATH_BLOCK_${placeholders.length}__`;
+      placeholders.push(m);
+      return key;
+    });
+
+    // Protect inline math
+    html = html.replace(/\$(.+?)\$/g, (m) => {
+      const key = `__MATH_INLINE_${placeholders.length}__`;
+      placeholders.push(m);
+      return key;
+    });
+
+    html = util.escapeHtml(html);
+
+    placeholders.forEach((m, i) => {
+      html = html.replaceAll(`__MATH_BLOCK_${i}__`, m);
+      html = html.replaceAll(`__MATH_INLINE_${i}__`, m);
+    });
+
     html = html.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
-    
-    // Italic: *text* → <em>text</em>
     html = html.replace(/\*(.+?)\*/g, "<em>$1</em>");
-    
-    // Code: `text` → <code>text</code>
     html = html.replace(/`(.+?)`/g, "<code>$1</code>");
-    
-    // Line breaks: \n → <br>
     html = html.replace(/\n/g, "<br>");
-    
-    // Unordered lists: * item → <li>item</li> (wrapped in <ul>)
-    html = html.replace(/^\* (.+)$/gm, "<li>$1</li>");
-    html = html.replace(/(<li>.*<\/li>)/s, "<ul>$1</ul>");
-    
-    // Headings: # Heading → <h2>Heading</h2>
+
     html = html.replace(/^### (.+)$/gm, "<h3>$1</h3>");
     html = html.replace(/^## (.+)$/gm, "<h2>$1</h2>");
     html = html.replace(/^# (.+)$/gm, "<h1>$1</h1>");
-    
+
     return html;
   },
-  
-  autoResize: (el) => {
+
+  autoResize(el) {
     el.style.height = "0px";
     el.style.height = Math.min(el.scrollHeight, 200) + "px";
   }
 };
 
-// ─────────────────────────────────────────────────
-// 2. DOM references (cache once)
-// ─────────────────────────────────────────────────
+
+/****************************************************
+ * 2. DOM
+ ****************************************************/
 const DOM = {
-  // Tabs
-  tabs: null,
-  contents: null,
-
-  // Chat UI
-  messages: null,
-  input: null,
-  sendBtn: null,
-  threadListEl: null,
-  newThreadBtn: null,
-  chatTitleEl: null,
-
-  // File upload
-  upload: null,
-  fileList: null,
-
-  // Flashcard
-  flashcard: null,
-
   init() {
-    // Tabs
     this.tabs = document.querySelectorAll(".tab-btn");
     this.contents = document.querySelectorAll(".tab-content");
 
-    // Chat
     this.messages = document.getElementById("messages");
     this.input = document.getElementById("chatInput");
     this.sendBtn = document.getElementById("sendBtn");
     this.threadListEl = document.getElementById("threadList");
     this.newThreadBtn = document.getElementById("newThreadBtn");
     this.chatTitleEl = document.getElementById("chatTitle");
+
     this.plusBtn = document.getElementById("chatPlusBtn");
     this.actionMenu = document.getElementById("actionMenu");
 
-    // File upload
     this.upload = document.getElementById("fileUpload");
     this.fileList = document.getElementById("fileList");
 
-    // Flashcard
-    this.flashcard = document.getElementById("flashcard");
+    this.notesGrid = document.getElementById("notesTopics");
+    this.noteDetail = document.getElementById("noteDetail");
+    this.noteDetailTitle = document.getElementById("noteDetailTitle");
+    this.noteDetailContent = document.getElementById("noteDetailContent");
+    this.backToNotes = document.getElementById("backToNotes");
 
-    // Validate essential chat elements
-    if (!this.messages || !this.input || !this.sendBtn || !this.threadListEl || !this.newThreadBtn || !this.chatTitleEl || !this.plusBtn || !this.actionMenu) {
-      console.warn("Chat UI elements not found – check IDs in index.html");
-      return false;
-    }
+    this.flashcard = document.getElementById("flashcard");
+    this.flashNav = document.getElementById("flashNav");
+    this.flashFront = document.getElementById("flashFront");
+    this.flashBack = document.getElementById("flashBack");
+    this.flashIndex = document.getElementById("flashIndex");
+    this.prevFlash = document.getElementById("prevFlash");
+    this.nextFlash = document.getElementById("nextFlash");
+
     return true;
   }
 };
 
-// ─────────────────────────────────────────────────
-// 3. Chat state & storage
-// ─────────────────────────────────────────────────
+
+/****************************************************
+ * 3. NOTES STORE
+ ****************************************************/
+const notesStore = {}; // topic → { title, content }
+
+
+/****************************************************
+ * 4. CHAT STATE
+ ****************************************************/
 const chatState = {
   chats: [],
   currentChatId: null,
 
   init() {
     this.chats = JSON.parse(localStorage.getItem("quizmate_chats") || "[]");
+
     if (this.chats.length === 0) {
       this.chats = [
-        { id: util.genId(), name: "Vektory", messages: [] },
-        { id: util.genId(), name: "Lineární rovnice", messages: [] }
+        { id: util.genId(), name: "Trigonometry", messages: [] },
+        { id: util.genId(), name: "Linear equations", messages: [] }
       ];
       this.save();
     }
-    this.currentChatId = localStorage.getItem("quizmate_current_chat") || this.chats[0].id;
+
+    this.currentChatId =
+      localStorage.getItem("quizmate_current_chat") || this.chats[0].id;
+
     localStorage.setItem("quizmate_current_chat", this.currentChatId);
   },
 
@@ -124,7 +133,7 @@ const chatState = {
   },
 
   getCurrent() {
-    return this.chats.find(c => c.id === this.currentChatId);
+    return this.chats.find((c) => c.id === this.currentChatId);
   },
 
   selectChat(id) {
@@ -136,13 +145,13 @@ const chatState = {
   },
 
   addChat(name) {
-    const newChat = { id: util.genId(), name, messages: [] };
-    this.chats.unshift(newChat);
+    const chat = { id: util.genId(), name, messages: [] };
+    this.chats.unshift(chat);
     this.save();
-    return newChat;
+    return chat;
   },
 
-  addMessageToChat(text, role) {
+  addMessage(text, role) {
     const chat = this.getCurrent();
     chat.messages.push({
       id: util.genId(),
@@ -154,248 +163,249 @@ const chatState = {
   }
 };
 
-// ─────────────────────────────────────────────────
-// 4. UI Rendering
-// ─────────────────────────────────────────────────
+
+/****************************************************
+ * 5. UI
+ ****************************************************/
 const ui = {
+  /* THREADS */
   renderThreads() {
     DOM.threadListEl.innerHTML = "";
-    chatState.chats.forEach(chat => {
+
+    chatState.chats.forEach((chat) => {
       const li = document.createElement("li");
-      li.className = "thread-item" + (chat.id === chatState.currentChatId ? " active" : "");
+      li.className =
+        "thread-item" + (chat.id === chatState.currentChatId ? " active" : "");
 
-      //název chatu
-      const nameSpan = document.createElement("span");
-      nameSpan.className = "thread-name";
-      nameSpan.textContent = chat.name;
+      const name = document.createElement("span");
+      name.textContent = chat.name;
 
-      //koš
-      const deleteBtn = document.createElement("button");
-      deleteBtn.className = "delete-thread-btn";
-      deleteBtn.textContent = "🗑️";
-      deleteBtn.dataset.chatId = chat.id;
+      const del = document.createElement("button");
+      del.textContent = "🗑️";
+      del.className = "delete-thread-btn";
 
-      //klik na chat
-      li.addEventListener("click", () => chatState.selectChat(chat.id));
-
-      //klik na koš
-      deleteBtn.addEventListener("click", (e) => {
-        e.stopPropagation();              //zabráníme výběru chatu
-
-        const id = deleteBtn.dataset.chatId;
-
-        //smazaní chatu
-        chatState.chats = chatState.chats.filter(c => c.id !== id);
+      del.addEventListener("click", (e) => {
+        e.stopPropagation();
+        chatState.chats = chatState.chats.filter((c) => c.id !== chat.id);
         chatState.save();
 
-        //pokud byl smazaný aktuální chat, přepneme na jiný
-        if (chatState.currentChatId === id) {
-          if (chatState.chats.length > 0) {
-            chatState.currentChatId = chatState.chats[0].id;
-          } else {
-            chatState.currentChatId = null;
-          }
+        if (chatState.currentChatId === chat.id) {
+          chatState.currentChatId = chatState.chats[0]?.id || null;
         }
 
         ui.renderThreads();
         ui.renderMessages();
       });
 
-      li.appendChild(nameSpan);
-      li.appendChild(deleteBtn);
+      li.appendChild(name);
+      li.appendChild(del);
 
-      
+      li.addEventListener("click", () => chatState.selectChat(chat.id));
       DOM.threadListEl.appendChild(li);
     });
   },
 
-  renderNotes() {
+  /* MESSAGES */
+  createMessageElement(msg) {
+    const row = document.createElement("div");
+    row.className = "msg " + msg.role;
 
-    const chat = chatState.getCurrent();
-    const notes = chat.notes || [];
-    const notesContainer = document.getElementById("notesContainer");
-    notesContainer.innerHTML = "";
-    if (notes.length === 0) {
-      notesContainer.innerHTML = "<p>Žádné poznámky k zobrazení.</p>";
-      return;
-    }
-    notes.forEach(note => {
-      const div = document.createElement("div");
-      div.className = "note-item";
-      div.innerHTML = util.markdownToHtml(note.content);
-      notesContainer.appendChild(div);
-    });
+    const avatar = document.createElement("div");
+    avatar.className = "avatar";
+    avatar.textContent = msg.role === "user" ? "U" : "AI";
+
+    const bubble = document.createElement("div");
+    bubble.className = "bubble";
+
+    if (msg.role === "assistant") bubble.innerHTML = util.markdownToHtml(msg.content);
+    else bubble.textContent = msg.content;
+
+    row.appendChild(avatar);
+    row.appendChild(bubble);
+
+    return row;
   },
 
   renderMessages() {
     DOM.messages.innerHTML = "";
-    chatState.getCurrent().messages.forEach(m => {
-      this.createMessageElement(m.content, m.role);
+    const chat = chatState.getCurrent();
+    if (!chat) return;
+
+    chat.messages.forEach((m) => {
+      DOM.messages.appendChild(ui.createMessageElement(m));
     });
+
     DOM.messages.scrollTop = DOM.messages.scrollHeight;
-  },
-
-  createMessageElement(text, role) {
-    const row = document.createElement("div");
-    row.className = `msg ${role}`;
-
-    const avatar = document.createElement("div");
-    avatar.className = "avatar";
-    avatar.textContent = role === "user" ? "U" : "Q";
-
-    const bubble = document.createElement("div");
-    bubble.className = "bubble";
-    // Use Markdown parser for AI responses, plain text for user
-    bubble.innerHTML = role === "assistant" ? util.markdownToHtml(text) : util.escapeHtml(text);
-
-    row.appendChild(avatar);
-    row.appendChild(bubble);
-    DOM.messages.appendChild(row);
-    DOM.messages.scrollTop = DOM.messages.scrollHeight;
-
-    // Re-render math (KaTeX) after adding message
-    if (window.renderMathInElement && role === "assistant") {
-      setTimeout(() => {
-        renderMathInElement(bubble, {
-          delimiters: [
-            { left: "$$", right: "$$", display: true },
-            { left: "$", right: "$", display: false },
-            { left: "\\(", right: "\\)", display: false },
-            { left: "\\[", right: "\\]", display: true }
-          ]
-        });
-      }, 0);
-    }
   },
 
   addMessage(text, role) {
-    this.createMessageElement(text, role);
-    chatState.addMessageToChat(text, role);
+    chatState.addMessage(text, role);
+    ui.renderMessages();
+  },
+
+  /* NOTES */
+  renderNotesGrid() {
+    DOM.noteDetail.classList.add("hidden");
+    DOM.backToNotes.classList.add("hidden");
+    DOM.notesGrid.innerHTML = "";
+
+    const topics = Object.keys(notesStore);
+
+    topics.forEach((topic) => {
+      const card = document.createElement("div");
+      card.className = "topic-card";
+      card.textContent = topic;
+
+      card.addEventListener("click", () => ui.openNoteDetail(topic));
+      DOM.notesGrid.appendChild(card);
+    });
+  },
+
+  openNoteDetail(topic) {
+    const data = notesStore[topic];
+    if (!data) return;
+
+    DOM.noteDetailTitle.textContent = data.title;
+    DOM.noteDetailContent.innerHTML = util.markdownToHtml(data.content);
+
+    DOM.backToNotes.classList.remove("hidden");
+    DOM.noteDetail.classList.remove("hidden");
+    DOM.notesGrid.innerHTML = "";
+
+    if (window.renderMathInElement) {
+      renderMathInElement(DOM.noteDetailContent, {
+        delimiters: [
+          { left: "$$", right: "$$", display: true },
+          { left: "$", right: "$", display: false }
+        ]
+      });
+    }
   }
 };
 
-// ─────────────────────────────────────────────────
-// 5. API calls
-// ─────────────────────────────────────────────────
+
+/****************************************************
+ * FLASHCARDS
+ ****************************************************/
+const flashcards = {
+  cards: [],
+  index: 0,
+
+  render() {
+    if (this.cards.length === 0) {
+      DOM.flashcard.classList.add("hidden");
+      DOM.flashNav.classList.add("hidden");
+      return;
+    }
+
+    DOM.flashcard.classList.remove("hidden");
+    DOM.flashNav.classList.remove("hidden");
+
+    const card = this.cards[this.index];
+
+    DOM.flashFront.innerHTML = util.markdownToHtml(card.q);
+    DOM.flashBaonk.innerHTML = util.markdownToHtml(card.a);
+
+    DOM.flashIndex.textContent = `${this.index + 1} / ${this.cards.length}`;
+  },
+
+  next() {
+    if (this.index < this.cards.length - 1) this.index++;
+    this.render();
+  },
+
+  prev() {
+    if (this.index > 0) this.index--;
+    this.render();
+  }
+};
+
+
+/****************************************************
+ * 7. API
+ ****************************************************/
 const api = {
-  // Limit to last N messages to save tokens
-  MAX_CONTEXT_MESSAGES: 10,
+  MAX_CONTEXT: 10,
 
   getContextMessages() {
     const chat = chatState.getCurrent();
-    const allMessages = chat.messages;
-    // Send only the last MAX_CONTEXT_MESSAGES to save tokens
-    return allMessages.slice(-this.MAX_CONTEXT_MESSAGES);
+    return chat.messages.slice(-this.MAX_CONTEXT);
   },
 
   async askAI(messages) {
-    // Build a helpful system message using the current chat's topic
-    const currentName = (chatState.getCurrent && chatState.getCurrent()?.name) || "(téma)";
-    const systemMessage = {
-      role: "system",
-      content: `Odpovídej vždy výhradně česky. Nikdy nepoužívej jiný jazyk. ` +
-               `Jsi asistent, který pomáhá studentovi v tématu: "${currentName}". ` +
-               `Drž konverzaci v kontextu tohoto tématu a v případě nejasností se ptej.`
-    };
+    const topic = chatState.getCurrent()?.name || "(téma)";
 
-    const payload = {
-      messages: [systemMessage, ...messages.map(m => ({ role: m.role, content: m.content }))]
+    const system = {
+      role: "user",
+      content: `Odpovídej česky. Téma chatu: ${topic}.`
     };
 
     const resp = await fetch("/api/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
+      body: JSON.stringify({ messages: [system, ...messages] })
     });
-
-    if (!resp.ok) {
-      // Try to parse JSON error body, fall back to text
-      let bodyText = await resp.text().catch(() => "");
-      try {
-        const json = JSON.parse(bodyText || "{}");
-        const errMsg = json.error || json.message || bodyText;
-        throw new Error(`API error ${resp.status}: ${errMsg}`);
-      } catch (parseErr) {
-        throw new Error(`API error ${resp.status}: ${bodyText}`);
-      }
-    }
 
     const data = await resp.json();
     return data.reply;
   }
 };
 
-// ─────────────────────────────────────────────────
-// 6. Event handlers
-// ─────────────────────────────────────────────────
 
+/****************************************************
+ * 8. EVENTS
+ ****************************************************/
 const events = {
   initTabs() {
-    DOM.tabs.forEach(btn => {
+    DOM.tabs.forEach((btn) => {
       btn.addEventListener("click", () => {
-        DOM.tabs.forEach(b => b.classList.remove("active"));
-        DOM.contents.forEach(c => c.classList.remove("active"));
+        DOM.tabs.forEach((b) => b.classList.remove("active"));
+        DOM.contents.forEach((c) => c.classList.remove("active"));
+
         btn.classList.add("active");
         document.getElementById(btn.dataset.tab).classList.add("active");
+
+        if (btn.dataset.tab === "notes") ui.renderNotesGrid();
       });
     });
   },
 
   initChat() {
-    // New thread
     DOM.newThreadBtn.addEventListener("click", () => {
-      const name = prompt("Name of the chat/topic:");
+      const name = prompt("Název nového chatu:");
       if (!name) return;
-      const newChat = chatState.addChat(name);
-      chatState.selectChat(newChat.id);
+
+      const chat = chatState.addChat(name);
+      chatState.selectChat(chat.id);
     });
 
-    // Send message
     DOM.input.addEventListener("keydown", (e) => {
       if (e.key === "Enter" && !e.shiftKey) {
         e.preventDefault();
-        this.sendMessage();
+        events.sendMessage();
       }
     });
 
-    DOM.sendBtn.addEventListener("click", (e) => {
-      e.preventDefault();
-      this.sendMessage();
-    });
-    
+    DOM.sendBtn.addEventListener("click", events.sendMessage);
+
     DOM.plusBtn.addEventListener("click", (e) => {
       e.stopPropagation();
       DOM.actionMenu.classList.toggle("hidden");
     });
 
-    // Prevent clicks inside the menu from closing it immediately
-    DOM.actionMenu.addEventListener("click", (e) => {
-      e.stopPropagation();
-    });
-  
-    //kliknutí mimo menu zavře menu
     document.addEventListener("click", () => {
       DOM.actionMenu.classList.add("hidden");
     });
 
-    // klik na akci v menu
+    // ACTION MENU
     DOM.actionMenu.addEventListener("click", (e) => {
-      const action = e.target.dataset.action;
-      if (!action) return;
+      const act = e.target.dataset.action;
+      if (!act) return;
 
-      if (action === "notes") {
-        events.generateNotes();
-      } else if (action === "flashcards") {
-        events.generateFlashcards();
-      } else if (action === "files") {
-        DOM.upload.click();
-      }
-
-      DOM.actionMenu.classList.add("hidden");
+      if (act === "notes") events.generateNotes();
+      if (act === "flashcards") events.generateFlashcards();
+      if (act === "files") DOM.upload.click();
     });
-
-    // Auto-resize textarea
-    DOM.input.addEventListener("input", () => util.autoResize(DOM.input));
   },
 
   async sendMessage() {
@@ -403,57 +413,116 @@ const events = {
     if (!text) return;
 
     ui.addMessage(text, "user");
+
     DOM.input.value = "";
     util.autoResize(DOM.input);
 
     try {
-      // Send only recent messages to save tokens
-      const recentMessages = api.getContextMessages();
-      const reply = await api.askAI(recentMessages);
+      const ctx = api.getContextMessages();
+      const reply = await api.askAI(ctx);
       ui.addMessage(reply, "assistant");
-    } catch (e) {
-      console.error(e);
-      // Show the actual error message returned from the server when possible
-      const msg = e && e.message ? `⚠️ ${e.message}` : "⚠️ Nepodařilo se získat odpověď od AI.";
-      ui.addMessage(msg, "assistant");
+    } catch (err) {
+      ui.addMessage("⚠️ Chyba serveru: " + err.message, "assistant");
     }
   },
 
   initFileUpload() {
-    if (!DOM.upload || !DOM.fileList) return;
-
     DOM.upload.addEventListener("change", () => {
       DOM.fileList.innerHTML = "";
-      Array.from(DOM.upload.files).forEach(file => {
+
+      [...DOM.upload.files].forEach((f) => {
         const div = document.createElement("div");
         div.className = "file-item";
-        div.textContent = `${file.name} (${Math.round(file.size / 1024)} KB)`;
+        div.textContent = `${f.name} (${Math.round(f.size / 1024)} KB)`;
         DOM.fileList.appendChild(div);
       });
     });
   },
 
-  initFlashcard() {
-    if (!DOM.flashcard) return;
-    DOM.flashcard.addEventListener("click", () => {
-      DOM.flashcard.classList.toggle("flipped");
-    });
+  /* GENERATE NOTES */
+  async generateNotes() {
+    const chat = chatState.getCurrent();
+    const topic = chat.name;
+
+    ui.addMessage("📝 Generuji výpisky...", "assistant");
+
+    const ctx = api.getContextMessages();
+
+    const prompt = `
+      Vytvoř přehledné, strukturované a vysokoškolsky kvalitní výpisky k tématu **${topic}**.
+      Použij nadpisy, odrážky, vysvětlení, vzorce (KaTeX), příklady.
+      `;
+
+    const reply = await api.askAI([{ role: "user", content: prompt }]);
+
+    notesStore[topic] = {
+      title: topic,
+      content: reply
+    };
+
+    document.querySelector('[data-tab="notes"]').click();
+    ui.renderNotesGrid();
   },
 
-  
+  /* GENERATE FLASHCARDS */
+  async generateFlashcards() {
+    const chat = chatState.getCurrent();
+    const topic = chat.name;
+
+    ui.addMessage("🧠 Generuji flashcards...", "assistant");
+
+    const prompt = `
+      Vytvoř 8 jednoduchých flashcards pro téma "${topic}" ve formátu:
+      Q: otázka
+      A: odpověď
+      Každou dvojici odděl prázdným řádkem.
+      `;
+
+    const reply = await api.askAI([{ role: "user", content: prompt }]);
+
+    const cards = reply
+      .split("\n\n")
+      .map((pair) => {
+        const q = pair.match(/Q:\s*(.+)/i)?.[1];
+        const a = pair.match(/A:\s*(.+)/i)?.[1];
+        if (!q || !a) return null;
+        return { q, a };
+      })
+      .filter(Boolean);
+
+    flashcards.cards = cards;
+    flashcards.index = 0;
+    flashcards.render();
+
+    document.querySelector('[data-tab="flashcards"]').click();
+  }
 };
 
-// ─────────────────────────────────────────────────
-// 7. App initialization
-// ─────────────────────────────────────────────────
-document.addEventListener("DOMContentLoaded", () => {
-  if (!DOM.init()) return; // Abort if DOM elements missing
 
+/****************************************************
+ * 9. INIT
+ ****************************************************/
+document.addEventListener("DOMContentLoaded", () => {
+  DOM.init();
   chatState.init();
+
   events.initTabs();
   events.initChat();
   events.initFileUpload();
-  events.initFlashcard();
 
-  chatState.selectChat(chatState.currentChatId);
+  ui.renderThreads();
+  ui.renderMessages();
+
+  // Flashcard events
+  DOM.flashcard.addEventListener("click", () => {
+    DOM.flashcard.classList.toggle("flipped");
+  });
+
+  DOM.nextFlash.addEventListener("click", () => flashcards.next());
+  DOM.prevFlash.addEventListener("click", () => flashcards.prev());
+
+  // Back button for notes
+  DOM.backToNotes.addEventListener("click", () => {
+    ui.renderNotesGrid();
+  });
 });

@@ -4,25 +4,31 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>QuizMate</title>
+
+  <!-- Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-  
-  <!-- KaTeX for math (zlomky, vzorečky, matice) -->
+
+  <!-- KaTeX -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
     onload="renderMathInElement(document.body);"></script>
-  
+
   <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
   <div class="app">
-    <!-- Sidebar - Main -->
+
+    <!-- SIDEBAR -->
     <aside class="sidebar">
       <div class="profile">
         <div class="avatar">U</div>
         <div class="username">Username</div>
       </div>
+
       <button class="btn primary full">+ New Subject</button>
+
       <ul class="subject-list">
         <li class="subject active">📘 Mathematics</li>
         <li class="subject">🧬 Biology</li>
@@ -30,21 +36,25 @@
       </ul>
     </aside>
 
-    <!-- Main area -->
+
+    <!-- MAIN CONTENT -->
     <main class="main">
-      <!-- Tabs -->
+
+      <!-- TABS -->
       <div class="tabs">
         <button class="tab-btn active" data-tab="chat">💬 Chat</button>
         <button class="tab-btn" data-tab="files">📂 Files</button>
-        <button class="tab-btn" data-tab="flashcards">🧠 Flashcards</button>
         <button class="tab-btn" data-tab="notes">📝 Notes</button>
+        <button class="tab-btn" data-tab="flashcards">🧠 Flashcards</button>
         <button class="tab-btn" data-tab="tests">🧪 Tests</button>
       </div>
 
-      <!-- CHAT (nové rozložení: vlevo seznam chatů, vpravo konverzace) -->
+
+      <!-- CHAT -->
       <section id="chat" class="tab-content active">
         <div class="chat-layout">
-          <!-- Levý sloupec: vlákna/chaty -->
+
+          <!-- Chat threads -->
           <aside class="chat-threads">
             <div class="threads-header">
               <h3>Chats</h3>
@@ -53,10 +63,10 @@
             <ul id="threadList" class="thread-list"></ul>
           </aside>
 
-          <!-- Pravý sloupec: samotný chat -->
+          <!-- Chat conversation -->
           <div class="chat-pane">
             <div class="chat-header">
-              <h2 id="chatTitle">Trigonometry</h2>
+              <h2 id="chatTitle"></h2>
             </div>
 
             <div class="chat-messages" id="messages"></div>
@@ -64,49 +74,92 @@
             <div class="chat-input">
               <div class="chat-actions">
                 <button id="chatPlusBtn" class="plus-btn">+</button>
+
                 <div id="actionMenu" class="action-menu hidden">
-                  <button class="action-item" data-action="notes">📄 Generate Notes</button>
-                  <button class="action-item" data-action="flashcards">🧠 Generate Flashcards</button>
-                  <button class="action-item" data-action="files">📂 Upload File</button>
+                  <button class="action-item" data-action="notes">
+                    📄 Generate Notes
+                  </button>
+                  <button class="action-item" data-action="flashcards">
+                    🧠 Generate Flashcards
+                  </button>
+                  <button class="action-item" data-action="files">
+                    📂 Upload File
+                  </button>
                 </div>
               </div>
-              
+
               <textarea id="chatInput" placeholder="Type here..."></textarea>
               <button id="sendBtn" class="btn primary">Send</button>
-              
             </div>
           </div>
         </div>
       </section>
 
+
       <!-- FILES -->
       <section id="files" class="tab-content">
         <h2>Uploaded Files</h2>
+
         <div class="upload-card">
           <p>Drag and drop files here, or click to browse</p>
           <input type="file" id="fileUpload" multiple>
           <button class="btn primary small">Select Files</button>
         </div>
+
         <div id="fileList"></div>
       </section>
 
+
       <!-- NOTES -->
       <section id="notes" class="tab-content">
-        <h2>Notes</h2>
-        <div id="noteList" class="note-list">
-          <!-- Notes will be dynamically added here -->
+
+        <div class="notes-header-bar">
+          <h2>Notes</h2>
+          <button id="backToNotes" class="btn small hidden">← Back</button>
         </div>
+
+        <!-- Topic grid -->
+        <div id="notesTopics" class="topic-grid"></div>
+
+        <!-- Detail view -->
+        <div id="noteDetail" class="note-detail hidden">
+          <h1 id="noteDetailTitle" class="note-title"></h1>
+          <div id="noteDetailContent" class="note-content"></div>
+        </div>
+
       </section>
-      
-      
-          <!-- TESTS -->
+
+
+      <!-- FLASHCARDS -->
+      <section id="flashcards" class="tab-content">
+
+        <div class="flash-header">
+          <h2>Flashcards</h2>
+        </div>
+
+        <div id="flashcard" class="flashcard hidden">
+          <div class="front" id="flashFront"></div>
+          <div class="back" id="flashBack"></div>
+        </div>
+
+        <div class="flash-nav hidden" id="flashNav">
+          <button class="btn small" id="prevFlash">Previous</button>
+          <span id="flashIndex"></span>
+          <button class="btn small" id="nextFlash">Next</button>
+        </div>
+
+      </section>
+
+
+      <!-- TESTS -->
       <section id="tests" class="tab-content">
         <div class="tests-header">
           <h2>Tests</h2>
         </div>
-        <div id="testList" class="tests-list">
-          <!-- Tests will be dynamically added here -->
-        </div>
+
+        <div id="testList" class="tests-list"></div>
+      </section>
+
     </main>
   </div>
 
