@@ -304,7 +304,7 @@ const flashcards = {
     const card = this.cards[this.index];
 
     DOM.flashFront.innerHTML = util.markdownToHtml(card.q);
-    DOM.flashBaonk.innerHTML = util.markdownToHtml(card.a);
+    DOM.flashBack.innerHTML = util.markdownToHtml(card.a);
 
     DOM.flashIndex.textContent = `${this.index + 1} / ${this.cards.length}`;
   },
@@ -406,6 +406,18 @@ const events = {
       if (act === "flashcards") events.generateFlashcards();
       if (act === "files") DOM.upload.click();
     });
+
+    document.addEventListener('DOMContentLoaded', () => {
+      // Select the avatar, which now has the toggle ID
+      const toggleButton = document.getElementById('toggleSidebar'); 
+      const sidebar = document.querySelector('.sidebar');
+      
+      if (toggleButton && sidebar) {
+          toggleButton.addEventListener('click', () => {
+              sidebar.classList.toggle('collapsed');
+          });
+      }
+    });
   },
 
   async sendMessage() {
@@ -495,6 +507,17 @@ const events = {
     flashcards.render();
 
     document.querySelector('[data-tab="flashcards"]').click();
+  },
+
+
+  initFlashcards() {
+    // Flashcard events
+    DOM.flashcard.addEventListener("click", () => {
+      DOM.flashcard.classList.toggle("flipped");
+    });
+
+    DOM.nextFlash.addEventListener("click", () => flashcards.next());
+    DOM.prevFlash.addEventListener("click", () => flashcards.prev());
   }
 };
 
@@ -508,6 +531,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   events.initTabs();
   events.initChat();
+  events.initFlashcards();
   events.initFileUpload();
 
   ui.renderThreads();

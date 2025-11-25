@@ -72,6 +72,7 @@ body {
   display: flex;
   align-items: center;
   gap: 10px;
+  position: relative;
 }
 
 .avatar {
@@ -581,4 +582,50 @@ body {
 
 #noteDetailContent {
   white-space: normal;
+}
+
+/* Base style for hamburger placement (when sidebar is open) */
+.hamburger {
+  /* Set position absolute relative to .profile */
+  position: absolute; 
+  /* Move it to the far right edge, accounting for sidebar padding */
+  right: 0; 
+  top: 50%;
+  transform: translateY(-50%);
+  margin-right: 0; /* Clear previous margin */
+  background: none;
+  border: none;
+  outline: none ;
+  cursor: pointer;
+  font-size: 20px;
+}
+/* Adjust layout when sidebar is open */
+.sidebar:not(.collapsed) .username {
+  /* Give space for the absolutely positioned hamburger */
+  margin-right: 40px; 
+}
+
+
+/* === COLLAPSABLE SIDEBAR (Your specific collapsed block) === */
+
+.sidebar.collapsed {
+  width: 70px !important;
+  padding-left: 10px;
+  padding-right: 10px;
+}
+
+/* Hide the hamburger completely when collapsed */
+.sidebar.collapsed .hamburger {
+  display: none;
+}
+
+/* Hide text in collapsed mode */
+.sidebar.collapsed .username{
+  display: none;
+}
+
+/* Keep avatar centered and make it the primary target for clicking */
+.sidebar.collapsed .avatar {
+  margin: 0 auto;
+  cursor: pointer; /* Indicate it's clickable */
 }
