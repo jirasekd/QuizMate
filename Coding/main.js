@@ -19,34 +19,36 @@ const util = {
     let html = md;
 
     // Protect display math
-    html = html.replace(/\$\$(.+?)\$\$/gs, (m) => {
+    html = html.replace(/(\$\$[\s\S]+?\$\$)/g, (m) => {
       const key = `__MATH_BLOCK_${placeholders.length}__`;
       placeholders.push(m);
       return key;
     });
 
     // Protect inline math
-    html = html.replace(/\$(.+?)\$/g, (m) => {
+    html = html.replace(/(\$[\s\S]+?\$)/g, (m) => {
       const key = `__MATH_INLINE_${placeholders.length}__`;
       placeholders.push(m);
       return key;
     });
 
+    // Now, process the non-math content
     html = util.escapeHtml(html);
-
-    placeholders.forEach((m, i) => {
-      html = html.replaceAll(`__MATH_BLOCK_${i}__`, m);
-      html = html.replaceAll(`__MATH_INLINE_${i}__`, m);
-    });
 
     html = html.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
     html = html.replace(/\*(.+?)\*/g, "<em>$1</em>");
     html = html.replace(/`(.+?)`/g, "<code>$1</code>");
-    html = html.replace(/\n/g, "<br>");
-
     html = html.replace(/^### (.+)$/gm, "<h3>$1</h3>");
     html = html.replace(/^## (.+)$/gm, "<h2>$1</h2>");
     html = html.replace(/^# (.+)$/gm, "<h1>$1</h1>");
+
+    // Finally, restore the math blocks and handle newlines for non-math text
+    placeholders.forEach((m, i) => {
+      html = html.replace(`__MATH_BLOCK_${i}__`, m);
+      html = html.replace(`__MATH_INLINE_${i}__`, m);
+    });
+
+    html = html.replace(/\n/g, "<br>");
 
     return html;
   },
@@ -72,6 +74,8 @@ const DOM = {
     this.threadListEl = document.getElementById("threadList");
     this.newThreadBtn = document.getElementById("newThreadBtn");
     this.chatTitleEl = document.getElementById("chatTitle");
+    this.hamburgerBtn = document.getElementById("hamburgerBtn");
+    this.resetAppBtn = document.getElementById("resetAppBtn");
 
     this.plusBtn = document.getElementById("chatPlusBtn");
     this.actionMenu = document.getElementById("actionMenu");
@@ -84,6 +88,7 @@ const DOM = {
     this.noteDetailTitle = document.getElementById("noteDetailTitle");
     this.noteDetailContent = document.getElementById("noteDetailContent");
     this.backToNotes = document.getElementById("backToNotes");
+    this.backToDecks = document.getElementById("backToDecks");
 
     this.flashcard = document.getElementById("flashcard");
     this.flashNav = document.getElementById("flashNav");
@@ -92,16 +97,11 @@ const DOM = {
     this.flashIndex = document.getElementById("flashIndex");
     this.prevFlash = document.getElementById("prevFlash");
     this.nextFlash = document.getElementById("nextFlash");
+    this.flashcardDecks = document.getElementById("flashcardDecks");
 
     return true;
   }
 };
-
-
-/****************************************************
- * 3. NOTES STORE
- ****************************************************/
-const notesStore = {}; // topic → { title, content }
 
 
 /****************************************************
@@ -116,8 +116,8 @@ const chatState = {
 
     if (this.chats.length === 0) {
       this.chats = [
-        { id: util.genId(), name: "Trigonometry", messages: [] },
-        { id: util.genId(), name: "Linear equations", messages: [] }
+        { id: util.genId(), name: "Pythagorova věta", messages: [], notes: null, flashcards: null, tests: null },
+        { id: util.genId(), name: "Lineární rovnice", messages: [], notes: null, flashcards: null, tests: null }
       ];
       this.save();
     }
@@ -145,7 +145,7 @@ const chatState = {
   },
 
   addChat(name) {
-    const chat = { id: util.genId(), name, messages: [] };
+    const chat = { id: util.genId(), name, messages: [], notes: null, flashcards: null, tests: null };
     this.chats.unshift(chat);
     this.save();
     return chat;
@@ -160,6 +160,37 @@ const chatState = {
       timestamp: new Date().toISOString()
     });
     this.save();
+  },
+
+  addFlashcards(cards) {
+    const chat = this.getCurrent();
+    if (!chat) return;
+    if (!chat.flashcards) { // Ensure the array exists before adding to it
+      chat.flashcards = [];
+    }
+    // Replace existing flashcards for this chat
+    chat.flashcards = cards;
+    this.save();
+  },
+
+  addNotes(content) {
+    const chat = this.getCurrent();
+    if (!chat) return;
+    chat.notes = {
+      title: chat.name,
+      content: content
+    };
+    this.save();
+  },
+
+  addTest(testData) {
+    const chat = this.getCurrent();
+    if (!chat) return;
+    if (!chat.tests) { // Ensure the array exists before adding to it
+      chat.tests = [];
+    }
+    chat.tests.push(testData); // Or replace, depending on desired logic
+    this.save();
   }
 };
 
@@ -168,6 +199,20 @@ const chatState = {
  * 5. UI
  ****************************************************/
 const ui = {
+  /**
+   * Renders KaTeX math expressions within a given DOM element.
+   * @param {HTMLElement} element The element to scan for math.
+   */
+  renderMathInElement(element) {
+    if (window.renderMathInElement) {
+      renderMathInElement(element, {
+        delimiters: [
+          { left: "$$", right: "$$", display: true },
+          { left: "$", right: "$", display: false }
+        ]
+      });
+    }
+  },
   /* THREADS */
   renderThreads() {
     DOM.threadListEl.innerHTML = "";
@@ -223,6 +268,9 @@ const ui = {
     row.appendChild(avatar);
     row.appendChild(bubble);
 
+    // After setting innerHTML, render math inside the bubble
+    this.renderMathInElement(bubble);
+
     return row;
   },
 
@@ -249,37 +297,96 @@ const ui = {
     DOM.backToNotes.classList.add("hidden");
     DOM.notesGrid.innerHTML = "";
 
-    const topics = Object.keys(notesStore);
+    // Find chats that have notes
+    const chatsWithNotes = chatState.chats.filter(
+      (chat) => chat.notes && chat.notes.content
+    );
 
-    topics.forEach((topic) => {
+    chatsWithNotes.forEach((chat) => {
       const card = document.createElement("div");
       card.className = "topic-card";
-      card.textContent = topic;
+      card.innerHTML = `
+        <div class="topic-title">📝 ${chat.name}</div>
+        <div class="topic-preview">${chat.notes.content.substring(0, 60)}...</div>
+        <button class="delete-item-btn">🗑️</button>
+      `;
 
-      card.addEventListener("click", () => ui.openNoteDetail(topic));
+      card.querySelector('.delete-item-btn').addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (confirm(`Opravdu chcete smazat výpisky pro "${chat.name}"?`)) {
+          chat.notes = null;
+          chatState.save();
+          ui.renderNotesGrid();
+        }
+      });
+
+      // Add click listener to the card itself, excluding the button
+      card.addEventListener("click", (e) => { if (e.target.tagName !== 'BUTTON') ui.openNoteDetail(chat.id) });
       DOM.notesGrid.appendChild(card);
     });
   },
 
-  openNoteDetail(topic) {
-    const data = notesStore[topic];
-    if (!data) return;
+  openNoteDetail(chatId) {
+    const chat = chatState.chats.find((c) => c.id === chatId);
+    if (!chat || !chat.notes) return;
 
-    DOM.noteDetailTitle.textContent = data.title;
-    DOM.noteDetailContent.innerHTML = util.markdownToHtml(data.content);
+    DOM.noteDetailTitle.textContent = chat.notes.title;
+    DOM.noteDetailContent.innerHTML = util.markdownToHtml(chat.notes.content);
 
     DOM.backToNotes.classList.remove("hidden");
     DOM.noteDetail.classList.remove("hidden");
-    DOM.notesGrid.innerHTML = "";
 
-    if (window.renderMathInElement) {
-      renderMathInElement(DOM.noteDetailContent, {
-        delimiters: [
-          { left: "$$", right: "$$", display: true },
-          { left: "$", right: "$", display: false }
-        ]
+    this.renderMathInElement(DOM.noteDetailContent);
+  },
+
+  /* FLASHCARDS */
+  renderDeckGrid() {
+    DOM.flashcard.classList.add("hidden");
+    DOM.flashNav.classList.add("hidden");
+    DOM.backToDecks.classList.add("hidden");
+    DOM.flashcardDecks.classList.remove("hidden");
+    DOM.flashcardDecks.innerHTML = "";
+
+    // Find chats that have flashcards
+    const chatsWithDecks = chatState.chats.filter(
+      (chat) => Array.isArray(chat.flashcards) && chat.flashcards.length > 0
+    );
+
+    chatsWithDecks.forEach((chat) => {
+      const card = document.createElement("div");
+      card.className = "topic-card";
+      card.innerHTML = `
+        <div class="topic-title">🧠 ${chat.name}</div>
+        <div class="topic-preview">${chat.flashcards.length} cards</div>
+        <button class="delete-item-btn">🗑️</button>
+      `;
+
+      card.querySelector('.delete-item-btn').addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (confirm(`Opravdu chcete smazat flashcards pro "${chat.name}"?`)) {
+          chat.flashcards = null;
+          chatState.save();
+          ui.renderDeckGrid();
+        }
       });
-    }
+
+      // Add click listener to the card itself, excluding the button
+      card.addEventListener("click", (e) => { if (e.target.tagName !== 'BUTTON') ui.openDeckDetail(chat.id) });
+      DOM.flashcardDecks.appendChild(card);
+    });
+  },
+
+  openDeckDetail(chatId) {
+    const chat = chatState.chats.find((c) => c.id === chatId);
+    if (!chat || !Array.isArray(chat.flashcards) || chat.flashcards.length === 0) return;
+
+    DOM.flashcardDecks.classList.add("hidden");
+    DOM.backToDecks.classList.remove("hidden");
+
+    // Load the selected deck into the flashcard viewer
+    flashcards.cards = chat.flashcards;
+    flashcards.index = 0;
+    flashcards.render();
   }
 };
 
@@ -292,7 +399,8 @@ const flashcards = {
   index: 0,
 
   render() {
-    if (this.cards.length === 0) {
+    if (!this.cards || this.cards.length === 0) {
+      // Ensure the card is hidden if there are no cards to show
       DOM.flashcard.classList.add("hidden");
       DOM.flashNav.classList.add("hidden");
       return;
@@ -307,16 +415,36 @@ const flashcards = {
     DOM.flashBack.innerHTML = util.markdownToHtml(card.a);
 
     DOM.flashIndex.textContent = `${this.index + 1} / ${this.cards.length}`;
+
+    // Render math on both sides of the card
+    ui.renderMathInElement(DOM.flashFront);
+    ui.renderMathInElement(DOM.flashBack);
   },
 
   next() {
-    if (this.index < this.cards.length - 1) this.index++;
-    this.render();
+    if (this.index >= this.cards.length - 1) return;
+
+    const wasFlipped = DOM.flashcard.classList.contains("flipped");
+    DOM.flashcard.classList.remove("flipped");
+
+    // Wait for the flip animation to finish before changing content
+    setTimeout(() => {
+      this.index++;
+      this.render();
+    }, wasFlipped ? 300 : 0); // Use a shorter delay for a snappier feel
   },
 
   prev() {
-    if (this.index > 0) this.index--;
-    this.render();
+    if (this.index <= 0) return;
+
+    const wasFlipped = DOM.flashcard.classList.contains("flipped");
+    DOM.flashcard.classList.remove("flipped");
+
+    // Wait for the flip animation to finish before changing content
+    setTimeout(() => {
+      this.index--;
+      this.render();
+    }, wasFlipped ? 300 : 0); // Use a shorter delay for a snappier feel
   }
 };
 
@@ -366,6 +494,7 @@ const events = {
         document.getElementById(btn.dataset.tab).classList.add("active");
 
         if (btn.dataset.tab === "notes") ui.renderNotesGrid();
+        if (btn.dataset.tab === "flashcards") ui.renderDeckGrid();
       });
     });
   },
@@ -406,17 +535,19 @@ const events = {
       if (act === "flashcards") events.generateFlashcards();
       if (act === "files") DOM.upload.click();
     });
+  },
 
-    document.addEventListener('DOMContentLoaded', () => {
-      // Select the avatar, which now has the toggle ID
-      const toggleButton = document.getElementById('toggleSidebar'); 
-      const sidebar = document.querySelector('.sidebar');
-      
-      if (toggleButton && sidebar) {
-          toggleButton.addEventListener('click', () => {
-              sidebar.classList.toggle('collapsed');
-          });
-      }
+  initSidebar() {
+    const sidebar = document.querySelector('.sidebar');
+    const avatar = document.getElementById('toggleSidebar');
+
+    if (!sidebar || !DOM.hamburgerBtn || !avatar) return;
+
+    DOM.hamburgerBtn.addEventListener('click', () => {
+      sidebar.classList.add('collapsed');
+    });
+    avatar.addEventListener('click', () => {
+      sidebar.classList.remove('collapsed');
     });
   },
 
@@ -467,13 +598,8 @@ const events = {
 
     const reply = await api.askAI([{ role: "user", content: prompt }]);
 
-    notesStore[topic] = {
-      title: topic,
-      content: reply
-    };
-
+    chatState.addNotes(reply);
     document.querySelector('[data-tab="notes"]').click();
-    ui.renderNotesGrid();
   },
 
   /* GENERATE FLASHCARDS */
@@ -484,10 +610,15 @@ const events = {
     ui.addMessage("🧠 Generuji flashcards...", "assistant");
 
     const prompt = `
-      Vytvoř 8 jednoduchých flashcards pro téma "${topic}" ve formátu:
+      Jsi expert na tvorbu vzdělávacích flashcards.
+      Tvým úkolem je vytvořit ideální počet flashcards pro téma "${topic}" ve formátu:
       Q: otázka
-      A: odpověď
+      A: odpověď.
+      Pro každý zadaný tematický okruh: zahrň pouze nejdůležitější pojmy, definice, pravidla, postupy a typické chyby.
       Každou dvojici odděl prázdným řádkem.
+      Vybírej klíčové pojmy, vzorce, definice.
+      A nedělej více než 30 flashcards.
+      Každou kartičku udělej krátkou a konkrétní.
       `;
 
     const reply = await api.askAI([{ role: "user", content: prompt }]);
@@ -502,11 +633,9 @@ const events = {
       })
       .filter(Boolean);
 
-    flashcards.cards = cards;
-    flashcards.index = 0;
-    flashcards.render();
-
+    chatState.addFlashcards(cards);
     document.querySelector('[data-tab="flashcards"]').click();
+    ui.renderDeckGrid();
   },
 
 
@@ -532,21 +661,24 @@ document.addEventListener("DOMContentLoaded", () => {
   events.initTabs();
   events.initChat();
   events.initFlashcards();
+  events.initSidebar();
   events.initFileUpload();
 
   ui.renderThreads();
   ui.renderMessages();
 
-  // Flashcard events
-  DOM.flashcard.addEventListener("click", () => {
-    DOM.flashcard.classList.toggle("flipped");
-  });
-
-  DOM.nextFlash.addEventListener("click", () => flashcards.next());
-  DOM.prevFlash.addEventListener("click", () => flashcards.prev());
-
   // Back button for notes
   DOM.backToNotes.addEventListener("click", () => {
     ui.renderNotesGrid();
+  });
+
+  DOM.backToDecks.addEventListener("click", () => {
+    ui.renderDeckGrid();
+  });
+
+  // Temporary reset button logic
+  DOM.resetAppBtn.addEventListener("click", () => {
+    localStorage.clear();
+    window.location.reload();
   });
 });

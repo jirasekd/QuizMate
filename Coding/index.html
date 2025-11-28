@@ -24,16 +24,28 @@
       <div class="profile">
         <div class="avatar" id="toggleSidebar">U</div>
         <div class="username">Username</div>
-        <button class="hamburger">☰</button>
+        <button id="hamburgerBtn" class="hamburger">☰</button>
       </div>
 
-      <button class="btn primary full">+ New Subject</button>
+      <button class="btn primary full new-subject-btn">
+        <span class="btn-icon">+</span>
+        <span class="btn-text">New Subject</span>
+      </button>
 
       <ul class="subject-list">
-        <li class="subject active">📘 Mathematics</li>
-        <li class="subject">🧬 Biology</li>
-        <li class="subject">📜 History</li>
+        <li class="subject active">
+          <span class="subject-icon">📘</span><span class="subject-text">Mathematics</span>
+        </li>
+        <li class="subject">
+          <span class="subject-icon">🧬</span><span class="subject-text">Biology</span>
+        </li>
+        <li class="subject">
+          <span class="subject-icon">📜</span><span class="subject-text">History</span>
+        </li>
       </ul>
+
+      <!-- Temporary Reset Button -->
+      <button id="resetAppBtn" class="btn outline" style="margin-top: auto;">Reset App Data</button>
     </aside>
 
 
@@ -135,7 +147,11 @@
 
         <div class="flash-header">
           <h2>Flashcards</h2>
+          <button id="backToDecks" class="btn small hidden">← Back</button>
         </div>
+
+        <!-- Deck grid -->
+        <div id="flashcardDecks" class="topic-grid"></div>
 
         <div id="flashcard" class="flashcard hidden">
           <div class="front" id="flashFront"></div>
