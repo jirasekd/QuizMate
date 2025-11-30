@@ -60,9 +60,12 @@ const util = {
 }
 ,
 
-  autoResize(el) {
+  autoResize(el) { // Temporarily hide scrollbar to get correct scrollHeight
+    const originalOverflow = el.style.overflowY;
+    el.style.overflowY = 'hidden';
     el.style.height = "0px";
-    el.style.height = Math.min(el.scrollHeight, 200) + "px";
+    el.style.height = Math.min(el.scrollHeight, 600) + "px";
+    el.style.overflowY = originalOverflow;
   }
 };
 
@@ -781,6 +784,11 @@ const events = {
 
       const chat = chatState.addChat(name);
       chatState.selectChat(chat.id);
+    });
+
+    // Add an input event listener to resize the textarea as the user types.
+    DOM.input.addEventListener("input", () => {
+      util.autoResize(DOM.input);
     });
 
     DOM.input.addEventListener("keydown", (e) => {
