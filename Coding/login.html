@@ -168,18 +168,20 @@
     
     document.getElementById("continueBtn").addEventListener("click", () => {
       const name = document.getElementById("username").value.trim();
-      let avatar = avatarText.value.trim() || "U";
-      let avatarImage = uploadedAvatarBase64 || null;
+      if (!name) {
+        alert("Please enter your username!");
+        return;
+      }
 
-      localStorage.setItem("quizmate_user", JSON.stringify({
-        name,
-        avatar,
-        avatarImage
-      }));
+      // Determine which avatar to use
+      let finalAvatar;
+      if (uploadedAvatarBase64) {
+        finalAvatar = uploadedAvatarBase64; // Use uploaded image if it exists
+      } else {
+        finalAvatar = avatarText.value.trim() || name.charAt(0).toUpperCase() || "U"; // Otherwise, use text, or first letter of name, or 'U'
+      }
 
-      if (!name) return alert("Enter your username!");
-
-      localStorage.setItem("quizmate_user", JSON.stringify({ name, avatar }));
+      localStorage.setItem("quizmate_user", JSON.stringify({ name: name, avatar: finalAvatar }));
       window.location.href = "/level";
     });
   </script>

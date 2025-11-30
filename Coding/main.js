@@ -119,6 +119,7 @@ const DOM = {
 
     // Reset button
     this.resetAppBtn = document.getElementById("resetAppBtn");
+    this.logoutBtn = document.getElementById("logoutBtn");
 
     return true;
   }
@@ -768,8 +769,6 @@ const events = {
 
     ui.addMessage("📝 Generuji výpisky...", "assistant");
 
-    const ctx = api.getContextMessages();
-
     let levelText = "";
 
     if (window.quizmateLevel === "zakladka") {
@@ -786,9 +785,14 @@ const events = {
       ${levelText}
       Vytvoř přehledné, strukturované a kvalitní výpisky k tématu **${topic}**.
       Použij nadpisy, odrážky, vysvětlení, vzorce (KaTeX), příklady.
+      Vycházej z předchozí konverzace.
       `;
 
-    const reply = await api.askAI([{ role: "user", content: prompt }]);
+    // Get the previous messages and add the new instruction at the end.
+    const ctx = api.getContextMessages();
+    const messagesForAI = [...ctx, { role: "user", content: prompt }];
+
+    const reply = await api.askAI(messagesForAI);
 
     chatState.addNotes(reply);
     document.querySelector('[data-tab="notes"]').click();
@@ -826,7 +830,11 @@ const events = {
       Každou kartičku udělej krátkou a konkrétní.
       `;
 
-    const reply = await api.askAI([{ role: "user", content: prompt }]);
+    // Get the previous messages and add the new instruction at the end.
+    const ctx = api.getContextMessages();
+    const messagesForAI = [...ctx, { role: "user", content: prompt }];
+
+    const reply = await api.askAI(messagesForAI);
 
     const cards = reply
       .split("\n\n")
@@ -877,9 +885,9 @@ document.addEventListener("DOMContentLoaded", () => {
   if (DOM.userName) DOM.userName.textContent = user.name;
 
   if (DOM.userAvatar) {
-    if (user.avatarImage) {
-      DOM.userAvatar.style.backgroundImage = `url(${user.avatarImage})`;
-      DOM.userAvatar.style.backgroundSize = "cover";
+    if (user.avatar && user.avatar.startsWith("data:image")) {
+      DOM.userAvatar.style.backgroundImage = `url(${user.avatar})`;
+      DOM.userAvatar.style.backgroundSize = "cover"; // This is already in style.css but good to be explicit
       DOM.userAvatar.style.backgroundPosition = "center";
       DOM.userAvatar.textContent = "";
     } else {
@@ -929,6 +937,14 @@ document.addEventListener("DOMContentLoaded", () => {
     DOM.resetAppBtn.addEventListener("click", () => {
       localStorage.clear();
       window.location.reload();
+    });
+  }
+
+  // Logout button
+  if (DOM.logoutBtn) {
+    DOM.logoutBtn.addEventListener("click", () => {
+      localStorage.removeItem("quizmate_user");
+      window.location.href = "/login";
     });
   }
 });
