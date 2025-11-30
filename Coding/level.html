@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Select Level – QuizMate</title>
+  <style>
+    body { font-family: Inter, sans-serif; background: #eef2ff; display: flex; justify-content: center; align-items: center; height: 100vh; }
+    .card { background: white; padding: 32px; border-radius: 12px; width: 360px; text-align: center; box-shadow: 0 4px 14px rgba(0,0,0,0.15); }
+    button { width: 100%; padding: 14px; margin-top: 12px; border-radius: 8px; border: 1px solid #ccc; cursor: pointer; font-size: 16px; }
+    .primary { background: #6366f1; color: white; border: none; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>Select Study Level</h2>
+    <button data-level="zakladka">📘 Elementary School</button>
+    <button data-level="stredni">📗 High School</button>
+    <button data-level="vysoka">📙 University</button>
+  </div>
+
+  <script>
+    document.querySelectorAll("button").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const user = JSON.parse(localStorage.getItem("quizmate_user") || "{}");
+        user.level = btn.dataset.level;
+        localStorage.setItem("quizmate_user", JSON.stringify(user));
+        window.location.href = "/";
+      });
+    });
+  </script>
+</body>
+</html>

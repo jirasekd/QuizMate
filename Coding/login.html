@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Login – QuizMate</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --primary-1: #6366f1;
+      --primary-2: #8b5cf6;
+      --bg: #f3f4f6;
+      --card: #ffffff;
+      --border: #e5e7eb;
+      --radius: 12px;
+      --radius-lg: 16px;
+      --shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+    }
+
+    body {
+      margin: 0;
+      font-family: "Inter", sans-serif;
+      background: var(--bg);
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .card {
+      background: var(--card);
+      padding: 40px 36px;
+      border-radius: var(--radius-lg);
+      width: 380px;
+      box-shadow: var(--shadow);
+      text-align: left;
+      animation: fadeIn .3s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    h2 {
+      margin-bottom: 24px;
+      font-size: 26px;
+      font-weight: 700;
+      color: #111827;
+      text-align: center;
+    }
+
+    label {
+      font-size: 14px;
+      font-weight: 500;
+      color: #374151;
+      display: block;
+      margin-bottom: 6px;
+      margin-top: 14px;
+    }
+
+    input {
+      width: 380px;
+      padding: 12px 14px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      font-size: 16px;
+      outline: none;
+      transition: 0.15s;
+      background: #fafafa;
+    }
+
+    input:focus {
+      border-color: var(--primary-1);
+      background: white;
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+    }
+
+    button {
+      width: 100%;
+      padding: 12px 14px;
+      margin-top: 26px;
+      border-radius: 999px;
+      border: none;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: 600;
+      background: linear-gradient(135deg, var(--primary-1), var(--primary-2));
+      color: white;
+      transition: 0.15s;
+    }
+
+    button:hover {
+      opacity: .95;
+      transform: translateY(-1px);
+    }
+
+    input, button {
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .avatar-preview {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      margin-top: 10px;
+      object-fit: cover;
+      display: block;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .upload-wrapper input {
+      margin-top: 12px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="card">
+    <h2>Welcome to QuizMate</h2>
+
+    <label>Your username:</label>
+    <input id="username" type="text" placeholder="Enter your name">
+
+    <label>Choose avatar:</label>
+    <div class="avatar-options">
+      <input id="avatarText" type="text" placeholder="e.g. 😊 or U or upload an image below">
+
+      <div class="upload-wrapper">
+        <input id="avatarFile" type="file" accept="image/*">
+      </div>
+
+      <img id="avatarPreview" class="avatar-preview hidden">
+    </div>
+
+    <button id="continueBtn">Continue →</button>
+  </div>
+
+  <script>
+    const avatarFile = document.getElementById("avatarFile");
+    const avatarPreview = document.getElementById("avatarPreview");
+    const avatarText = document.getElementById("avatarText");
+
+    let uploadedAvatarBase64 = null;
+
+    avatarFile.addEventListener("change", () => {
+      const file = avatarFile.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        uploadedAvatarBase64 = e.target.result;
+
+        // Preview
+        avatarPreview.src = uploadedAvatarBase64;
+        avatarPreview.classList.remove("hidden");
+
+        // Clear text avatar if any
+        avatarText.value = "";
+      };
+      reader.readAsDataURL(file);
+    });
+    
+    document.getElementById("continueBtn").addEventListener("click", () => {
+      const name = document.getElementById("username").value.trim();
+      let avatar = avatarText.value.trim() || "U";
+      let avatarImage = uploadedAvatarBase64 || null;
+
+      localStorage.setItem("quizmate_user", JSON.stringify({
+        name,
+        avatar,
+        avatarImage
+      }));
+
+      if (!name) return alert("Enter your username!");
+
+      localStorage.setItem("quizmate_user", JSON.stringify({ name, avatar }));
+      window.location.href = "/level";
+    });
+  </script>
+
+</body>
+</html>

@@ -47,7 +47,7 @@ body {
 /****************************************************
  * 2. APP SHELL & MAIN LAYOUT
  ****************************************************/
- .app { /* Hlavní kontejner aplikace, používá Flexbox pro rozdělení na postranní panel a hlavní obsah. */
+.app { /* Hlavní kontejner aplikace, používá Flexbox pro rozdělení na postranní panel a hlavní obsah. */
   display: flex;
   width: 95%;
   height: 90%;
@@ -55,6 +55,12 @@ body {
   border-radius: calc(var(--radius) + 4px);
   overflow: hidden;  /* Zabrání scrollování kolem app */
   box-shadow: var(--shadow-lg);
+}
+
+.avatar {
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
 }
 
 .sidebar {
@@ -133,15 +139,37 @@ body {
 }
 
 .subject {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   padding: 10px;
   border-radius: var(--radius-sm);
   cursor: pointer; 
   transition: background 0.2s ease, transform 0.2s ease;
   color: #111827;
+  position: relative; /* Required for positioning the delete button */
+  font-weight: 500;
+}
+.subject .icon {
+  font-size: 20px;
+  color: var(--muted);
+  transition: color 0.2s ease;
+}
+.subject:hover .delete-subject-btn {
+  opacity: 0.8;
+}
+.subject .delete-subject-btn {
+  position: absolute;
+  right: 8px;
 }
 .subject:hover { background: var(--border); }
 .subject.active {
   background: linear-gradient(135deg, var(--primary-1), var(--primary-2));
+  box-shadow: 0 4px 10px #6366f14d;
+  color: white;
+}
+
+.subject.active .icon {
   color: white;
 }
 
@@ -174,8 +202,11 @@ body {
 
 .sidebar.collapsed .new-subject-btn .btn-text { display: none; }
 .sidebar.collapsed .new-subject-btn { justify-content: center; padding: 8px 12px; }
-.sidebar.collapsed .subject-text { display: none; }
-.sidebar.collapsed .subject { justify-content: center; padding: 10px; }
+.sidebar.collapsed .subject .subject-text { display: none; }
+.sidebar.collapsed .subject { 
+  justify-content: center; 
+  padding: 12px; 
+}
 
 /****************************************************
  * 5. TABS
@@ -263,6 +294,13 @@ body {
   font-weight: 500;
 }
 .thread-item:hover { background: #eef2ff; transform: translateY(-1px); } 
+.thread-item .thread-name {
+  flex-grow: 1; /* Allows this element to grow and fill available space */
+  min-width: 0; /* Prevents text overflow issues */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis; /* Adds '...' if the text is too long */
+}
 .thread-item.active {
   background: linear-gradient(135deg, var(--primary-1), var(--primary-2));
   color: white;
@@ -531,6 +569,7 @@ body {
   width: 90%;
   max-width: 400px;
   height: 250px;
+  padding-top: 230px;
   margin: 40px auto; 
   position: relative;
   perspective: 1000px; /* Vytváří 3D prostor pro otáčecí animaci. */
@@ -571,6 +610,7 @@ body {
   justify-content: center;
   align-items: center;
   gap: 16px;
+  padding-top: 230px;
 }
 
 /****************************************************

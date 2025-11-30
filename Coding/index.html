@@ -7,14 +7,14 @@
 
   <!-- Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="style.css">
 
   <!-- KaTeX -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
     onload="renderMathInElement(document.body);"></script>
-
-  <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
@@ -22,8 +22,8 @@
     <!-- SIDEBAR -->
     <aside class="sidebar">
       <div class="profile">
-        <div class="avatar" id="toggleSidebar">U</div>
-        <div class="username">Username</div>
+        <div class="avatar" id="userAvatar">U</div>
+        <div class="username" id="userName">User</div>
         <button id="hamburgerBtn" class="hamburger">☰</button>
       </div>
 
@@ -32,17 +32,7 @@
         <span class="btn-text">New Subject</span>
       </button>
 
-      <ul class="subject-list">
-        <li class="subject active">
-          <span class="subject-icon">📘</span><span class="subject-text">Mathematics</span>
-        </li>
-        <li class="subject">
-          <span class="subject-icon">🧬</span><span class="subject-text">Biology</span>
-        </li>
-        <li class="subject">
-          <span class="subject-icon">📜</span><span class="subject-text">History</span>
-        </li>
-      </ul>
+      <ul class="subject-list"></ul>
 
       <!-- Temporary Reset Button -->
       <button id="resetAppBtn" class="btn outline" style="margin-top: auto;">Reset App Data</button>

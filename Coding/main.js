@@ -13,45 +13,52 @@ const util = {
 
   // Markdown → HTML (math-safe)
   markdownToHtml(md) {
-    if (!md) return "";
+  if (!md) return "";
 
-    const placeholders = [];
-    let html = md;
+  // 1) Protect block math ($$...$$)
+  const blockMath = [];
+  md = md.replace(/\$\$([\s\S]+?)\$\$/g, (match) => {
+    const key = `__BLOCKMATH_${blockMath.length}__`;
+    blockMath.push(match); 
+    return key;
+  });
 
-    // Protect display math
-    html = html.replace(/(\$\$[\s\S]+?\$\$)/g, (m) => {
-      const key = `__MATH_BLOCK_${placeholders.length}__`;
-      placeholders.push(m);
-      return key;
-    });
+  // 2) Protect inline math ($...$)
+  const inlineMath = [];
+  md = md.replace(/\$([^\$]+?)\$/g, (match) => {
+    const key = `__INLINEMATH_${inlineMath.length}__`;
+    inlineMath.push(match);
+    return key;
+  });
 
-    // Protect inline math
-    html = html.replace(/(\$[\s\S]+?\$)/g, (m) => {
-      const key = `__MATH_INLINE_${placeholders.length}__`;
-      placeholders.push(m);
-      return key;
-    });
+  // 3) Convert markdown WITHOUT breaking math
+  let html = md
 
-    // Now, process the non-math content
-    html = util.escapeHtml(html);
+    // bold
+    .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
 
-    html = html.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
-    html = html.replace(/\*(.+?)\*/g, "<em>$1</em>");
-    html = html.replace(/`(.+?)`/g, "<code>$1</code>");
-    html = html.replace(/^### (.+)$/gm, "<h3>$1</h3>");
-    html = html.replace(/^## (.+)$/gm, "<h2>$1</h2>");
-    html = html.replace(/^# (.+)$/gm, "<h1>$1</h1>");
+    // italic
+    .replace(/\*(.+?)\*/g, "<em>$1</em>")
 
-    // Finally, restore the math blocks and handle newlines for non-math text
-    placeholders.forEach((m, i) => {
-      html = html.replace(`__MATH_BLOCK_${i}__`, m);
-      html = html.replace(`__MATH_INLINE_${i}__`, m);
-    });
+    // code
+    .replace(/`(.+?)`/g, "<code>$1</code>");
 
-    html = html.replace(/\n/g, "<br>");
+  // 4) Replace newlines with <br>, but math placeholders won't break
+  html = html.replace(/\n/g, "<br>");
 
-    return html;
-  },
+  // 5) Restore math blocks
+  blockMath.forEach((m, i) => {
+    html = html.replace(`__BLOCKMATH_${i}__`, m);
+  });
+
+  // 6) Restore inline math
+  inlineMath.forEach((m, i) => {
+    html = html.replace(`__INLINEMATH_${i}__`, m);
+  });
+
+  return html;
+}
+,
 
   autoResize(el) {
     el.style.height = "0px";
@@ -65,89 +72,166 @@ const util = {
  ****************************************************/
 const DOM = {
   init() {
+    // Tabs
     this.tabs = document.querySelectorAll(".tab-btn");
     this.contents = document.querySelectorAll(".tab-content");
 
+    // Sidebar
+    this.userAvatar = document.getElementById("userAvatar");
+    this.userName = document.getElementById("userName");
+    this.hamburgerBtn = document.getElementById("hamburgerBtn");
+
+    // Subjects
+    this.newSubjectBtn = document.querySelector(".new-subject-btn");
+    this.subjectList = document.querySelector(".subject-list");
+
+    // Chat
     this.messages = document.getElementById("messages");
     this.input = document.getElementById("chatInput");
     this.sendBtn = document.getElementById("sendBtn");
     this.threadListEl = document.getElementById("threadList");
     this.newThreadBtn = document.getElementById("newThreadBtn");
     this.chatTitleEl = document.getElementById("chatTitle");
-    this.hamburgerBtn = document.getElementById("hamburgerBtn");
-    this.resetAppBtn = document.getElementById("resetAppBtn");
-
     this.plusBtn = document.getElementById("chatPlusBtn");
     this.actionMenu = document.getElementById("actionMenu");
 
+    // Files
     this.upload = document.getElementById("fileUpload");
     this.fileList = document.getElementById("fileList");
 
+    // Notes
     this.notesGrid = document.getElementById("notesTopics");
     this.noteDetail = document.getElementById("noteDetail");
+    this.backToNotes = document.getElementById("backToNotes");
     this.noteDetailTitle = document.getElementById("noteDetailTitle");
     this.noteDetailContent = document.getElementById("noteDetailContent");
-    this.backToNotes = document.getElementById("backToNotes");
-    this.backToDecks = document.getElementById("backToDecks");
 
+    // Flashcards
+    this.flashcardDecks = document.getElementById("flashcardDecks");
     this.flashcard = document.getElementById("flashcard");
-    this.flashNav = document.getElementById("flashNav");
     this.flashFront = document.getElementById("flashFront");
     this.flashBack = document.getElementById("flashBack");
-    this.flashIndex = document.getElementById("flashIndex");
+    this.flashNav = document.getElementById("flashNav");
     this.prevFlash = document.getElementById("prevFlash");
     this.nextFlash = document.getElementById("nextFlash");
-    this.flashcardDecks = document.getElementById("flashcardDecks");
+    this.flashIndex = document.getElementById("flashIndex");
+    this.backToDecks = document.getElementById("backToDecks");
+
+    // Reset button
+    this.resetAppBtn = document.getElementById("resetAppBtn");
 
     return true;
   }
 };
 
+/****************************************************
+ * 3. SUBJECT STATE
+ ****************************************************/
+const subjectState = {
+  subjects: [],
+  activeSubjectId: null,
+
+  init() {
+    // This becomes the main data store, loaded from localStorage.
+    this.subjects = JSON.parse(localStorage.getItem("quizmate_subjects") || "[]");
+
+    if (this.subjects.length === 0) {
+      // If no subjects exist, create default data, including the old chats.
+      const oldChats = JSON.parse(localStorage.getItem("quizmate_chats") || "[]");
+      this.subjects = [
+        { 
+          id: 'subj-math', name: 'Mathematics', icon: '🧮',
+          chats: oldChats.length > 0 ? oldChats : [
+            { id: util.genId(), name: "Pythagorean Theorem", messages: [], notes: null, flashcards: null, tests: null },
+            { id: util.genId(), name: "Linear Equations", messages: [], notes: null, flashcards: null, tests: null }
+          ]
+        },
+        { id: 'subj-bio', name: 'Biology', icon: '🧬', chats: [] },
+        { id: 'subj-hist', name: 'History', icon: '📜', chats: [] },
+      ];
+      this.save();
+    }
+
+    this.activeSubjectId = this.subjects[0]?.id || null;
+  },
+
+  save() {
+    localStorage.setItem("quizmate_subjects", JSON.stringify(this.subjects));
+  },
+
+  addSubject(name) {
+    const newSubject = {
+      id: util.genId(),
+      name,
+      icon: "📘",
+      chats: []
+    };
+
+    this.subjects.push(newSubject);
+    this.save();
+
+    // If no active subject, set this one
+    if (!this.activeSubjectId) {
+      this.activeSubjectId = newSubject.id;
+    }
+
+    ui.renderSubjects();
+  },
+
+  setActive(subjectId) {
+    this.activeSubjectId = subjectId;
+    
+    // When switching subjects, select the first chat of that subject
+    const firstChatId = this.getActiveSubject()?.chats[0]?.id || null;
+    chatState.selectChat(firstChatId);
+
+    // Re-render the UI to reflect the change
+    ui.renderSubjects();
+    ui.renderThreads();
+    ui.renderMessages();
+  },
+
+  getActiveSubject() {
+    return this.subjects.find(s => s.id === this.activeSubjectId);
+  }
+};
 
 /****************************************************
  * 4. CHAT STATE
  ****************************************************/
 const chatState = {
-  chats: [],
   currentChatId: null,
 
   init() {
-    this.chats = JSON.parse(localStorage.getItem("quizmate_chats") || "[]");
-
-    if (this.chats.length === 0) {
-      this.chats = [
-        { id: util.genId(), name: "Pythagorova věta", messages: [], notes: null, flashcards: null, tests: null },
-        { id: util.genId(), name: "Lineární rovnice", messages: [], notes: null, flashcards: null, tests: null }
-      ];
-      this.save();
-    }
-
+    // Chat state now initializes based on the active subject
     this.currentChatId =
-      localStorage.getItem("quizmate_current_chat") || this.chats[0].id;
+      localStorage.getItem("quizmate_current_chat") || subjectState.getActiveSubject()?.chats[0]?.id || null;
 
     localStorage.setItem("quizmate_current_chat", this.currentChatId);
   },
 
-  save() {
-    localStorage.setItem("quizmate_chats", JSON.stringify(this.chats));
-  },
-
   getCurrent() {
-    return this.chats.find((c) => c.id === this.currentChatId);
+    const activeSubject = subjectState.getActiveSubject();
+    if (!activeSubject) return null;
+    return activeSubject.chats.find((c) => c.id === this.currentChatId);
   },
 
   selectChat(id) {
     this.currentChatId = id;
     localStorage.setItem("quizmate_current_chat", id);
+    const chat = this.getCurrent();
+    DOM.chatTitleEl.textContent = chat ? chat.name : "Select a Chat";
     ui.renderThreads();
     ui.renderMessages();
-    DOM.chatTitleEl.textContent = this.getCurrent().name;
   },
 
   addChat(name) {
+    const activeSubject = subjectState.getActiveSubject();
+    if (!activeSubject) return null;
+
     const chat = { id: util.genId(), name, messages: [], notes: null, flashcards: null, tests: null };
-    this.chats.unshift(chat);
-    this.save();
+    activeSubject.chats.unshift(chat);
+    subjectState.save();
     return chat;
   },
 
@@ -159,7 +243,7 @@ const chatState = {
       content: text,
       timestamp: new Date().toISOString()
     });
-    this.save();
+    subjectState.save();
   },
 
   addFlashcards(cards) {
@@ -170,17 +254,29 @@ const chatState = {
     }
     // Replace existing flashcards for this chat
     chat.flashcards = cards;
-    this.save();
+    subjectState.save();
   },
 
   addNotes(content) {
     const chat = this.getCurrent();
     if (!chat) return;
+    
+    let cleaned = content;
+
+    // Remove intro lines (AI intros)
+    cleaned = cleaned.replace(/^.*(Vítejte|Vítám|Welcome|Úvodem).*\n?/i, "");
+
+    // Remove outro lines (AI closings)
+    cleaned = cleaned.replace(/Tento\s+přehled.*$/i, "");
+    cleaned = cleaned.replace(/Tato\s+rekapitulace.*$/i, "");
+    cleaned = cleaned.replace(/Tento\s+souhrn.*$/i, "");
+    cleaned = cleaned.replace(/This\s+summary.*$/i, "");
+
     chat.notes = {
       title: chat.name,
-      content: content
+      content: cleaned.trim()
     };
-    this.save();
+    subjectState.save();
   },
 
   addTest(testData) {
@@ -190,7 +286,7 @@ const chatState = {
       chat.tests = [];
     }
     chat.tests.push(testData); // Or replace, depending on desired logic
-    this.save();
+    subjectState.save();
   }
 };
 
@@ -213,17 +309,68 @@ const ui = {
       });
     }
   },
+
+  /* SUBJECTS */
+  renderSubjects() {
+    DOM.subjectList.innerHTML = ""; // Clear existing subjects
+
+    subjectState.subjects.forEach(subject => {
+      const subjectItem = document.createElement('li');
+      subjectItem.className = 'subject';
+      subjectItem.dataset.id = subject.id;
+
+      if (subject.id === subjectState.activeSubjectId) {
+        subjectItem.classList.add('active');
+      }
+
+      subjectItem.innerHTML = `
+        <span class="icon">${subject.icon}</span>
+        <span class="subject-text">${subject.name}</span>
+        <button class="delete-thread-btn delete-subject-btn" data-id="${subject.id}">🗑️</button>
+      `;
+
+      // Add click listener to the entire item to switch the active subject
+      subjectItem.addEventListener('click', () => subjectState.setActive(subject.id));
+
+      // Add click listener for the delete button
+      subjectItem.querySelector('.delete-subject-btn').addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (confirm(`Opravdu chcete smazat předmět "${subject.name}" a všechny jeho chaty?`)) {
+          const wasActive = subject.id === subjectState.activeSubjectId;
+          
+          // Remove the subject
+          subjectState.subjects = subjectState.subjects.filter(s => s.id !== subject.id);
+          subjectState.save();
+
+          // If the deleted subject was active, select the first remaining one
+          if (wasActive && subjectState.subjects.length > 0) {
+            subjectState.setActive(subjectState.subjects[0].id);
+          } else {
+            // Just re-render if no subjects are left or a non-active one was deleted
+            ui.renderSubjects();
+          }
+        }
+      });
+
+      DOM.subjectList.appendChild(subjectItem);
+    });
+  },
+
   /* THREADS */
   renderThreads() {
     DOM.threadListEl.innerHTML = "";
+    const activeSubject = subjectState.getActiveSubject();
+    if (!activeSubject) return;
 
-    chatState.chats.forEach((chat) => {
+    activeSubject.chats.forEach((chat) => {
       const li = document.createElement("li");
       li.className =
         "thread-item" + (chat.id === chatState.currentChatId ? " active" : "");
 
       const name = document.createElement("span");
       name.textContent = chat.name;
+      name.className = "thread-name"; // This is the key change
+      name.addEventListener("click", () => chatState.selectChat(chat.id));
 
       const del = document.createElement("button");
       del.textContent = "🗑️";
@@ -231,11 +378,12 @@ const ui = {
 
       del.addEventListener("click", (e) => {
         e.stopPropagation();
-        chatState.chats = chatState.chats.filter((c) => c.id !== chat.id);
-        chatState.save();
+        activeSubject.chats = activeSubject.chats.filter((c) => c.id !== chat.id);
+        subjectState.save();
 
-        if (chatState.currentChatId === chat.id) {
-          chatState.currentChatId = chatState.chats[0]?.id || null;
+        if (chatState.currentChatId === chat.id) { // If we deleted the active chat
+          const newActiveChatId = activeSubject.chats[0]?.id || null;
+          chatState.selectChat(newActiveChatId); // Select the next available chat
         }
 
         ui.renderThreads();
@@ -245,7 +393,6 @@ const ui = {
       li.appendChild(name);
       li.appendChild(del);
 
-      li.addEventListener("click", () => chatState.selectChat(chat.id));
       DOM.threadListEl.appendChild(li);
     });
   },
@@ -276,7 +423,7 @@ const ui = {
 
   renderMessages() {
     DOM.messages.innerHTML = "";
-    const chat = chatState.getCurrent();
+    const chat = chatState.getCurrent(); // This now gets the chat from the active subject
     if (!chat) return;
 
     chat.messages.forEach((m) => {
@@ -295,11 +442,15 @@ const ui = {
   renderNotesGrid() {
     DOM.noteDetail.classList.add("hidden");
     DOM.backToNotes.classList.add("hidden");
+    DOM.notesGrid.classList.remove("hidden");
     DOM.notesGrid.innerHTML = "";
 
     // Find chats that have notes
-    const chatsWithNotes = chatState.chats.filter(
-      (chat) => chat.notes && chat.notes.content
+    const activeSubject = subjectState.getActiveSubject();
+    if (!activeSubject) return;
+
+    const chatsWithNotes = activeSubject.chats.filter(
+      (chat) => chat.notes && chat.notes.content.trim()
     );
 
     chatsWithNotes.forEach((chat) => {
@@ -315,7 +466,7 @@ const ui = {
         e.stopPropagation();
         if (confirm(`Opravdu chcete smazat výpisky pro "${chat.name}"?`)) {
           chat.notes = null;
-          chatState.save();
+          subjectState.save();
           ui.renderNotesGrid();
         }
       });
@@ -327,14 +478,20 @@ const ui = {
   },
 
   openNoteDetail(chatId) {
-    const chat = chatState.chats.find((c) => c.id === chatId);
+    const activeSubject = subjectState.getActiveSubject();
+    if (!activeSubject) return;
+
+    const chat = activeSubject.chats.find((c) => c.id === chatId);
     if (!chat || !chat.notes) return;
 
     DOM.noteDetailTitle.textContent = chat.notes.title;
     DOM.noteDetailContent.innerHTML = util.markdownToHtml(chat.notes.content);
 
-    DOM.backToNotes.classList.remove("hidden");
+    DOM.notesGrid.classList.add("hidden");
     DOM.noteDetail.classList.remove("hidden");
+    DOM.backToNotes.classList.remove("hidden");
+
+    DOM.noteDetail.scrollTop = 0;
 
     this.renderMathInElement(DOM.noteDetailContent);
   },
@@ -348,8 +505,11 @@ const ui = {
     DOM.flashcardDecks.innerHTML = "";
 
     // Find chats that have flashcards
-    const chatsWithDecks = chatState.chats.filter(
-      (chat) => Array.isArray(chat.flashcards) && chat.flashcards.length > 0
+    const activeSubject = subjectState.getActiveSubject();
+    if (!activeSubject) return;
+
+    const chatsWithDecks = activeSubject.chats.filter(
+      (c) => Array.isArray(c.flashcards) && c.flashcards.length > 0
     );
 
     chatsWithDecks.forEach((chat) => {
@@ -365,7 +525,7 @@ const ui = {
         e.stopPropagation();
         if (confirm(`Opravdu chcete smazat flashcards pro "${chat.name}"?`)) {
           chat.flashcards = null;
-          chatState.save();
+          subjectState.save();
           ui.renderDeckGrid();
         }
       });
@@ -377,7 +537,10 @@ const ui = {
   },
 
   openDeckDetail(chatId) {
-    const chat = chatState.chats.find((c) => c.id === chatId);
+    const activeSubject = subjectState.getActiveSubject();
+    if (!activeSubject) return;
+
+    const chat = activeSubject.chats.find((c) => c.id === chatId);
     if (!chat || !Array.isArray(chat.flashcards) || chat.flashcards.length === 0) return;
 
     DOM.flashcardDecks.classList.add("hidden");
@@ -462,10 +625,12 @@ const api = {
 
   async askAI(messages) {
     const topic = chatState.getCurrent()?.name || "(téma)";
+    const subjectName = subjectState.getActiveSubject()?.name || "všeobecné";
 
     const system = {
       role: "user",
-      content: `Odpovídej česky. Téma chatu: ${topic}.`
+      content: `Jsi expert na téma **${subjectName}**. Odpovídej na otázky v kontextu tohoto předmětu.
+      Téma chatu je: ${topic}. Odpovídej česky.`
     };
 
     const resp = await fetch("/api/chat", {
@@ -539,17 +704,31 @@ const events = {
 
   initSidebar() {
     const sidebar = document.querySelector('.sidebar');
-    const avatar = document.getElementById('toggleSidebar');
 
-    if (!sidebar || !DOM.hamburgerBtn || !avatar) return;
+    if (!sidebar || !DOM.hamburgerBtn || !DOM.userAvatar) return;
 
+    // Collapse sidebar
     DOM.hamburgerBtn.addEventListener('click', () => {
-      sidebar.classList.add('collapsed');
+      sidebar.classList.toggle('collapsed');
     });
-    avatar.addEventListener('click', () => {
+
+    // Uncollapse sidebar when clicking avatar
+    DOM.userAvatar.addEventListener('click', () => {
       sidebar.classList.remove('collapsed');
-    });
-  },
+  });
+},
+
+  initSubjects() {
+    if (!DOM.newSubjectBtn || !DOM.subjectList) return;
+
+    DOM.newSubjectBtn.addEventListener("click", () => {
+      const name = prompt("Název nového předmětu:");
+      if (!name) return;
+
+      subjectState.addSubject(name);
+      ui.renderSubjects();
+  });
+},
 
   async sendMessage() {
     const text = DOM.input.value.trim();
@@ -591,8 +770,21 @@ const events = {
 
     const ctx = api.getContextMessages();
 
+    let levelText = "";
+
+    if (window.quizmateLevel === "zakladka") {
+      levelText = "Piš jednoduše, srozumitelně, jako pro 5.–9. třídu.";
+    }
+    if (window.quizmateLevel === "stredni") {
+      levelText = "Piš středoškolsky, používej běžné matematické termíny.";
+    }
+    if (window.quizmateLevel === "vysoka") {
+      levelText = "Piš vysokoškolskou úrovní, detailně, teoreticky.";
+    }
+
     const prompt = `
-      Vytvoř přehledné, strukturované a vysokoškolsky kvalitní výpisky k tématu **${topic}**.
+      ${levelText}
+      Vytvoř přehledné, strukturované a kvalitní výpisky k tématu **${topic}**.
       Použij nadpisy, odrážky, vysvětlení, vzorce (KaTeX), příklady.
       `;
 
@@ -609,7 +801,20 @@ const events = {
 
     ui.addMessage("🧠 Generuji flashcards...", "assistant");
 
+    let levelText = "";
+
+    if (window.quizmateLevel === "zakladka") {
+      levelText = "Piš základoškolskou úrovní. Vysvětluj jako pro studenty na základní škole.";
+    }
+    if (window.quizmateLevel === "stredni") {
+      levelText = "Piš středoškolskou úrovní. Vysvětluj jako pro studenty na střední škole.";
+    }
+    if (window.quizmateLevel === "vysoka") {
+      levelText = "Piš vysokoškolskou úrovní. Vysvětluj jako pro studenty na vysoké škole.";
+    }
+
     const prompt = `
+      ${levelText}
       Jsi expert na tvorbu vzdělávacích flashcards.
       Tvým úkolem je vytvořit ideální počet flashcards pro téma "${topic}" ve formátu:
       Q: otázka
@@ -655,7 +860,39 @@ const events = {
  * 9. INIT
  ****************************************************/
 document.addEventListener("DOMContentLoaded", () => {
+
+  // Load user data
+  const user = JSON.parse(localStorage.getItem("quizmate_user") || "{}");
+
+  // Redirect if not logged in
+  if (!user.name) {
+    window.location.href = "/login";
+    return; // STOP running initialization
+  }
+
+  // Initialize DOM FIRST so elements exist
   DOM.init();
+
+  // Now we can safely apply user info
+  if (DOM.userName) DOM.userName.textContent = user.name;
+
+  if (DOM.userAvatar) {
+    if (user.avatarImage) {
+      DOM.userAvatar.style.backgroundImage = `url(${user.avatarImage})`;
+      DOM.userAvatar.style.backgroundSize = "cover";
+      DOM.userAvatar.style.backgroundPosition = "center";
+      DOM.userAvatar.textContent = "";
+    } else {
+      DOM.userAvatar.style.backgroundImage = "";
+      DOM.userAvatar.textContent = user.avatar || "U";
+    }
+  }
+
+  // Save level globally
+  window.quizmateLevel = user.level || "stredni";
+
+  // Initialize rest of the app
+  subjectState.init();
   chatState.init();
 
   events.initTabs();
@@ -663,22 +900,35 @@ document.addEventListener("DOMContentLoaded", () => {
   events.initFlashcards();
   events.initSidebar();
   events.initFileUpload();
+  events.initSubjects();
 
+  ui.renderSubjects();
   ui.renderThreads();
   ui.renderMessages();
 
   // Back button for notes
-  DOM.backToNotes.addEventListener("click", () => {
-    ui.renderNotesGrid();
-  });
+  if (DOM.backToNotes) {
+    DOM.backToNotes.addEventListener("click", () => {
+      DOM.noteDetail.classList.add("hidden");
+      DOM.backToNotes.classList.add("hidden");
 
-  DOM.backToDecks.addEventListener("click", () => {
-    ui.renderDeckGrid();
-  });
+      DOM.notesGrid.classList.remove("hidden");
+      ui.renderNotesGrid();
+    });
+  }
 
-  // Temporary reset button logic
-  DOM.resetAppBtn.addEventListener("click", () => {
-    localStorage.clear();
-    window.location.reload();
-  });
+  // Back button for flashcard decks
+  if (DOM.backToDecks) {
+    DOM.backToDecks.addEventListener("click", () => {
+      ui.renderDeckGrid();
+    });
+  }
+
+  // Reset app
+  if (DOM.resetAppBtn) {
+    DOM.resetAppBtn.addEventListener("click", () => {
+      localStorage.clear();
+      window.location.reload();
+    });
+  }
 });

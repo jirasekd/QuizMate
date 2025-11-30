@@ -75,6 +75,19 @@ if (!API_KEY) {
   console.warn("⚠️  Chybí GOOGLE_API_KEY v .env — /api/chat nebude fungovat.");
 }
 
+app.get("/login", (req, res) => {
+  res.sendFile(path.join(__dirname, "login.html"));
+});
+
+app.get("/level", (req, res) => {
+  res.sendFile(path.join(__dirname, "level.html"));
+});
+
+// Main app
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "index.html"));
+});
+
 // Mapování OpenAI-style zpráv na Gemini "contents"
 function toGeminiContents(openAiMessages) {
   // Gemini role: "user" nebo "model"
