@@ -127,6 +127,12 @@
     <label>Your username:</label>
     <input id="username" type="text" placeholder="Enter your name">
 
+    <div id="password-wrapper">
+      <label>Password:</label>
+      <input id="password" type="password" placeholder="Enter your password">
+    </div>
+
+
     <label>Choose avatar:</label>
     <div class="avatar-options">
       <input id="avatarText" type="text" placeholder="e.g. 😊 or U or upload an image below">
@@ -138,15 +144,24 @@
       <img id="avatarPreview" class="avatar-preview hidden">
     </div>
 
-    <button id="continueBtn">Continue →</button>
+    <button id="actionBtn">Login →</button>
+    <p id="toggleMode" style="text-align: center; margin-top: 16px; font-size: 14px; cursor: pointer; color: #4b5563;">
+      Don't have an account? <span style="color: var(--primary-1); font-weight: 600;">Register here</span>
+    </p>
   </div>
 
   <script>
+    // DOM Elements
     const avatarFile = document.getElementById("avatarFile");
     const avatarPreview = document.getElementById("avatarPreview");
     const avatarText = document.getElementById("avatarText");
+    const usernameInput = document.getElementById("username");
+    const passwordInput = document.getElementById("password");
+    const actionBtn = document.getElementById("actionBtn");
+    const toggleModeEl = document.getElementById("toggleMode");
 
     let uploadedAvatarBase64 = null;
+    let mode = 'login'; // 'login' or 'register'
 
     avatarFile.addEventListener("change", () => {
       const file = avatarFile.files[0];
@@ -165,25 +180,79 @@
       };
       reader.readAsDataURL(file);
     });
-    
-    document.getElementById("continueBtn").addEventListener("click", () => {
-      const name = document.getElementById("username").value.trim();
-      if (!name) {
-        alert("Please enter your username!");
+
+    toggleModeEl.addEventListener("click", () => {
+      mode = mode === 'login' ? 'register' : 'login';
+      updateUIForMode();
+    });
+
+    function updateUIForMode() {
+      if (mode === 'login') {
+        actionBtn.textContent = 'Login →';
+        toggleModeEl.innerHTML = `Don't have an account? <span style="color: var(--primary-1); font-weight: 600;">Register here</span>`;
+        document.querySelector('.avatar-options').style.display = 'none';
+      } else {
+        actionBtn.textContent = 'Register →';
+        toggleModeEl.innerHTML = `Already have an account? <span style="color: var(--primary-1); font-weight: 600;">Login here</span>`;
+        document.querySelector('.avatar-options').style.display = 'block';
+      }
+    }
+
+    actionBtn.addEventListener("click", () => {
+      const username = usernameInput.value.trim();
+      const password = passwordInput.value.trim();
+
+      if (!username || !password) {
+        alert("Please enter both username and password!");
         return;
       }
 
-      // Determine which avatar to use
-      let finalAvatar;
-      if (uploadedAvatarBase64) {
-        finalAvatar = uploadedAvatarBase64; // Use uploaded image if it exists
-      } else {
-        finalAvatar = avatarText.value.trim() || name.charAt(0).toUpperCase() || "U"; // Otherwise, use text, or first letter of name, or 'U'
-      }
+      const users = JSON.parse(localStorage.getItem("quizmate_users") || "[]");
 
-      localStorage.setItem("quizmate_user", JSON.stringify({ name: name, avatar: finalAvatar }));
-      window.location.href = "/level";
+      if (mode === 'login') {
+        const user = users.find(u => u.username === username && u.password === password);
+        if (user) {
+          // On successful login, we only need to store the username.
+          // The main app will load the full user object.
+          localStorage.setItem("quizmate_current_user", JSON.stringify(user));
+          window.location.href = "/level";
+        } else {
+          alert("Invalid username or password.");
+        }
+      } else {
+        // Register mode
+        if (users.find(u => u.username === username)) {
+          alert("Username already exists. Please choose another one.");
+          return;
+        }
+
+        // Determine which avatar to use
+        let finalAvatar;
+        if (uploadedAvatarBase64) {
+          finalAvatar = uploadedAvatarBase64; // Use uploaded image if it exists
+        } else {
+          finalAvatar = avatarText.value.trim() || username.charAt(0).toUpperCase() || "U";
+        }
+
+        const newUser = {
+          username,
+          password, // In a real app, this should be hashed!
+          avatar: finalAvatar
+        };
+
+        users.push(newUser);
+        localStorage.setItem("quizmate_users", JSON.stringify(users));
+        
+        // Also set the current user to log them in immediately
+        localStorage.setItem("quizmate_current_user", JSON.stringify(newUser));
+        
+        alert("Registration successful! You will now be redirected.");
+        window.location.href = "/level";
+      }
     });
+
+    // Initial UI setup
+    updateUIForMode();
   </script>
 
 </body>

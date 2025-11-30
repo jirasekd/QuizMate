@@ -88,6 +88,8 @@
                   <button class="action-item" data-action="files">
                     📂 Upload File
                   </button>
+                  <button class="action-item" data-action="test">
+                    🧪 Create Test
                 </div>
               </div>
 
@@ -158,15 +160,19 @@
       </section>
 
 
-      <!-- TESTS -->
-      <section id="tests" class="tab-content">
-        <div class="tests-header">
-          <h2>Tests</h2>
+      <!-- Testy -->
+      <div id="tests" class="tab-content">
+          <div class="topic-grid" id="testsTopics">
+            <!-- Test decks will be rendered here -->
+          </div>
+          <div id="testDetail" class="hidden">
+            <button id="backToTests" class="back-btn">← Zpět na přehled testů</button>
+            <h2 id="testDetailTitle"></h2>
+            <div id="testQuestionsContainer">
+              <!-- Questions will be rendered here -->
+            </div>
+          </div>
         </div>
-
-        <div id="testList" class="tests-list"></div>
-      </section>
-
     </main>
   </div>
 

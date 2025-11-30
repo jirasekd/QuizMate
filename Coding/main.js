@@ -117,6 +117,13 @@ const DOM = {
     this.flashIndex = document.getElementById("flashIndex");
     this.backToDecks = document.getElementById("backToDecks");
 
+    // Tests
+    this.testsGrid = document.getElementById("testsTopics");
+    this.testDetail = document.getElementById("testDetail");
+    this.backToTests = document.getElementById("backToTests");
+    this.testDetailTitle = document.getElementById("testDetailTitle");
+    this.testQuestionsContainer = document.getElementById("testQuestionsContainer");
+
     // Reset button
     this.resetAppBtn = document.getElementById("resetAppBtn");
     this.logoutBtn = document.getElementById("logoutBtn");
@@ -132,32 +139,38 @@ const subjectState = {
   subjects: [],
   activeSubjectId: null,
 
-  init() {
-    // This becomes the main data store, loaded from localStorage.
-    this.subjects = JSON.parse(localStorage.getItem("quizmate_subjects") || "[]");
+  init(username) {
+    if (!username) {
+      console.error("User not provided for subjectState init.");
+      this.subjects = [];
+      return;
+    }
+    this.username = username;
+    const userData = JSON.parse(localStorage.getItem(`quizmate_data_${username}`) || "{}");
+    this.subjects = userData.subjects || [];
 
     if (this.subjects.length === 0) {
       // If no subjects exist, create default data, including the old chats.
-      const oldChats = JSON.parse(localStorage.getItem("quizmate_chats") || "[]");
+      // This also helps migrate data for the first user to log in.
       this.subjects = [
         { 
           id: 'subj-math', name: 'Mathematics', icon: '🧮',
-          chats: oldChats.length > 0 ? oldChats : [
-            { id: util.genId(), name: "Pythagorean Theorem", messages: [], notes: null, flashcards: null, tests: null },
-            { id: util.genId(), name: "Linear Equations", messages: [], notes: null, flashcards: null, tests: null }
-          ]
+          chats: []
         },
         { id: 'subj-bio', name: 'Biology', icon: '🧬', chats: [] },
         { id: 'subj-hist', name: 'History', icon: '📜', chats: [] },
       ];
       this.save();
     }
-
     this.activeSubjectId = this.subjects[0]?.id || null;
   },
 
   save() {
-    localStorage.setItem("quizmate_subjects", JSON.stringify(this.subjects));
+    if (!this.username) return;
+    const userData = {
+      subjects: this.subjects
+    };
+    localStorage.setItem(`quizmate_data_${this.username}`, JSON.stringify(userData));
   },
 
   addSubject(name) {
@@ -182,7 +195,8 @@ const subjectState = {
   setActive(subjectId) {
     this.activeSubjectId = subjectId;
     
-    // When switching subjects, select the first chat of that subject
+    // When switching subjects, reset the active chat.
+    // This prevents "data leakage" between subjects (e.g., showing old flashcards).
     const firstChatId = this.getActiveSubject()?.chats[0]?.id || null;
     chatState.selectChat(firstChatId);
 
@@ -190,6 +204,9 @@ const subjectState = {
     ui.renderSubjects();
     ui.renderThreads();
     ui.renderMessages();
+    ui.renderNotesGrid();
+    ui.renderDeckGrid();
+    ui.renderTestsGrid();
   },
 
   getActiveSubject() {
@@ -203,12 +220,13 @@ const subjectState = {
 const chatState = {
   currentChatId: null,
 
-  init() {
+  init(username) {
     // Chat state now initializes based on the active subject
-    this.currentChatId =
-      localStorage.getItem("quizmate_current_chat") || subjectState.getActiveSubject()?.chats[0]?.id || null;
+    this.username = username;
+    const key = `quizmate_current_chat_${username}`;
+    this.currentChatId = localStorage.getItem(key) || subjectState.getActiveSubject()?.chats[0]?.id || null;
 
-    localStorage.setItem("quizmate_current_chat", this.currentChatId);
+    if(this.currentChatId) localStorage.setItem(key, this.currentChatId);
   },
 
   getCurrent() {
@@ -219,8 +237,9 @@ const chatState = {
 
   selectChat(id) {
     this.currentChatId = id;
-    localStorage.setItem("quizmate_current_chat", id);
     const chat = this.getCurrent();
+    const key = `quizmate_current_chat_${this.username}`;
+    if (id) localStorage.setItem(key, id); else localStorage.removeItem(key);
     DOM.chatTitleEl.textContent = chat ? chat.name : "Select a Chat";
     ui.renderThreads();
     ui.renderMessages();
@@ -286,7 +305,7 @@ const chatState = {
     if (!chat.tests) { // Ensure the array exists before adding to it
       chat.tests = [];
     }
-    chat.tests.push(testData); // Or replace, depending on desired logic
+    chat.tests = [testData]; // Replace previous tests for this chat
     subjectState.save();
   }
 };
@@ -552,6 +571,95 @@ const ui = {
     flashcards.index = 0;
     flashcards.render();
   }
+  ,
+
+  /* TESTS */
+  renderTestsGrid() {
+    DOM.testDetail.classList.add("hidden");
+    DOM.backToTests.classList.add("hidden");
+    DOM.testsGrid.classList.remove("hidden");
+    DOM.testsGrid.innerHTML = "";
+
+    const activeSubject = subjectState.getActiveSubject();
+    if (!activeSubject) return;
+
+    const chatsWithTests = activeSubject.chats.filter(
+      (c) => Array.isArray(c.tests) && c.tests.length > 0
+    );
+
+    chatsWithTests.forEach((chat) => {
+      const card = document.createElement("div");
+      card.className = "topic-card";
+      card.innerHTML = `
+        <div class="topic-title">🧪 ${chat.name}</div>
+        <div class="topic-preview">${chat.tests[0].questions.length} questions</div>
+        <button class="delete-item-btn">🗑️</button>
+      `;
+
+      card.querySelector('.delete-item-btn').addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (confirm(`Opravdu chcete smazat test pro "${chat.name}"?`)) {
+          chat.tests = null;
+          subjectState.save();
+          ui.renderTestsGrid();
+        }
+      });
+
+      card.addEventListener("click", (e) => { if (e.target.tagName !== 'BUTTON') ui.openTestDetail(chat.id) });
+      DOM.testsGrid.appendChild(card);
+    });
+  },
+
+  openTestDetail(chatId) {
+    const activeSubject = subjectState.getActiveSubject();
+    if (!activeSubject) return;
+
+    const chat = activeSubject.chats.find((c) => c.id === chatId);
+    if (!chat || !Array.isArray(chat.tests) || chat.tests.length === 0) return;
+
+    const test = chat.tests[0];
+
+    DOM.testDetailTitle.textContent = `Test: ${chat.name}`;
+    DOM.testQuestionsContainer.innerHTML = "";
+
+    test.questions.forEach((q, index) => {
+      const questionEl = document.createElement('div');
+      questionEl.className = 'test-question';
+      
+      let optionsHtml = q.options.map((opt, i) => `
+        <label class="test-option">
+          <input type="radio" name="question-${index}" value="${util.escapeHtml(opt)}">
+          <span>${util.escapeHtml(opt)}</span>
+        </label>
+      `).join('');
+
+      questionEl.innerHTML = `
+        <p class="question-text"><strong>${index + 1}.</strong> ${util.escapeHtml(q.text)}</p>
+        <div class="options-container">${optionsHtml}</div>
+        <div class="result-feedback"></div>
+      `;
+      DOM.testQuestionsContainer.appendChild(questionEl);
+    });
+
+    // Add submit button
+    const submitBtn = document.createElement('button');
+    submitBtn.id = 'submitTestBtn';
+    submitBtn.textContent = 'Submit Test';
+    submitBtn.onclick = () => events.submitTest(chatId);
+    DOM.testQuestionsContainer.appendChild(submitBtn);
+
+    DOM.testsGrid.classList.add("hidden");
+
+    // Add classes to the back button to style it like the others
+    DOM.backToTests.classList.add('btn', 'small', 'outline');
+
+    DOM.testDetail.classList.remove("hidden");
+    DOM.backToTests.classList.remove("hidden");
+
+    DOM.testDetail.scrollTop = 0;
+
+    this.renderMathInElement(DOM.testQuestionsContainer);
+  }
 };
 
 
@@ -661,6 +769,7 @@ const events = {
 
         if (btn.dataset.tab === "notes") ui.renderNotesGrid();
         if (btn.dataset.tab === "flashcards") ui.renderDeckGrid();
+        if (btn.dataset.tab === "tests") ui.renderTestsGrid();
       });
     });
   },
@@ -699,6 +808,7 @@ const events = {
 
       if (act === "notes") events.generateNotes();
       if (act === "flashcards") events.generateFlashcards();
+      if (act === "test") events.generateTest();
       if (act === "files") DOM.upload.click();
     });
   },
@@ -851,6 +961,87 @@ const events = {
     ui.renderDeckGrid();
   },
 
+  /* GENERATE TEST */
+  async generateTest() {
+    const chat = chatState.getCurrent();
+    if (!chat) return;
+    const topic = chat.name;
+
+    ui.addMessage("🧪 Generuji test...", "assistant");
+
+    let levelText = "";
+    if (window.quizmateLevel === "stredni") levelText = "pro středoškoláky";
+    else if (window.quizmateLevel === "vysoka") levelText = "pro vysokoškoláky";
+    else levelText = "pro žáky základní školy";
+
+    const prompt = `
+      Jsi expert na tvorbu multiple-choice testů. Vytvoř test s ideálním počtem otázek ${levelText} k tématu "${topic}" na základě předchozí konverzace.
+      Odpověz POUZE ve formátu JSON, bez jakéhokoliv dalšího textu.
+      JSON by měl mít klíč "questions" obsahující pole objektů.
+      Každý objekt musí mít klíče: "text" (otázka), "options" (pole 4 stringů) a "correctAnswer" (string, který se přesně shoduje s jednou z možností).
+
+      Příklad formátu:
+      \`\`\`json
+      {
+        "questions": [
+          {
+            "text": "Jaký je vzorec pro Pythagorovu větu?",
+            "options": ["a^2 + b^2 = c^2", "a + b = c", "a^2 - b^2 = c^2", "a * b = c"],
+            "correctAnswer": "a^2 + b^2 = c^2"
+          }
+        ]
+      }
+      \`\`\`
+
+      Můžes přidat i příklady které si bude muset uživatel spočítat.
+    `;
+
+    const ctx = api.getContextMessages();
+    const messagesForAI = [...ctx, { role: "user", content: prompt }];
+
+    try {
+      const reply = await api.askAI(messagesForAI);
+      
+      // Clean the response to get only the JSON part
+      const jsonString = reply.substring(reply.indexOf('{'), reply.lastIndexOf('}') + 1);
+      const testData = JSON.parse(jsonString);
+
+      if (!testData.questions || !Array.isArray(testData.questions)) {
+        throw new Error("AI vrátila neplatný formát testu.");
+      }
+
+      chatState.addTest(testData);
+      document.querySelector('[data-tab="tests"]').click();
+      ui.renderTestsGrid();
+
+    } catch (error) {
+      console.error("Chyba při generování testu:", error);
+      ui.addMessage(`⚠️ Nepodařilo se vygenerovat test: ${error.message}`, "assistant");
+    }
+  },
+
+  submitTest(chatId) {
+    const chat = subjectState.getActiveSubject().chats.find(c => c.id === chatId);
+    const test = chat.tests[0];
+    let score = 0;
+
+    test.questions.forEach((q, index) => {
+      const selectedOption = document.querySelector(`input[name="question-${index}"]:checked`);
+      const feedbackEl = document.querySelectorAll('.result-feedback')[index];
+
+      if (selectedOption && selectedOption.value === q.correctAnswer) {
+        score++;
+        feedbackEl.textContent = '✅ Správně!';
+        feedbackEl.style.color = 'green';
+      } else {
+        feedbackEl.textContent = `❌ Špatně. Správná odpověď: ${q.correctAnswer}`;
+        feedbackEl.style.color = 'red';
+      }
+    });
+
+    document.getElementById('submitTestBtn').disabled = true;
+    DOM.testDetailTitle.textContent = `Výsledek testu: ${score} / ${test.questions.length}`;
+  },
 
   initFlashcards() {
     // Flashcard events
@@ -870,10 +1061,10 @@ const events = {
 document.addEventListener("DOMContentLoaded", () => {
 
   // Load user data
-  const user = JSON.parse(localStorage.getItem("quizmate_user") || "{}");
+  const user = JSON.parse(localStorage.getItem("quizmate_current_user") || "null");
 
   // Redirect if not logged in
-  if (!user.name) {
+  if (!user || !user.username) {
     window.location.href = "/login";
     return; // STOP running initialization
   }
@@ -882,7 +1073,7 @@ document.addEventListener("DOMContentLoaded", () => {
   DOM.init();
 
   // Now we can safely apply user info
-  if (DOM.userName) DOM.userName.textContent = user.name;
+  if (DOM.userName) DOM.userName.textContent = user.username;
 
   if (DOM.userAvatar) {
     if (user.avatar && user.avatar.startsWith("data:image")) {
@@ -900,8 +1091,8 @@ document.addEventListener("DOMContentLoaded", () => {
   window.quizmateLevel = user.level || "stredni";
 
   // Initialize rest of the app
-  subjectState.init();
-  chatState.init();
+  subjectState.init(user.username);
+  chatState.init(user.username);
 
   events.initTabs();
   events.initChat();
@@ -932,6 +1123,13 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // Back button for tests
+  if (DOM.backToTests) {
+    DOM.backToTests.addEventListener("click", () => {
+      ui.renderTestsGrid();
+    });
+  }
+
   // Reset app
   if (DOM.resetAppBtn) {
     DOM.resetAppBtn.addEventListener("click", () => {
@@ -943,7 +1141,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Logout button
   if (DOM.logoutBtn) {
     DOM.logoutBtn.addEventListener("click", () => {
-      localStorage.removeItem("quizmate_user");
+      localStorage.removeItem("quizmate_current_user");
       window.location.href = "/login";
     });
   }

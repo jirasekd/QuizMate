@@ -241,7 +241,9 @@ body {
   padding: 20px;
   min-height: 0;
 }
-.tab-content.active { display: block; }
+.tab-content.active { 
+  display: block; /* Default display */
+}
 
 /****************************************************
  * 6. CHAT
@@ -249,6 +251,12 @@ body {
 #chat.tab-content.active {
   display: flex;
   padding: 0;
+}
+
+#tests.tab-content.active {
+  display: flex;
+  flex-direction: column;
+  padding: 20px; /* Apply padding here instead of the generic rule */
 }
 
 .chat-layout {
@@ -705,6 +713,106 @@ body {
 
 #noteDetailContent {
   white-space: normal;
+}
+
+
+
+/****************************************************
+ * 11. TESTS TAB
+ ****************************************************/
+#testQuestionsContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.test-question {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+}
+
+.question-text {
+  font-size: 17px;
+  font-weight: 500;
+  color: #111827;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.question-text .q-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 24px;
+  background: var(--muted-bg);
+  color: var(--muted);
+  border-radius: 50%;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.options-container {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.test-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.test-option:hover {
+  border-color: var(--primary-1);
+  background: #f0f0ff;
+}
+
+.test-option.selected {
+  border-color: var(--primary-1);
+  background: #eef2ff;
+  box-shadow: 0 0 0 2px var(--primary-1);
+}
+
+.test-option .option-letter {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: var(--muted-bg);
+  color: var(--muted);
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+}
+
+.test-option.correct { background: #dcfce7; border-color: #22c55e; }
+.test-option.incorrect { background: #fee2e2; border-color: #ef4444; }
+
+.result-feedback { margin-top: 12px; font-weight: 500; }
+
+.test-detail {
+  display: block;
+  overflow-y: auto;
+  padding-right: 10px;
+}
+
+#testDetail {
+  flex: 1;
+  overflow-y: auto;
+  max-height: calc(100vh - 150px);
+  padding-right: 10px;
 }
 
 /****************************************************
