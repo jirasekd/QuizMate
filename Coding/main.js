@@ -131,6 +131,11 @@ const DOM = {
     this.resetAppBtn = document.getElementById("resetAppBtn");
     this.logoutBtn = document.getElementById("logoutBtn");
 
+    // Settings Modal
+    this.settingsModal = document.getElementById("settings-modal");
+    this.closeModalButton = this.settingsModal?.querySelector(".close-button");
+
+
     return true;
   }
 };
@@ -438,8 +443,22 @@ const ui = {
 
     const avatar = document.createElement("div");
     avatar.className = "avatar";
-    avatar.textContent = msg.role === "user" ? "U" : "AI";
 
+    if (msg.role === "user") {
+      // Get the current user's data to display their avatar
+      const user = JSON.parse(localStorage.getItem("quizmate_current_user") || "{}");
+      if (user.avatar && user.avatar.startsWith("data:image")) {
+        avatar.style.backgroundImage = `url(${user.avatar})`;
+        avatar.style.backgroundSize = "cover";
+        avatar.style.backgroundPosition = "center";
+        avatar.textContent = ""; // Clear the placeholder text
+      } else {
+        avatar.textContent = user.avatar || "U";
+      }
+    } else {
+      avatar.textContent = "AI";
+    }
+    
     const bubble = document.createElement("div");
     bubble.className = "bubble";
 
@@ -899,16 +918,21 @@ const events = {
 
     if (!sidebar || !DOM.hamburgerBtn || !DOM.userAvatar) return;
 
-    // Collapse sidebar
     DOM.hamburgerBtn.addEventListener('click', () => {
       sidebar.classList.toggle('collapsed');
     });
 
-    // Uncollapse sidebar when clicking avatar
+    // This single listener handles both expanding the sidebar and opening the modal.
     DOM.userAvatar.addEventListener('click', () => {
-      sidebar.classList.remove('collapsed');
-  });
-},
+      if (sidebar.classList.contains('collapsed')) {
+        // If sidebar is collapsed, just expand it.
+        sidebar.classList.remove('collapsed');
+      } else {
+        // If sidebar is already expanded, open the settings modal.
+        DOM.settingsModal.classList.remove('hidden');
+      }
+    });
+  },
 
   initSubjects() {
     if (!DOM.newSubjectBtn || !DOM.subjectList) return;
@@ -1151,6 +1175,22 @@ const events = {
 
     DOM.nextFlash.addEventListener("click", () => flashcards.next());
     DOM.prevFlash.addEventListener("click", () => flashcards.prev());
+  },
+
+  initSettingsModal() {
+    if (!DOM.settingsModal || !DOM.userAvatar || !DOM.closeModalButton) return;
+
+    function closeSettingsModal() {
+        DOM.settingsModal.classList.add('hidden');
+    }
+
+    // The logic to open the modal is now in initSidebar, so we only need to handle closing it here.
+    DOM.closeModalButton.addEventListener('click', closeSettingsModal);
+
+    // Close modal if user clicks on the background overlay
+    DOM.settingsModal.addEventListener('click', (event) => {
+        if (event.target === DOM.settingsModal) closeSettingsModal();
+    });
   }
 };
 
@@ -1200,6 +1240,7 @@ document.addEventListener("DOMContentLoaded", () => {
   events.initSidebar();
   events.initFileUpload();
   events.initSubjects();
+  events.initSettingsModal();
 
   ui.renderSubjects();
   ui.renderThreads();
