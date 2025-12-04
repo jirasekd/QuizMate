@@ -158,10 +158,10 @@ const subjectState = {
       this.subjects = [
         { 
           id: 'subj-math', name: 'Mathematics', icon: '🧮',
-          chats: []
+          chats: [], files: []
         },
-        { id: 'subj-bio', name: 'Biology', icon: '🧬', chats: [] },
-        { id: 'subj-hist', name: 'History', icon: '📜', chats: [] },
+        { id: 'subj-bio', name: 'Biology', icon: '🧬', chats: [], files: [] },
+        { id: 'subj-hist', name: 'History', icon: '📜', chats: [], files: [] },
       ];
       this.save();
     }
@@ -181,7 +181,8 @@ const subjectState = {
       id: util.genId(),
       name,
       icon: "📘",
-      chats: []
+      chats: [],
+      files: []
     };
 
     this.subjects.push(newSubject);
@@ -210,6 +211,7 @@ const subjectState = {
     ui.renderNotesGrid();
     ui.renderDeckGrid();
     ui.renderTestsGrid();
+    ui.renderFiles();
   },
 
   getActiveSubject() {
@@ -217,6 +219,15 @@ const subjectState = {
   }
 };
 
+const fileState = {
+  addFile(fileData) {
+    const subject = subjectState.getActiveSubject();
+    if (!subject) return;
+    if (!subject.files) subject.files = [];
+    subject.files.push(fileData);
+    subjectState.save();
+  }
+};
 /****************************************************
  * 4. CHAT STATE
  ****************************************************/
@@ -519,6 +530,51 @@ const ui = {
     this.renderMathInElement(DOM.noteDetailContent);
   },
 
+  /* FILES */
+  renderFiles() {
+    DOM.fileList.innerHTML = "";
+    const activeSubject = subjectState.getActiveSubject();
+    if (!activeSubject || !activeSubject.files) return;
+
+    activeSubject.files.forEach(file => {
+      const fileEl = document.createElement('div');
+      fileEl.className = 'file-item';
+      fileEl.innerHTML = `
+        <span>📄 ${file.name} (${Math.round(file.size / 1024)} KB)</span>
+        <button class="delete-item-btn" data-id="${file.id}">🗑️</button>
+      `;
+
+      fileEl.querySelector('.delete-item-btn').addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (confirm(`Opravdu chcete smazat soubor "${file.name}"?`)) {
+          activeSubject.files = activeSubject.files.filter(f => f.id !== file.id);
+          subjectState.save();
+          this.renderFiles();
+        }
+      });
+
+      DOM.fileList.appendChild(fileEl);
+    });
+  },
+
+  showFileProcessingLoader(message) {
+    DOM.fileList.innerHTML = `<div class="file-item typing">${message}</div>`;
+  },
+
+  readFileAsText(file) {
+    return new Promise((resolve, reject) => {
+      // Check for large files to prevent browser freeze
+      if (file.size > 5 * 1024 * 1024) { // 5MB limit
+        return reject(new Error("Soubor je příliš velký (limit 5MB)."));
+      }
+
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = (error) => reject(error);
+      reader.readAsText(file);
+    });
+  },
+
   /* FLASHCARDS */
   renderDeckGrid() {
     DOM.flashcard.classList.add("hidden");
@@ -738,11 +794,25 @@ const api = {
   async askAI(messages) {
     const topic = chatState.getCurrent()?.name || "(téma)";
     const subjectName = subjectState.getActiveSubject()?.name || "všeobecné";
+    const subject = subjectState.getActiveSubject();
 
+    let fileContext = "";
+    if (subject && subject.files && subject.files.length > 0) {
+      const fileContents = subject.files.map(f => `Kontext ze souboru "${f.name}":\n${f.content}`).join('\n\n---\n\n');
+      fileContext = `
+      Máš k dispozici následující materiály. Aktivně z nich čerpej a odkazuj se na ně. Nikdy neříkej, že k souborům nemáš přístup. Pokud je použiješ, na začátku odpovědi to stručně zmiň (např. "Podle poskytnutých materiálů...").
+      --- SOUBORY ---
+      ${fileContents}
+      --- KONEC SOUBORŮ ---
+      `;
+    }
+
+    // The role should be "system" for system-level instructions.
+    // This helps the model better distinguish instructions from user conversation.
     const system = {
-      role: "user",
+      role: "system",
       content: `Jsi expert na téma **${subjectName}**. Odpovídej na otázky v kontextu tohoto předmětu.
-      Téma chatu je: ${topic}. Odpovídej česky.`
+      Téma chatu je: ${topic}. Odpovídej česky. ${fileContext}`
     };
 
     const resp = await fetch("/api/chat", {
@@ -817,7 +887,10 @@ const events = {
       if (act === "notes") events.generateNotes();
       if (act === "flashcards") events.generateFlashcards();
       if (act === "test") events.generateTest();
-      if (act === "files") DOM.upload.click();
+      if (act === "files") {
+        // Also trigger via the main button in the Files tab
+        document.querySelector('.upload-card button').click();
+      }
     });
   },
 
@@ -868,15 +941,29 @@ const events = {
   },
 
   initFileUpload() {
-    DOM.upload.addEventListener("change", () => {
-      DOM.fileList.innerHTML = "";
+    DOM.upload.addEventListener("change", async (e) => {
+      const files = e.target.files;
+      if (!files.length) return;
 
-      [...DOM.upload.files].forEach((f) => {
-        const div = document.createElement("div");
-        div.className = "file-item";
-        div.textContent = `${f.name} (${Math.round(f.size / 1024)} KB)`;
-        DOM.fileList.appendChild(div);
-      });
+      ui.showFileProcessingLoader("Zpracovávám soubory...");
+
+      for (const file of files) {
+        try {
+          const content = await ui.readFileAsText(file);
+          const fileData = {
+            id: util.genId(),
+            name: file.name,
+            content: content,
+            size: file.size,
+            type: file.type,
+            uploadedAt: new Date().toISOString()
+          };
+          fileState.addFile(fileData);
+        } catch (error) {
+          alert(`Chyba při nahrávání souboru ${file.name}: ${error.message}`);
+        }
+      }
+      ui.renderFiles();
     });
   },
 
@@ -899,10 +986,15 @@ const events = {
       levelText = "Piš vysokoškolskou úrovní, detailně, teoreticky.";
     }
 
+    // Conditionally add formula instruction for math-related subjects
+    const subject = subjectState.getActiveSubject();
+    const isMathSubject = subject && subject.name.toLowerCase().includes('math' || 'matematika' || 'matika');
+    const formulaInstruction = isMathSubject ? "vzorce (KaTeX), " : "";
+
     const prompt = `
       ${levelText}
       Vytvoř přehledné, strukturované a kvalitní výpisky k tématu **${topic}**.
-      Použij nadpisy, odrážky, vysvětlení, vzorce (KaTeX), příklady.
+      Použij nadpisy, odrážky, vysvětlení, ${formulaInstruction}příklady.
       Vycházej z předchozí konverzace.
       `;
 
@@ -1112,6 +1204,7 @@ document.addEventListener("DOMContentLoaded", () => {
   ui.renderSubjects();
   ui.renderThreads();
   ui.renderMessages();
+  ui.renderFiles();
 
   // Back button for notes
   if (DOM.backToNotes) {

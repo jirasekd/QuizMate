@@ -67,7 +67,7 @@ dotenv.config();
 
 const app = express();
 
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
 app.use(express.static(__dirname)); // servíruje index.html, css, js, obrázky
 
 const API_KEY = process.env.GOOGLE_API_KEY;

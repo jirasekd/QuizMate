@@ -562,6 +562,21 @@ body {
   background: var(--muted-bg);
 }
 
+.file-item { /* Přidáme position: relative, aby se dalo tlačítko absolutně pozicovat uvnitř */
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-right: 40px; /* Vytvoříme místo pro tlačítko, aby nepřekrývalo text */
+}
+
+.file-item .delete-item-btn {
+  opacity: 0; /* Tlačítko je na začátku neviditelné */
+}
+
+.file-item:hover .delete-item-btn {
+  opacity: 0.6; /* Zobrazí se při najetí myší na celý řádek souboru */
+}
 /****************************************************
  * 9. FLASHCARDS TAB
  ****************************************************/
@@ -710,11 +725,37 @@ body {
   border: 1px solid var(--border);
 }
 
+/* Typography enhancements for notes */
 #noteDetailContent {
   white-space: normal;
+  line-height: 1.7; /* Zvětšíme řádkování pro lepší čitelnost */
+  font-size: 16px;  /* Lehce zvětšíme základní text */
+  color: #374151;  /* Tmavší text pro lepší kontrast */
 }
 
+#noteDetailContent h1,
+#noteDetailContent h2,
+#noteDetailContent h3 {
+  margin-top: 1.5em; /* Větší mezera nad nadpisy */
+  margin-bottom: 0.7em; /* Menší mezera pod nadpisy */
+  line-height: 1.3;
+  color: #111827;
+}
 
+#noteDetailContent h1 { font-size: 1.8em; font-weight: 700; }
+#noteDetailContent h2 { font-size: 1.5em; font-weight: 600; }
+#noteDetailContent h3 { font-size: 1.2em; font-weight: 600; }
+
+#noteDetailContent ul,
+#noteDetailContent ol {
+  margin-left: 20px; /* Odsazení seznamů */
+  margin-top: 0.5em;
+  margin-bottom: 1em;
+}
+
+#noteDetailContent li {
+  margin-bottom: 0.5em; /* Mezera mezi položkami seznamu */
+}
 
 /****************************************************
  * 11. TESTS TAB
