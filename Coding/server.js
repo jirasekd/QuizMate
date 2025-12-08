@@ -68,35 +68,31 @@ dotenv.config();
 const app = express();
 
 app.use(express.json({ limit: '50mb' }));
+// Servíruj statické soubory (HTML, CSS, JS) pouze z adresáře 'public'
+app.use(express.static(path.join(__dirname, "public")));
 
 const API_KEY = process.env.GOOGLE_API_KEY;
 if (!API_KEY) {
   console.warn("⚠️  Chybí GOOGLE_API_KEY v .env — /api/chat nebude fungovat.");
 }
 
-// --- ROUTING ORDER ---
-// 1. API Routes: Define API endpoints first so they are matched before the static file server or SPA catch-all.
-app.post("/api/chat", async (req, res) => {
-  try {
-    const { messages } = req.body || {};
-    if (!Array.isArray(messages) || messages.length === 0) {
-      return res.status(400).json({ error: "messages musí být neprázdné pole" });
-    }
-    
-    console.log("Received messages:", messages); // DEBUG
-    const reply = await callGemini(messages);
-    console.log("Replying with:", reply); // DEBUG
-    res.json({ reply });
-  } catch (e) {
-    console.error("API error:", e.message);
-    res.status(500).json({ error: e.message });
-  }
+app.get("/login", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "login.html"));
 });
 
-// Maps OpenAI-style messages to Gemini "contents" format
+app.get("/level", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "level.html"));
+});
+
+// Main app
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "index.html"));
+});
+
+// Mapování OpenAI-style zpráv na Gemini "contents"
 function toGeminiContents(openAiMessages) {
-  // Gemini roles: "user" or "model"
-  // OpenAI roles: 'user' | 'assistant' | 'system'
+  // Gemini role: "user" nebo "model"
+  // OpenAI: 'user' | 'assistant' | 'system'
   // System zprávy sloučíme na začátek jako user text (nejjednodušší varianta).
   const contents = [];
   for (const m of openAiMessages) {
@@ -173,16 +169,22 @@ async function callGemini(openAiMessages) {
   throw new Error("Gemini returned empty or malformed response");
 }
 
-// 2. Static Files: Serve files like main.js, style.css, etc., from the 'public' directory.
-app.use(express.static(path.join(__dirname, 'public')));
-
-// 3. SPA Catch-all: For any other GET request that didn't match a static file, send the main index.html.
-// This allows the client-side JavaScript to handle routing.
-app.get('*', (req, res, next) => {
-  if (req.path.startsWith('/api/')) {
-    return next(); // Skip API calls
+// API endpoint pro chat
+app.post("/api/chat", async (req, res) => {
+  try {
+    const { messages } = req.body || {};
+    if (!Array.isArray(messages) || messages.length === 0) {
+      return res.status(400).json({ error: "messages musí být neprázdné pole" });
+    }
+    
+    console.log("Received messages:", messages); // DEBUG
+    const reply = await callGemini(messages);
+    console.log("Replying with:", reply); // DEBUG
+    res.json({ reply });
+  } catch (e) {
+    console.error("API error:", e.message);
+    res.status(500).json({ error: e.message });
   }
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 const PORT = process.env.PORT || 3000;
