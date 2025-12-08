@@ -87,13 +87,14 @@ app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
-// BEZPEČNOSTNÍ OPRAVA: Servírovat statické soubory pouze z adresáře 'public'.
+// This middleware serves static files like CSS, JS, and images from the 'public' directory.
+// It must come AFTER the specific route definitions (like app.get('/')) to ensure they are handled correctly.
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Mapování OpenAI-style zpráv na Gemini "contents"
+// Maps OpenAI-style messages to Gemini "contents" format
 function toGeminiContents(openAiMessages) {
-  // Gemini role: "user" nebo "model"
-  // OpenAI: 'user' | 'assistant' | 'system'
+  // Gemini roles: "user" or "model"
+  // OpenAI roles: 'user' | 'assistant' | 'system'
   // System zprávy sloučíme na začátek jako user text (nejjednodušší varianta).
   const contents = [];
   for (const m of openAiMessages) {
