@@ -1091,33 +1091,3 @@ body.dark-mode .plus-btn {
     grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   }
 }
-
-/* Mobile devices (~768px and below) */
-@media (max-width: 768px) {
-  /* Make sidebar collapsed by default on mobile */
-  .sidebar {
-    width: 70px;
-    padding-left: 10px;
-    padding-right: 10px;
-  }
-  .sidebar .username,
-  .sidebar .new-subject-btn .btn-text,
-  .sidebar .subject .subject-text {
-    display: none;
-  }
-  .sidebar .hamburger {
-    opacity: 0;
-    pointer-events: none;
-  }
-  .sidebar .avatar {
-    margin: 0 auto;
-  }
-
-  /* Adjust chat layout for single-column view */
-  .chat-layout {
-    grid-template-columns: 1fr; /* Single column */
-  }
-  .chat-threads {
-    display: none; /* Hide threads list on mobile */
-  }
-}

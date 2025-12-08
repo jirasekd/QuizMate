@@ -12,6 +12,16 @@ Tento dokument slouží jako zásobník nápadů a přehled dokončených úkol�
 - **Cíl:** Vyřešit překrývání tlačítek v zápatí postranního panelu a vytvořit centralizované místo pro uživatelská nastavení.
 - **Stav:** Hotovo. Po kliknutí na avatar (pokud není panel sbalený) se zobrazí modální okno s tlačítky pro odhlášení a resetování dat.
 
+### Nasazení a Zabezpečení
+- **Cíl:** Připravit aplikaci pro nasazení a opravit základní bezpečnostní nedostatky.
+- **Stav:** Hotovo.
+  - Zdrojový kód je chráněn servírováním souborů pouze z adresáře `public`.
+  - Aplikace je připravena pro nasazení na služby jako Render.
+
+### Responzivní Design
+- **Cíl:** Zlepšit použitelnost aplikace na tabletech a mobilních zařízeních.
+- **Stav:** Hotovo. Layout se nyní lépe přizpůsobuje menším obrazovkám.
+
 ---
 
 ## Fáze 1: Rychlá vylepšení UI/UX (Quick Wins)
@@ -78,17 +88,9 @@ Tento dokument slouží jako zásobník nápadů a přehled dokončených úkol�
 
 ---
 
-## Fáze 4: Nasazení a Zabezpečení (Deployment & Security)
+## Fáze 4: Zabezpečení (Security)
 
 *Kroky potřebné k bezpečnému nasazení aplikace na internet a její ochraně.*
-
-### Nasazení na produkční server (Deployment)
-- **Cíl:** Zpřístupnit aplikaci online pro veřejné použití.
-- **Doporučená služba:** Render (Platform as a Service).
-- **Kroky:**
-    1.  **Použít Git a GitHub:** Vytvořit repozitář a nahrát kód.
-    2.  **Vytvořit `.gitignore`:** Ignorovat `node_modules` a `.env` soubory.
-    3.  **Nasadit na Render:** Propojit GitHub, nastavit build command (`npm install`) a start command (`npm start`), a přidat environmentální proměnné (např. `GOOGLE_API_KEY`).
 
 ### Zabezpečení Aplikace (Security Hardening)
 - **Cíl:** Opravit kritické bezpečnostní zranitelnosti před nasazením.
@@ -96,6 +98,3 @@ Tento dokument slouží jako zásobník nápadů a přehled dokončených úkol�
     - **Autentizace na straně klienta:** Současný login systém v `localStorage` je snadno obejitelný.
         - **Riziko:** Neautorizovaný přístup a zneužití API klíče.
         - **Řešení:** Implementovat **server-side autentizaci** (např. pomocí sessions nebo JWT), kde server ověřuje každou chráněnou akci.
-    - **Servírování celého adresáře:** `app.use(express.static(__dirname))` odhaluje zdrojový kód a citlivé soubory.
-        - **Riziko:** Útočník si může stáhnout `server.js`, `package.json` atd.
-        - **Řešení:** Vytvořit dedikovaný `public` adresář pro frontend soubory (`index.html`, `style.css`, `main.js`) a servírovat pouze ten.
