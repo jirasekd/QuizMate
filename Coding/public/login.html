@@ -278,56 +278,80 @@
       }
     }
 
-    actionBtn.addEventListener("click", () => {
+    actionBtn.addEventListener("click", async () => {
       const username = usernameInput.value.trim();
       const password = passwordInput.value.trim();
+      const messageEl = document.getElementById("toggleMode"); // Použijeme tento prvek pro zprávy
 
       if (!username || !password) {
-        alert("Please enter both username and password!");
+        messageEl.innerHTML = `<span style="color: red;">Vyplňte prosím jméno i heslo!</span>`;
         return;
       }
 
-      const users = JSON.parse(localStorage.getItem("quizmate_users") || "[]");
+      // Zobrazíme "načítání"
+      actionBtn.disabled = true;
+      actionBtn.textContent = 'Processing...';
 
       if (mode === 'login') {
-        const user = users.find(u => u.username === username && u.password === password);
-        if (user) {
-          // On successful login, we only need to store the username.
-          // The main app will load the full user object.
-          localStorage.setItem("quizmate_current_user", JSON.stringify(user));
-          window.location.href = "/level";
-        } else {
-          alert("Invalid username or password.");
-        }
-      } else {
-        // Register mode
-        if (users.find(u => u.username === username)) {
-          alert("Username already exists. Please choose another one.");
-          return;
+        // === PŘIHLÁŠENÍ PŘES API ===
+        try {
+          const response = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password }),
+          });
+          const data = await response.json();
+
+          if (!response.ok) {
+            throw new Error(data.msg || 'Přihlášení selhalo.');
+          }
+
+          // ÚSPĚCH! Uložíme token a data uživatele
+          localStorage.setItem('authToken', data.token);
+          localStorage.setItem('quizmate_current_user', JSON.stringify(data.user));
+
+          // Přesměrujeme na výběr úrovně
+          window.location.href = "/level.html";
+
+        } catch (error) {
+          messageEl.innerHTML = `<span style="color: red;">${error.message}</span>`;
+          actionBtn.disabled = false;
+          updateUIForMode();
         }
 
+      } else { // mode === 'register'
+        // === REGISTRACE PŘES API ===
         // Determine which avatar to use
         let finalAvatar;
         if (uploadedAvatarBase64) {
           finalAvatar = uploadedAvatarBase64; // Use uploaded image if it exists
         } else {
-          finalAvatar = avatarText.value.trim() || username.charAt(0).toUpperCase() || "U";
+          finalAvatar = avatarText.value.trim() || username.charAt(0).toUpperCase() || "👤";
         }
 
-        const newUser = {
-          username,
-          password, // In a real app, this should be hashed!
-          avatar: finalAvatar
-        };
+        try {
+          const response = await fetch('/api/auth/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password, avatar: finalAvatar }),
+          });
+          const data = await response.json();
 
-        users.push(newUser);
-        localStorage.setItem("quizmate_users", JSON.stringify(users));
-        
-        // Also set the current user to log them in immediately
-        localStorage.setItem("quizmate_current_user", JSON.stringify(newUser));
-        
-        alert("Registration successful! You will now be redirected.");
-        window.location.href = "/level";
+          if (!response.ok) {
+            throw new Error(data.msg || 'Registrace selhala.');
+          }
+
+          // Úspěch! Zobrazíme zprávu a přepneme do login módu
+          messageEl.innerHTML = `<span style="color: green;">Registrace úspěšná! Nyní se můžete přihlásit.</span>`;
+          mode = 'login';
+          updateUIForMode();
+
+        } catch (error) {
+          messageEl.innerHTML = `<span style="color: red;">${error.message}</span>`;
+        } finally {
+          actionBtn.disabled = false;
+          // Text tlačítka se aktualizuje v updateUIForMode()
+        }
       }
     });
 

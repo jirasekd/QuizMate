@@ -147,58 +147,114 @@ const subjectState = {
   subjects: [],
   activeSubjectId: null,
 
-  init(username) {
-    if (!username) {
-      console.error("User not provided for subjectState init.");
+  async init() {
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+      console.error("Chybí token, nelze načíst předměty.");
       this.subjects = [];
       return;
-    }
-    this.username = username;
-    const userData = JSON.parse(localStorage.getItem(`quizmate_data_${username}`) || "{}");
-    this.subjects = userData.subjects || [];
+    } 
 
-    if (this.subjects.length === 0) {
-      // If no subjects exist, create default data, including the old chats.
-      // This also helps migrate data for the first user to log in.
-      this.subjects = [
-        { 
-          id: 'subj-math', name: 'Mathematics', icon: '🧮',
-          chats: [], files: []
+    try {
+      const response = await fetch('/api/subjects', {
+        headers: { 'x-auth-token': token }
+      });
+
+      if (response.status === 401) {
+        // Neplatný token, odhlásíme uživatele
+        localStorage.clear();
+        window.location.href = '/login.html';
+        return;
+      }
+      if (!response.ok) throw new Error('Nepodařilo se načíst předměty.');
+
+      const subjectsFromServer = await response.json();
+      // Mongoose vrací _id, my v aplikaci používáme id
+      this.subjects = subjectsFromServer.map(s => ({ 
+        ...s, 
+        id: s._id,
+        // Zajistíme, že i vnořené chaty mají správné `id`
+        chats: s.chats.map(c => ({...c, id: c._id}))
+      }));
+
+      // Pokud uživatel nemá žádné předměty, vytvoříme mu výchozí
+      if (this.subjects.length === 0) {
+        console.log("Vytvářím výchozí předměty pro nového uživatele...");
+        await this.addSubject('Mathematics', '🧮');
+        await this.addSubject('Biology', '🧬');
+        await this.addSubject('History', '📜');
+      }
+
+      this.activeSubjectId = this.subjects[0]?.id || null;
+
+    } catch (error) {
+      console.error("Chyba při inicializaci předmětů:", error);
+    }
+  },
+
+  // Nová funkce pro uložení změn na server
+  async saveActiveSubject() {
+    const token = localStorage.getItem('authToken');
+    const subject = this.getActiveSubject();
+    if (!token || !subject) return;
+
+    // Vytvoříme kopii dat pro odeslání, bez `id` které Mongoose nemá rád v těle
+    const subjectData = { ...subject };
+    delete subjectData.id;
+    delete subjectData._id; // Pro jistotu
+
+    try {
+      const response = await fetch(`/api/subjects/${subject.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-auth-token': token,
         },
-        { id: 'subj-bio', name: 'Biology', icon: '🧬', chats: [], files: [] },
-        { id: 'subj-hist', name: 'History', icon: '📜', chats: [], files: [] },
-      ];
-      this.save();
+        body: JSON.stringify(subjectData),
+      });
+      if (!response.ok) throw new Error('Nepodařilo se uložit změny na server.');
+    } catch (error) {
+      console.error("Chyba při ukládání předmětu:", error);
+      alert("Chyba při ukládání změn. Zkuste obnovit stránku.");
     }
-    this.activeSubjectId = this.subjects[0]?.id || null;
   },
 
-  save() {
-    if (!this.username) return;
-    const userData = {
-      subjects: this.subjects
-    };
-    localStorage.setItem(`quizmate_data_${this.username}`, JSON.stringify(userData));
-  },
+  async addSubject(name, icon = "📘") {
+    const token = localStorage.getItem('authToken');
+    if (!token) return;
 
-  addSubject(name) {
-    const newSubject = {
-      id: util.genId(),
-      name,
-      icon: "📘",
-      chats: [],
-      files: []
-    };
+    try {
+      const response = await fetch('/api/subjects', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-auth-token': token,
+        },
+        body: JSON.stringify({ name, icon }),
+      });
 
-    this.subjects.push(newSubject);
-    this.save();
+      if (!response.ok) throw new Error('Nepodařilo se přidat předmět.');
 
-    // If no active subject, set this one
-    if (!this.activeSubjectId) {
-      this.activeSubjectId = newSubject.id;
+      const newSubjectFromServer = await response.json();
+      const newSubject = { 
+        ...newSubjectFromServer, 
+        id: newSubjectFromServer._id,
+        chats: [] // Zajistíme, že nový předmět má pole pro chaty
+      };
+
+      this.subjects.push(newSubject);
+
+      // Pokud nebyl žádný aktivní, nastavíme tento
+      if (!this.activeSubjectId) {
+        this.activeSubjectId = newSubject.id;
+      }
+
+      ui.renderSubjects();
+      return newSubject; // Vrátíme přidaný předmět pro případné další použití
+    } catch (error) {
+      console.error("Chyba při přidávání předmětu:", error);
+      alert("Chyba při přidávání předmětu. Zkuste to prosím znovu.");
     }
-
-    ui.renderSubjects();
   },
 
   setActive(subjectId) {
@@ -229,8 +285,8 @@ const fileState = {
     const subject = subjectState.getActiveSubject();
     if (!subject) return;
     if (!subject.files) subject.files = [];
-    subject.files.push(fileData);
-    subjectState.save();
+    subject.files.push(fileData); // TODO: Ukládání souborů přes API
+    // subjectState.saveActiveSubject(); // Až budeme řešit soubory
   }
 };
 /****************************************************
@@ -268,9 +324,10 @@ const chatState = {
     const activeSubject = subjectState.getActiveSubject();
     if (!activeSubject) return null;
 
-    const chat = { id: util.genId(), name, messages: [], notes: null, flashcards: null, tests: null };
+    // Vytvoříme chat bez ID, to přiřadí databáze
+    const chat = { name, messages: [], notes: null, flashcards: null, tests: null };
     activeSubject.chats.unshift(chat);
-    subjectState.save();
+    subjectState.saveActiveSubject(); // Uložíme na server
     return chat;
   },
 
@@ -282,7 +339,7 @@ const chatState = {
       content: text,
       timestamp: new Date().toISOString()
     });
-    subjectState.save();
+    subjectState.saveActiveSubject();
   },
 
   addFlashcards(cards) {
@@ -293,7 +350,7 @@ const chatState = {
     }
     // Replace existing flashcards for this chat
     chat.flashcards = cards;
-    subjectState.save();
+    subjectState.saveActiveSubject();
   },
 
   addNotes(content) {
@@ -315,7 +372,7 @@ const chatState = {
       title: chat.name,
       content: cleaned.trim()
     };
-    subjectState.save();
+    subjectState.saveActiveSubject();
   },
 
   addTest(testData) {
@@ -325,7 +382,7 @@ const chatState = {
       chat.tests = [];
     }
     chat.tests = [testData]; // Replace previous tests for this chat
-    subjectState.save();
+    subjectState.saveActiveSubject();
   }
 };
 
@@ -373,21 +430,24 @@ const ui = {
 
       // Add click listener for the delete button
       subjectItem.querySelector('.delete-subject-btn').addEventListener('click', (e) => {
-        e.stopPropagation();
-        if (confirm(`Opravdu chcete smazat předmět "${subject.name}" a všechny jeho chaty?`)) {
-          const wasActive = subject.id === subjectState.activeSubjectId;
-          
-          // Remove the subject
-          subjectState.subjects = subjectState.subjects.filter(s => s.id !== subject.id);
-          subjectState.save();
+        e.stopPropagation(); // Zabráníme prokliknutí na celý předmět
+        if (confirm(`Opravdu chcete smazat předmět "${subject.name}"?`)) {
+          const token = localStorage.getItem('authToken');
+          fetch(`/api/subjects/${subject.id}`, {
+            method: 'DELETE',
+            headers: { 'x-auth-token': token }
+          }).then(res => {
+            if (!res.ok) throw new Error('Smazání selhalo');
+            
+            const wasActive = subject.id === subjectState.activeSubjectId;
+            subjectState.subjects = subjectState.subjects.filter(s => s.id !== subject.id);
 
-          // If the deleted subject was active, select the first remaining one
-          if (wasActive && subjectState.subjects.length > 0) {
-            subjectState.setActive(subjectState.subjects[0].id);
-          } else {
-            // Just re-render if no subjects are left or a non-active one was deleted
-            ui.renderSubjects();
-          }
+            if (wasActive && subjectState.subjects.length > 0) {
+              subjectState.setActive(subjectState.subjects[0].id);
+            } else {
+              ui.renderSubjects();
+            }
+          }).catch(err => alert(err.message));
         }
       });
 
@@ -417,8 +477,8 @@ const ui = {
 
       del.addEventListener("click", (e) => {
         e.stopPropagation();
-        activeSubject.chats = activeSubject.chats.filter((c) => c.id !== chat.id);
-        subjectState.save();
+        activeSubject.chats = activeSubject.chats.filter((c) => c.id !== chat.id); 
+        subjectState.saveActiveSubject(); // Uložíme změnu na server
 
         if (chatState.currentChatId === chat.id) { // If we deleted the active chat
           const newActiveChatId = activeSubject.chats[0]?.id || null;
@@ -519,8 +579,7 @@ const ui = {
         e.stopPropagation();
         if (confirm(`Opravdu chcete smazat výpisky pro "${chat.name}"?`)) {
           chat.notes = null;
-          subjectState.save();
-          ui.renderNotesGrid();
+          subjectState.saveActiveSubject().then(() => ui.renderNotesGrid());
         }
       });
 
@@ -566,8 +625,7 @@ const ui = {
       fileEl.querySelector('.delete-item-btn').addEventListener('click', (e) => {
         e.stopPropagation();
         if (confirm(`Opravdu chcete smazat soubor "${file.name}"?`)) {
-          activeSubject.files = activeSubject.files.filter(f => f.id !== file.id);
-          subjectState.save();
+          activeSubject.files = activeSubject.files.filter(f => f.id !== file.id); // TODO: Ukládání přes API
           this.renderFiles();
         }
       });
@@ -623,8 +681,7 @@ const ui = {
         e.stopPropagation();
         if (confirm(`Opravdu chcete smazat flashcards pro "${chat.name}"?`)) {
           chat.flashcards = null;
-          subjectState.save();
-          ui.renderDeckGrid();
+          subjectState.saveActiveSubject().then(() => ui.renderDeckGrid());
         }
       });
 
@@ -678,8 +735,7 @@ const ui = {
         e.stopPropagation();
         if (confirm(`Opravdu chcete smazat test pro "${chat.name}"?`)) {
           chat.tests = null;
-          subjectState.save();
-          ui.renderTestsGrid();
+          subjectState.saveActiveSubject().then(() => ui.renderTestsGrid());
         }
       });
 
@@ -871,8 +927,10 @@ const events = {
       const name = prompt("Název nového chatu:");
       if (!name) return;
 
-      const chat = chatState.addChat(name);
-      chatState.selectChat(chat.id);
+      // Počkáme na uložení a pak znovu načteme předměty, abychom dostali ID chatu
+      chatState.addChat(name);
+      ui.renderThreads();
+      chatState.selectChat(subjectState.getActiveSubject().chats[0].id);
     });
 
     // Add an input event listener to resize the textarea as the user types.
@@ -939,12 +997,11 @@ const events = {
 
     DOM.newSubjectBtn.addEventListener("click", () => {
       const name = prompt("Název nového předmětu:");
-      if (!name) return;
-
-      subjectState.addSubject(name);
-      ui.renderSubjects();
-  });
-},
+      if (name) {
+        subjectState.addSubject(name); // Tato funkce je teď asynchronní
+      }
+    });
+  },
 
   async sendMessage() {
     const text = DOM.input.value.trim();
@@ -1027,8 +1084,10 @@ const events = {
     const messagesForAI = [...ctx, { role: "user", content: prompt }];
 
     const reply = await api.askAI(messagesForAI);
-
-    chatState.addNotes(reply);
+    
+    // Uložíme a počkáme na dokončení, než přepneme tab
+    await chatState.addNotes(reply);
+    
     document.querySelector('[data-tab="notes"]').click();
   },
 
@@ -1080,9 +1139,9 @@ const events = {
       })
       .filter(Boolean);
 
-    chatState.addFlashcards(cards);
+    // Uložíme a počkáme na dokončení, než přepneme tab
+    await chatState.addFlashcards(cards);
     document.querySelector('[data-tab="flashcards"]').click();
-    ui.renderDeckGrid();
   },
 
   /* GENERATE TEST */
@@ -1134,9 +1193,9 @@ const events = {
         throw new Error("AI vrátila neplatný formát testu.");
       }
 
-      chatState.addTest(testData);
+      // Uložíme a počkáme na dokončení, než přepneme tab
+      await chatState.addTest(testData);
       document.querySelector('[data-tab="tests"]').click();
-      ui.renderTestsGrid();
 
     } catch (error) {
       console.error("Chyba při generování testu:", error);
@@ -1198,7 +1257,7 @@ const events = {
 /****************************************************
  * 9. INIT
  ****************************************************/
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
 
   // Load user data
   const user = JSON.parse(localStorage.getItem("quizmate_current_user") || "null");
@@ -1231,7 +1290,7 @@ document.addEventListener("DOMContentLoaded", () => {
   window.quizmateLevel = user.level || "stredni";
 
   // Initialize rest of the app
-  subjectState.init(user.username);
+  await subjectState.init(); // Počkáme, až se předměty načtou ze serveru
   chatState.init(user.username);
 
   events.initTabs();
@@ -1284,6 +1343,7 @@ document.addEventListener("DOMContentLoaded", () => {
   if (DOM.logoutBtn) {
     DOM.logoutBtn.addEventListener("click", () => {
       localStorage.removeItem("quizmate_current_user");
+      localStorage.removeItem("authToken"); // Smažeme i token
       window.location.href = "/login";
     });
   }

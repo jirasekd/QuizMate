@@ -63,6 +63,10 @@ app.listen(PORT, () => {
 const express = require("express");
 const path = require("path");
 const dotenv = require("dotenv");
+const mongoose = require('mongoose'); // Přidáno pro databázi
+const cors = require('cors'); // Přidáno pro jistotu, pokud by chybělo
+
+// Načtení .env souboru z aktuálního adresáře (Coding)
 dotenv.config();
 
 const app = express();
@@ -70,6 +74,29 @@ const app = express();
 app.use(express.json({ limit: '50mb' }));
 // Servíruj statické soubory (HTML, CSS, JS) pouze z adresáře 'public'
 app.use(express.static(path.join(__dirname, "public")));
+app.use(cors()); // Povolí komunikaci mezi frontendem a backendem na různých portech (pro vývoj)
+
+// ==================================
+//  PŘIPOJENÍ K DATABÁZI
+// ==================================
+const connectDB = async () => {
+  try {
+    // Použije MONGO_URI z tvého .env souboru v D:\Quizmate\Coding\
+    await mongoose.connect(process.env.MONGO_URI);
+    console.log('✅ MongoDB připojeno...');
+  } catch (err) {
+    console.error("❌ Chyba připojení k MongoDB:", err.message);
+    process.exit(1); // Ukončí aplikaci, pokud se nepodaří připojit k DB
+  }
+};
+connectDB();
+
+// ==================================
+//  DEFINICE API CEST
+// ==================================
+// Přidáme cesty pro registraci a přihlášení
+app.use('/api/auth', require('./routes/auth'));
+app.use('/api/subjects', require('./routes/subjects'));
 
 const API_KEY = process.env.GOOGLE_API_KEY;
 if (!API_KEY) {
@@ -187,7 +214,7 @@ app.post("/api/chat", async (req, res) => {
   }
 });
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 5000; // Změníme port na 5000, aby se to nebilo s jinými aplikacemi
 app.listen(PORT, () => {
   console.log(`✅ Server běží na http://localhost:${PORT}`);
 });
