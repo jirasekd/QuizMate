@@ -68,8 +68,6 @@ dotenv.config();
 const app = express();
 
 app.use(express.json({ limit: '50mb' }));
-// BEZPEČNOSTNÍ OPRAVA: Servírovat statické soubory pouze z adresáře 'public'.
-app.use(express.static(path.join(__dirname, 'public')));
 
 const API_KEY = process.env.GOOGLE_API_KEY;
 if (!API_KEY) {
@@ -88,6 +86,9 @@ app.get("/level", (req, res) => {
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
+
+// BEZPEČNOSTNÍ OPRAVA: Servírovat statické soubory pouze z adresáře 'public'.
+app.use(express.static(path.join(__dirname, 'public')));
 
 // Mapování OpenAI-style zpráv na Gemini "contents"
 function toGeminiContents(openAiMessages) {
