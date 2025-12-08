@@ -1061,3 +1061,63 @@ body.dark-mode .plus-btn {
   position: absolute;
   left: -9999px;
 }
+
+/****************************************************
+ * 15. RESPONSIVE DESIGN (Media Queries)
+ ****************************************************/
+
+/* Tablet and smaller devices (~1024px and below) */
+@media (max-width: 1024px) {
+  .app {
+    width: 100%;
+    height: 100%;
+    border-radius: 0;
+  }
+
+  .sidebar {
+    width: 220px; /* Slightly smaller sidebar */
+  }
+
+  .sidebar.collapsed {
+    width: 70px; /* Slightly smaller collapsed sidebar */
+  }
+
+  .chat-layout {
+    grid-template-columns: 240px 1fr; /* Smaller chat threads panel */
+  }
+
+  .topic-grid {
+    /* More flexible grid for notes/flashcards */
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  }
+}
+
+/* Mobile devices (~768px and below) */
+@media (max-width: 768px) {
+  /* Make sidebar collapsed by default on mobile */
+  .sidebar {
+    width: 70px;
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+  .sidebar .username,
+  .sidebar .new-subject-btn .btn-text,
+  .sidebar .subject .subject-text {
+    display: none;
+  }
+  .sidebar .hamburger {
+    opacity: 0;
+    pointer-events: none;
+  }
+  .sidebar .avatar {
+    margin: 0 auto;
+  }
+
+  /* Adjust chat layout for single-column view */
+  .chat-layout {
+    grid-template-columns: 1fr; /* Single column */
+  }
+  .chat-threads {
+    display: none; /* Hide threads list on mobile */
+  }
+}

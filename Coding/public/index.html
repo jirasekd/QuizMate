@@ -18,6 +18,15 @@
 </head>
 
 <body>
+  <!-- SVG Defs for filters - Fix for Safari rendering bug -->
+  <svg width="0" height="0" style="position:absolute">
+    <defs>
+      <filter id="container"><feDropShadow stdDeviation="2.5" in="SourceGraphic" dx="0" dy="0" flood-opacity="0.1" flood-color="#000000"></feDropShadow></filter>
+      <filter id="sun-outer"><feDropShadow stdDeviation="2.5" in="SourceGraphic" dx="0" dy="0" flood-opacity="0.2" flood-color="#f8e664"></feDropShadow></filter>
+      <filter id="moon"><feDropShadow stdDeviation="2.5" in="SourceGraphic" dx="0" dy="0" flood-opacity="0.3" flood-color="#a6cad0"></feDropShadow></filter>
+      <filter id="cloud"><feDropShadow stdDeviation="2.5" in="SourceGraphic" dx="0" dy="0" flood-opacity="0.1" flood-color="#000000"></feDropShadow></filter>
+    </defs>
+  </svg>
   <div class="app">
     <!-- SIDEBAR -->
     <aside class="sidebar">
