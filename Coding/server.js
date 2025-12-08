@@ -69,27 +69,23 @@ const app = express();
 
 app.use(express.json({ limit: '50mb' }));
 
+// CRITICAL FIX: Serve static files FIRST.
+// This tells Express to look for files like main.js or style.css in the 'public' folder
+// before it tries to match any other routes. This resolves the MIME type errors.
+app.use(express.static(path.join(__dirname, 'public')));
+
 const API_KEY = process.env.GOOGLE_API_KEY;
 if (!API_KEY) {
   console.warn("⚠️  Chybí GOOGLE_API_KEY v .env — /api/chat nebude fungovat.");
 }
 
-app.get("/login", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "login.html"));
+// CRITICAL FIX: Catch-all for single-page app routing.
+// If a request is not for a static file (like main.js) and not for an API route,
+// this will send the main index.html. The JavaScript in index.html will then
+// handle the routing (e.g., showing the login page or the main app).
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
-
-app.get("/level", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "level.html"));
-});
-
-// Main app
-app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "index.html"));
-});
-
-// This middleware serves static files like CSS, JS, and images from the 'public' directory.
-// It must come AFTER the specific route definitions (like app.get('/')) to ensure they are handled correctly.
-app.use(express.static(path.join(__dirname, 'public')));
 
 // Maps OpenAI-style messages to Gemini "contents" format
 function toGeminiContents(openAiMessages) {
