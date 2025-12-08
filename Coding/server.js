@@ -68,7 +68,8 @@ dotenv.config();
 const app = express();
 
 app.use(express.json({ limit: '50mb' }));
-app.use(express.static(__dirname)); // servíruje index.html, css, js, obrázky
+// BEZPEČNOSTNÍ OPRAVA: Servírovat statické soubory pouze z adresáře 'public'.
+app.use(express.static(path.join(__dirname, 'public')));
 
 const API_KEY = process.env.GOOGLE_API_KEY;
 if (!API_KEY) {
@@ -76,16 +77,16 @@ if (!API_KEY) {
 }
 
 app.get("/login", (req, res) => {
-  res.sendFile(path.join(__dirname, "login.html"));
+  res.sendFile(path.join(__dirname, "public", "login.html"));
 });
 
 app.get("/level", (req, res) => {
-  res.sendFile(path.join(__dirname, "level.html"));
+  res.sendFile(path.join(__dirname, "public", "level.html"));
 });
 
 // Main app
 app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "index.html"));
+  res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
 // Mapování OpenAI-style zpráv na Gemini "contents"
