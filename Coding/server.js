@@ -178,7 +178,10 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // 3. SPA Catch-all: For any other GET request that didn't match a static file, send the main index.html.
 // This allows the client-side JavaScript to handle routing.
-app.get('*', (req, res) => {
+app.get('*', (req, res, next) => {
+  if (req.path.startsWith('/api/')) {
+    return next(); // Skip API calls
+  }
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
