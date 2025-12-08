@@ -213,6 +213,15 @@ const subjectState = {
         body: JSON.stringify(subjectData),
       });
       if (!response.ok) throw new Error('Nepodařilo se uložit změny na server.');
+
+      // Zde je klíčová oprava: Aktualizujeme lokální data odpovědí ze serveru
+      const updatedSubjectFromServer = await response.json();
+      const subjectIndex = this.subjects.findIndex(s => s.id === subject.id);
+      if (subjectIndex !== -1) {
+        const updatedSubjectWithMappedIds = { ...updatedSubjectFromServer, id: updatedSubjectFromServer._id, chats: updatedSubjectFromServer.chats.map(c => ({...c, id: c._id})) };
+        this.subjects[subjectIndex] = updatedSubjectWithMappedIds;
+      }
+      return updatedSubjectFromServer; // Vrátíme aktualizovaná data
     } catch (error) {
       console.error("Chyba při ukládání předmětu:", error);
       alert("Chyba při ukládání změn. Zkuste obnovit stránku.");
@@ -320,14 +329,14 @@ const chatState = {
     ui.renderMessages();
   },
 
-  addChat(name) {
+  async addChat(name) {
     const activeSubject = subjectState.getActiveSubject();
     if (!activeSubject) return null;
 
     // Vytvoříme chat bez ID, to přiřadí databáze
     const chat = { name, messages: [], notes: null, flashcards: null, tests: null };
     activeSubject.chats.unshift(chat);
-    subjectState.saveActiveSubject(); // Uložíme na server
+    await subjectState.saveActiveSubject(); // Uložíme na server a POČKÁME
     return chat;
   },
 
@@ -339,7 +348,7 @@ const chatState = {
       content: text,
       timestamp: new Date().toISOString()
     });
-    subjectState.saveActiveSubject();
+    return subjectState.saveActiveSubject();
   },
 
   addFlashcards(cards) {
@@ -350,7 +359,7 @@ const chatState = {
     }
     // Replace existing flashcards for this chat
     chat.flashcards = cards;
-    subjectState.saveActiveSubject();
+    return subjectState.saveActiveSubject();
   },
 
   addNotes(content) {
@@ -372,7 +381,7 @@ const chatState = {
       title: chat.name,
       content: cleaned.trim()
     };
-    subjectState.saveActiveSubject();
+    return subjectState.saveActiveSubject();
   },
 
   addTest(testData) {
@@ -382,7 +391,7 @@ const chatState = {
       chat.tests = [];
     }
     chat.tests = [testData]; // Replace previous tests for this chat
-    subjectState.saveActiveSubject();
+    return subjectState.saveActiveSubject();
   }
 };
 
@@ -579,7 +588,7 @@ const ui = {
         e.stopPropagation();
         if (confirm(`Opravdu chcete smazat výpisky pro "${chat.name}"?`)) {
           chat.notes = null;
-          subjectState.saveActiveSubject().then(() => ui.renderNotesGrid());
+          subjectState.saveActiveSubject().then(() => ui.renderNotesGrid()); // Správně
         }
       });
 
@@ -681,7 +690,7 @@ const ui = {
         e.stopPropagation();
         if (confirm(`Opravdu chcete smazat flashcards pro "${chat.name}"?`)) {
           chat.flashcards = null;
-          subjectState.saveActiveSubject().then(() => ui.renderDeckGrid());
+          subjectState.saveActiveSubject().then(() => ui.renderDeckGrid()); // Správně
         }
       });
 
@@ -735,7 +744,7 @@ const ui = {
         e.stopPropagation();
         if (confirm(`Opravdu chcete smazat test pro "${chat.name}"?`)) {
           chat.tests = null;
-          subjectState.saveActiveSubject().then(() => ui.renderTestsGrid());
+          subjectState.saveActiveSubject().then(() => ui.renderTestsGrid()); // Správně
         }
       });
 
@@ -923,13 +932,14 @@ const events = {
   },
 
   initChat() {
-    DOM.newThreadBtn.addEventListener("click", () => {
+    DOM.newThreadBtn.addEventListener("click", async () => {
       const name = prompt("Název nového chatu:");
       if (!name) return;
 
-      // Počkáme na uložení a pak znovu načteme předměty, abychom dostali ID chatu
-      chatState.addChat(name);
+      // Počkáme, až se chat uloží na server a data se aktualizují
+      await chatState.addChat(name);
       ui.renderThreads();
+      // Nový chat je vždy první, takže jeho ID bude na `chats[0].id`
       chatState.selectChat(subjectState.getActiveSubject().chats[0].id);
     });
 
