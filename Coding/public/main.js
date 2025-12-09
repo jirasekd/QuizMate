@@ -127,8 +127,7 @@ const DOM = {
     this.testDetailTitle = document.getElementById("testDetailTitle");
     this.testQuestionsContainer = document.getElementById("testQuestionsContainer");
 
-    // Reset button
-    this.resetAppBtn = document.getElementById("resetAppBtn");
+    // Logout button
     this.logoutBtn = document.getElementById("logoutBtn");
 
     // Settings Modal
@@ -1338,14 +1337,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (DOM.backToTests) {
     DOM.backToTests.addEventListener("click", () => {
       ui.renderTestsGrid();
-    });
-  }
-
-  // Reset app
-  if (DOM.resetAppBtn) {
-    DOM.resetAppBtn.addEventListener("click", () => {
-      localStorage.clear();
-      window.location.reload();
     });
   }
 

@@ -97,6 +97,27 @@
       box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
     }
 
+    /* Keyframes for the shake animation */
+    @keyframes shake {
+      10%, 90% { transform: translate3d(-1px, 0, 0); }
+      20%, 80% { transform: translate3d(2px, 0, 0); }
+      30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+      40%, 60% { transform: translate3d(4px, 0, 0); }
+    }
+
+    /* Class to apply the animation */
+    .shake {
+      animation: shake 0.82s cubic-bezier(.36,.07,.19,.97) both;
+    }
+
+    /* Class for the error state (red border) */
+    .input-error {
+      /* Use !important to ensure these styles override others like :focus */
+      border-color: #ef4444 !important;
+      box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2) !important;
+    }
+
+
     button {
       width: 100%;
       padding: 12px 14px;
@@ -261,6 +282,11 @@
       reader.readAsDataURL(file);
     });
 
+    // Remove error state when user starts typing again
+    passwordInput.addEventListener('input', () => {
+      passwordInput.classList.remove('input-error');
+    });
+
     toggleModeEl.addEventListener("click", () => {
       mode = mode === 'login' ? 'register' : 'login';
       updateUIForMode();
@@ -315,6 +341,15 @@
 
         } catch (error) {
           messageEl.innerHTML = `<span style="color: red;">${error.message}</span>`;
+
+          // Add shake and error style to password input
+          passwordInput.classList.add('input-error', 'shake');
+
+          // Remove shake class after animation ends so it can be re-triggered
+          setTimeout(() => {
+            passwordInput.classList.remove('shake');
+          }, 820); // Match animation duration
+
           actionBtn.disabled = false;
           updateUIForMode();
         }
