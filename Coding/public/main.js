@@ -534,7 +534,15 @@ const ui = {
     ui.showSubjectDetail();
     ui.updateSubjectSidebar();
 
-    // Render the subject detail content
+    // Ensure all event handlers are properly attached for the detail view
+    events.initTabs();
+    events.initChat();
+    events.initNotes();
+    events.initFlashcards();
+    events.initTests();
+    events.initFileUpload();
+
+    // Render all content for the selected subject
     ui.renderThreads();
     ui.renderMessages();
     ui.renderNotesGrid();
@@ -1014,72 +1022,127 @@ const api = {
  ****************************************************/
 const events = {
   initTabs() {
+    // Clear any existing listeners to avoid duplicates
     DOM.tabs.forEach((btn) => {
-      btn.addEventListener("click", () => {
+      const newBtn = btn.cloneNode(true);
+      btn.parentNode.replaceChild(newBtn, btn);
+    });
+    
+    // Re-select tabs after cloning
+    DOM.tabs = document.querySelectorAll(".tab-btn");
+    
+    DOM.tabs.forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        // Remove active class from all tabs
         DOM.tabs.forEach((b) => b.classList.remove("active"));
-        DOM.contents.forEach((c) => c.style.display = "none");
+        
+        // Hide all tab content
+        DOM.contents.forEach((c) => {
+          c.style.display = "none";
+          c.classList.remove("active");
+        });
 
+        // Show active tab and content
         btn.classList.add("active");
         const content = document.getElementById(btn.dataset.tab);
         if (content) {
           content.style.display = "flex";
+          content.classList.add("active");
+          
+          // Render content for the tab
+          if (btn.dataset.tab === "notes") ui.renderNotesGrid();
+          if (btn.dataset.tab === "flashcards") ui.renderDeckGrid();
+          if (btn.dataset.tab === "tests") ui.renderTestsGrid();
         }
-
-        if (btn.dataset.tab === "notes") ui.renderNotesGrid();
-        if (btn.dataset.tab === "flashcards") ui.renderDeckGrid();
-        if (btn.dataset.tab === "tests") ui.renderTestsGrid();
       });
     });
   },
 
   initChat() {
-    DOM.newThreadBtn.addEventListener("click", async () => {
-      const name = prompt("Název nového chatu:");
-      if (!name) return;
+    // Re-attach event listeners to avoid duplicates
+    if (DOM.newThreadBtn) {
+      DOM.newThreadBtn.replaceWith(DOM.newThreadBtn.cloneNode(true));
+      DOM.newThreadBtn = document.getElementById("newThreadBtn");
+      if (DOM.newThreadBtn) {
+        DOM.newThreadBtn.addEventListener("click", async () => {
+          const name = prompt("Název nového chatu:");
+          if (!name) return;
 
-      // Počkáme, až se chat uloží na server a data se aktualizují
-      await chatState.addChat(name);
-      ui.renderThreads();
-      // Nový chat je vždy první, takže jeho ID bude na `chats[0].id`
-      chatState.selectChat(subjectState.getActiveSubject().chats[0].id);
-    });
-
-    // Add an input event listener to resize the textarea as the user types.
-    DOM.input.addEventListener("input", () => {
-      util.autoResize(DOM.input);
-    });
-
-    DOM.input.addEventListener("keydown", (e) => {
-      if (e.key === "Enter" && !e.shiftKey) {
-        e.preventDefault();
-        events.sendMessage();
+          await chatState.addChat(name);
+          ui.renderThreads();
+          chatState.selectChat(subjectState.getActiveSubject().chats[0].id);
+        });
       }
-    });
+    }
 
-    DOM.sendBtn.addEventListener("click", events.sendMessage);
+    // Re-attach other chat event listeners
+    if (DOM.input) {
+      DOM.input.replaceWith(DOM.input.cloneNode(true));
+      DOM.input = document.getElementById("chatInput");
+      if (DOM.input) {
+        DOM.input.addEventListener("input", () => {
+          util.autoResize(DOM.input);
+        });
+        DOM.input.addEventListener("keydown", (e) => {
+          if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault();
+            events.sendMessage();
+          }
+        });
+      }
+    }
 
-    DOM.plusBtn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      DOM.actionMenu.classList.toggle("hidden");
-    });
+    if (DOM.sendBtn) {
+      DOM.sendBtn.replaceWith(DOM.sendBtn.cloneNode(true));
+      DOM.sendBtn = document.getElementById("sendBtn");
+      if (DOM.sendBtn) {
+        DOM.sendBtn.addEventListener("click", events.sendMessage);
+      }
+    }
 
-    document.addEventListener("click", () => {
+    if (DOM.plusBtn) {
+      DOM.plusBtn.replaceWith(DOM.plusBtn.cloneNode(true));
+      DOM.plusBtn = document.getElementById("chatPlusBtn");
+      if (DOM.plusBtn) {
+        DOM.plusBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          DOM.actionMenu.classList.toggle("hidden");
+        });
+      }
+    }
+
+    // Re-attach action menu listeners
+    if (DOM.actionMenu) {
+      const actionItems = DOM.actionMenu.querySelectorAll(".action-item");
+      actionItems.forEach(item => {
+        item.replaceWith(item.cloneNode(true));
+      });
+      
+      DOM.actionMenu.addEventListener("click", (e) => {
+        const act = e.target.dataset.action;
+        if (!act) return;
+
+        if (act === "notes") events.generateNotes();
+        if (act === "flashcards") events.generateFlashcards();
+        if (act === "test") events.generateTest();
+        if (act === "files") {
+          document.querySelector('.upload-card button').click();
+        }
+      });
+    }
+
+    // Global click to close action menu
+    document.removeEventListener("click", events.closeActionMenu);
+    document.addEventListener("click", events.closeActionMenu);
+  },
+
+  closeActionMenu() {
+    if (DOM.actionMenu) {
       DOM.actionMenu.classList.add("hidden");
-    });
-
-    // ACTION MENU
-    DOM.actionMenu.addEventListener("click", (e) => {
-      const act = e.target.dataset.action;
-      if (!act) return;
-
-      if (act === "notes") events.generateNotes();
-      if (act === "flashcards") events.generateFlashcards();
-      if (act === "test") events.generateTest();
-      if (act === "files") {
-        // Also trigger via the main button in the Files tab
-        document.querySelector('.upload-card button').click();
-      }
-    });
+    }
   },
 
   initSidebar() {
@@ -1177,30 +1240,36 @@ const events = {
   },
 
   initFileUpload() {
-    DOM.upload.addEventListener("change", async (e) => {
-      const files = e.target.files;
-      if (!files.length) return;
+    if (DOM.upload) {
+      DOM.upload.replaceWith(DOM.upload.cloneNode(true));
+      DOM.upload = document.getElementById("fileUpload");
+      if (DOM.upload) {
+        DOM.upload.addEventListener("change", async (e) => {
+          const files = e.target.files;
+          if (!files.length) return;
 
-      ui.showFileProcessingLoader("Zpracovávám soubory...");
+          ui.showFileProcessingLoader("Zpracovávám soubory...");
 
-      for (const file of files) {
-        try {
-          const content = await ui.readFileAsText(file);
-          const fileData = {
-            id: util.genId(),
-            name: file.name,
-            content: content,
-            size: file.size,
-            type: file.type,
-            uploadedAt: new Date().toISOString()
-          };
-          fileState.addFile(fileData);
-        } catch (error) {
-          alert(`Chyba při nahrávání souboru ${file.name}: ${error.message}`);
-        }
+          for (const file of files) {
+            try {
+              const content = await ui.readFileAsText(file);
+              const fileData = {
+                id: util.genId(),
+                name: file.name,
+                content: content,
+                size: file.size,
+                type: file.type,
+                uploadedAt: new Date().toISOString()
+              };
+              fileState.addFile(fileData);
+            } catch (error) {
+              alert(`Chyba při nahrávání souboru ${file.name}: ${error.message}`);
+            }
+          }
+          ui.renderFiles();
+        });
       }
-      ui.renderFiles();
-    });
+    }
   },
 
   /* GENERATE NOTES */
@@ -1430,28 +1499,59 @@ const events = {
   },
 
   initFlashcards() {
-    // Flashcard events
-    DOM.flashcard.addEventListener("click", () => {
-      DOM.flashcard.classList.toggle("flipped");
-    });
+    // Re-attach flashcard event listeners
+    if (DOM.flashcard) {
+      DOM.flashcard.replaceWith(DOM.flashcard.cloneNode(true));
+      DOM.flashcard = document.getElementById("flashcard");
+      if (DOM.flashcard) {
+        DOM.flashcard.addEventListener("click", () => {
+          DOM.flashcard.classList.toggle("flipped");
+        });
+      }
+    }
 
-    DOM.nextFlash.addEventListener("click", () => flashcards.next());
-    DOM.prevFlash.addEventListener("click", () => flashcards.prev());
+    if (DOM.nextFlash) {
+      DOM.nextFlash.replaceWith(DOM.nextFlash.cloneNode(true));
+      DOM.nextFlash = document.getElementById("nextFlash");
+      if (DOM.nextFlash) {
+        DOM.nextFlash.addEventListener("click", () => flashcards.next());
+      }
+    }
+
+    if (DOM.prevFlash) {
+      DOM.prevFlash.replaceWith(DOM.prevFlash.cloneNode(true));
+      DOM.prevFlash = document.getElementById("prevFlash");
+      if (DOM.prevFlash) {
+        DOM.prevFlash.addEventListener("click", () => flashcards.prev());
+      }
+    }
 
     if (DOM.newFlashcardBtn) {
-      DOM.newFlashcardBtn.addEventListener("click", events.createStandaloneFlashcards);
+      DOM.newFlashcardBtn.replaceWith(DOM.newFlashcardBtn.cloneNode(true));
+      DOM.newFlashcardBtn = document.getElementById("newFlashcardBtn");
+      if (DOM.newFlashcardBtn) {
+        DOM.newFlashcardBtn.addEventListener("click", events.createStandaloneFlashcards);
+      }
     }
   },
 
   initNotes() {
     if (DOM.newNoteBtn) {
-      DOM.newNoteBtn.addEventListener("click", events.createStandaloneNotes);
+      DOM.newNoteBtn.replaceWith(DOM.newNoteBtn.cloneNode(true));
+      DOM.newNoteBtn = document.getElementById("newNoteBtn");
+      if (DOM.newNoteBtn) {
+        DOM.newNoteBtn.addEventListener("click", events.createStandaloneNotes);
+      }
     }
   },
 
   initTests() {
     if (DOM.newTestBtn) {
-      DOM.newTestBtn.addEventListener("click", events.createStandaloneTest);
+      DOM.newTestBtn.replaceWith(DOM.newTestBtn.cloneNode(true));
+      DOM.newTestBtn = document.getElementById("newTestBtn");
+      if (DOM.newTestBtn) {
+        DOM.newTestBtn.addEventListener("click", events.createStandaloneTest);
+      }
     }
   },
 
