@@ -83,6 +83,10 @@ const DOM = {
     this.subjectDetailTitle = document.getElementById("subjectDetailTitle");
     this.newSubjectOverviewBtn = document.getElementById("newSubjectOverviewBtn");
 
+    // Tabs
+    this.tabs = document.querySelectorAll(".tab-btn");
+    this.contents = document.querySelectorAll(".tab-content");
+
     // Sidebar content
     this.sidebarOverview = document.getElementById("sidebar-overview");
     this.sidebarDetail = document.getElementById("sidebar-detail");
@@ -1022,28 +1026,53 @@ const api = {
  ****************************************************/
 const events = {
   initTabs() {
+    // If tabs don't exist yet, try to find them
+    if (!DOM.tabs || DOM.tabs.length === 0) {
+      DOM.tabs = document.querySelectorAll(".tab-btn");
+      DOM.contents = document.querySelectorAll(".tab-content");
+    }
+
+    if (!DOM.tabs || DOM.tabs.length === 0) {
+      console.log('No tab buttons found');
+      return;
+    }
+
     // Clear any existing listeners to avoid duplicates
     DOM.tabs.forEach((btn) => {
-      const newBtn = btn.cloneNode(true);
-      btn.parentNode.replaceChild(newBtn, btn);
+      if (btn && btn.parentNode) {
+        const newBtn = btn.cloneNode(true);
+        btn.parentNode.replaceChild(newBtn, btn);
+      }
     });
     
     // Re-select tabs after cloning
     DOM.tabs = document.querySelectorAll(".tab-btn");
+    DOM.contents = document.querySelectorAll(".tab-content");
     
+    if (!DOM.tabs || DOM.tabs.length === 0) {
+      console.log('No tab buttons found after cloning');
+      return;
+    }
+
     DOM.tabs.forEach((btn) => {
+      if (!btn) return;
+      
       btn.addEventListener("click", (e) => {
+        if (!e) return;
         e.preventDefault();
         e.stopPropagation();
         
         // Remove active class from all tabs
-        DOM.tabs.forEach((b) => b.classList.remove("active"));
+        DOM.tabs.forEach((b) => {
+          if (b) b.classList.remove("active");
+        });
         
         // Hide all tab content
-        DOM.contents.forEach((c) => {
-          c.style.display = "none";
-          c.classList.remove("active");
-        });
+        if (DOM.contents) {
+          DOM.contents.forEach((c) => {
+            if (c) c.style.display = "none";
+          });
+        }
 
         // Show active tab and content
         btn.classList.add("active");
