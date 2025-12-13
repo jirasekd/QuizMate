@@ -278,9 +278,9 @@ body {
   min-height: 0;
 }
 .tab-content.active { 
-  display: block;
+  display: flex;
   flex: 1;
-  overflow: hidden;
+  flex-direction: column;
 }
 
 /****************************************************

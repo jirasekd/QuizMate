@@ -1017,10 +1017,13 @@ const events = {
     DOM.tabs.forEach((btn) => {
       btn.addEventListener("click", () => {
         DOM.tabs.forEach((b) => b.classList.remove("active"));
-        DOM.contents.forEach((c) => c.classList.remove("active"));
+        DOM.contents.forEach((c) => c.style.display = "none");
 
         btn.classList.add("active");
-        document.getElementById(btn.dataset.tab).classList.add("active");
+        const content = document.getElementById(btn.dataset.tab);
+        if (content) {
+          content.style.display = "flex";
+        }
 
         if (btn.dataset.tab === "notes") ui.renderNotesGrid();
         if (btn.dataset.tab === "flashcards") ui.renderDeckGrid();
