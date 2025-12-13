@@ -151,6 +151,12 @@ const DOM = {
     this.settingsModal = document.getElementById("settings-modal");
     this.closeModalButton = this.settingsModal?.querySelector(".close-button");
 
+    console.log('DOM initialized:', {
+      userAvatar: this.userAvatar,
+      hamburgerBtn: this.hamburgerBtn,
+      newSubjectOverviewBtn: this.newSubjectOverviewBtn,
+      settingsModal: this.settingsModal
+    });
 
     return true;
   }
@@ -274,7 +280,7 @@ const subjectState = {
         this.activeSubjectId = newSubject.id;
       }
 
-      ui.renderSubjects();
+      ui.renderSubjectsGrid();
       return newSubject; // Vrátíme přidaný předmět pro případné další použití
     } catch (error) {
       console.error("Chyba při přidávání předmětu:", error);
@@ -291,7 +297,6 @@ const subjectState = {
     chatState.selectChat(firstChatId);
 
     // Re-render the UI to reflect the change
-    ui.renderSubjects();
     ui.renderThreads();
     ui.renderMessages();
     ui.renderNotesGrid();
@@ -471,7 +476,7 @@ const ui = {
             if (wasActive && subjectState.subjects.length > 0) {
               subjectState.setActive(subjectState.subjects[0].id);
             } else {
-              ui.renderSubjects();
+              ui.renderSubjectsGrid();
             }
           }).catch(err => alert(err.message));
         }
@@ -1082,7 +1087,10 @@ const events = {
   initSidebar() {
     const sidebar = document.querySelector('.sidebar');
 
-    if (!sidebar || !DOM.hamburgerBtn || !DOM.userAvatar) return;
+    if (!sidebar || !DOM.hamburgerBtn || !DOM.userAvatar) {
+      console.log('Sidebar elements not found:', { sidebar, hamburgerBtn: DOM.hamburgerBtn, userAvatar: DOM.userAvatar });
+      return;
+    }
 
     DOM.hamburgerBtn.addEventListener('click', () => {
       sidebar.classList.toggle('collapsed');
@@ -1095,7 +1103,11 @@ const events = {
         sidebar.classList.remove('collapsed');
       } else {
         // If sidebar is already expanded, open the settings modal.
-        DOM.settingsModal.classList.remove('hidden');
+        if (DOM.settingsModal) {
+          DOM.settingsModal.classList.remove('hidden');
+        } else {
+          console.log('Settings modal not found');
+        }
       }
     });
   },
@@ -1121,6 +1133,8 @@ const events = {
           });
         }
       });
+    } else {
+      console.log('New subject overview button not found');
     }
 
     if (DOM.backToSubjects) {
@@ -1520,13 +1534,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   events.initSubjectsOverview();
   events.initSettingsModal();
 
-  // Only render subject detail content if we have subjects
-  if (subjectState.subjects.length > 0) {
-    ui.renderSubjects();
-    ui.renderThreads();
-    ui.renderMessages();
-    ui.renderFiles();
-  }
+  // Subject detail content will be rendered when a subject is selected
 
   // Back button for notes
   if (DOM.backToNotes) {
