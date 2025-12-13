@@ -580,6 +580,24 @@ body.dark-mode .plus-btn {
   width: 100%;
 }
 
+.newBtn {
+  background: linear-gradient(135deg, var(--primary-1), var(--primary-2));
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 16px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  margin-bottom: 20px;
+  display: block;
+  width: fit-content;
+}
+
+.newBtn:hover {
+  opacity: 0.96;
+}
+
 /****************************************************
  * 8. FILES TAB
  ****************************************************/

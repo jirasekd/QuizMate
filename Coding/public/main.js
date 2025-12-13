@@ -108,6 +108,7 @@ const DOM = {
     this.backToNotes = document.getElementById("backToNotes");
     this.noteDetailTitle = document.getElementById("noteDetailTitle");
     this.noteDetailContent = document.getElementById("noteDetailContent");
+    this.newNoteBtn = document.getElementById("newNoteBtn");
 
     // Flashcards
     this.flashcardDecks = document.getElementById("flashcardDecks");
@@ -119,6 +120,7 @@ const DOM = {
     this.nextFlash = document.getElementById("nextFlash");
     this.flashIndex = document.getElementById("flashIndex");
     this.backToDecks = document.getElementById("backToDecks");
+    this.newFlashcardBtn = document.getElementById("newFlashcardBtn");
 
     // Tests
     this.testsGrid = document.getElementById("testsTopics");
@@ -126,6 +128,7 @@ const DOM = {
     this.backToTests = document.getElementById("backToTests");
     this.testDetailTitle = document.getElementById("testDetailTitle");
     this.testQuestionsContainer = document.getElementById("testQuestionsContainer");
+    this.newTestBtn = document.getElementById("newTestBtn");
 
     // Logout button
     this.logoutBtn = document.getElementById("logoutBtn");
@@ -1235,6 +1238,54 @@ const events = {
     DOM.testDetailTitle.textContent = `Výsledek testu: ${score} / ${test.questions.length}`;
   },
 
+  async createStandaloneNotes() {
+    const topic = prompt("Zadejte téma pro výpisky:");
+    if (!topic) return;
+
+    // Create a new chat for this topic
+    await chatState.addChat(topic);
+    const newChat = subjectState.getActiveSubject().chats[0];
+    chatState.selectChat(newChat.id);
+
+    // Generate notes
+    await events.generateNotes();
+
+    // Switch to notes tab
+    document.querySelector('[data-tab="notes"]').click();
+  },
+
+  async createStandaloneFlashcards() {
+    const topic = prompt("Zadejte téma pro flashcards:");
+    if (!topic) return;
+
+    // Create a new chat for this topic
+    await chatState.addChat(topic);
+    const newChat = subjectState.getActiveSubject().chats[0];
+    chatState.selectChat(newChat.id);
+
+    // Generate flashcards
+    await events.generateFlashcards();
+
+    // Switch to flashcards tab
+    document.querySelector('[data-tab="flashcards"]').click();
+  },
+
+  async createStandaloneTest() {
+    const topic = prompt("Zadejte téma pro test:");
+    if (!topic) return;
+
+    // Create a new chat for this topic
+    await chatState.addChat(topic);
+    const newChat = subjectState.getActiveSubject().chats[0];
+    chatState.selectChat(newChat.id);
+
+    // Generate test
+    await events.generateTest();
+
+    // Switch to tests tab
+    document.querySelector('[data-tab="tests"]').click();
+  },
+
   initFlashcards() {
     // Flashcard events
     DOM.flashcard.addEventListener("click", () => {
@@ -1243,6 +1294,22 @@ const events = {
 
     DOM.nextFlash.addEventListener("click", () => flashcards.next());
     DOM.prevFlash.addEventListener("click", () => flashcards.prev());
+
+    if (DOM.newFlashcardBtn) {
+      DOM.newFlashcardBtn.addEventListener("click", events.createStandaloneFlashcards);
+    }
+  },
+
+  initNotes() {
+    if (DOM.newNoteBtn) {
+      DOM.newNoteBtn.addEventListener("click", events.createStandaloneNotes);
+    }
+  },
+
+  initTests() {
+    if (DOM.newTestBtn) {
+      DOM.newTestBtn.addEventListener("click", events.createStandaloneTest);
+    }
   },
 
   initSettingsModal() {
@@ -1305,6 +1372,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   events.initTabs();
   events.initChat();
   events.initFlashcards();
+  events.initNotes();
+  events.initTests();
   events.initSidebar();
   events.initFileUpload();
   events.initSubjects();
