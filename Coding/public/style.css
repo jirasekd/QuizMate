@@ -278,7 +278,9 @@ body {
   min-height: 0;
 }
 .tab-content.active { 
-  display: block; /* Default display */
+  display: block;
+  flex: 1;
+  overflow: hidden;
 }
 
 /****************************************************
@@ -683,6 +685,12 @@ body.dark-mode .plus-btn {
 /****************************************************
  * SUBJECT DETAIL VIEW
  ****************************************************/
+.subject-detail {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
 .subject-detail.hidden {
   display: none;
 }

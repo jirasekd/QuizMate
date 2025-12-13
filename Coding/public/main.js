@@ -151,13 +151,6 @@ const DOM = {
     this.settingsModal = document.getElementById("settings-modal");
     this.closeModalButton = this.settingsModal?.querySelector(".close-button");
 
-    console.log('DOM initialized:', {
-      userAvatar: this.userAvatar,
-      hamburgerBtn: this.hamburgerBtn,
-      newSubjectOverviewBtn: this.newSubjectOverviewBtn,
-      settingsModal: this.settingsModal
-    });
-
     return true;
   }
 };
@@ -589,16 +582,18 @@ const ui = {
 
       del.addEventListener("click", (e) => {
         e.stopPropagation();
-        activeSubject.chats = activeSubject.chats.filter((c) => c.id !== chat.id); 
-        subjectState.saveActiveSubject(); // Uložíme změnu na server
+        if (confirm("Opravdu chcete smazat tento chat?")) {
+          activeSubject.chats = activeSubject.chats.filter((c) => c.id !== chat.id); 
+          subjectState.saveActiveSubject(); // Uložíme změnu na server
 
-        if (chatState.currentChatId === chat.id) { // If we deleted the active chat
-          const newActiveChatId = activeSubject.chats[0]?.id || null;
-          chatState.selectChat(newActiveChatId); // Select the next available chat
+          if (chatState.currentChatId === chat.id) { // If we deleted the active chat
+            const newActiveChatId = activeSubject.chats[0]?.id || null;
+            chatState.selectChat(newActiveChatId); // Select the next available chat
+          }
+
+          ui.renderThreads();
+          ui.renderMessages();
         }
-
-        ui.renderThreads();
-        ui.renderMessages();
       });
 
       li.appendChild(name);
@@ -1087,10 +1082,7 @@ const events = {
   initSidebar() {
     const sidebar = document.querySelector('.sidebar');
 
-    if (!sidebar || !DOM.hamburgerBtn || !DOM.userAvatar) {
-      console.log('Sidebar elements not found:', { sidebar, hamburgerBtn: DOM.hamburgerBtn, userAvatar: DOM.userAvatar });
-      return;
-    }
+    if (!sidebar || !DOM.hamburgerBtn || !DOM.userAvatar) return;
 
     DOM.hamburgerBtn.addEventListener('click', () => {
       sidebar.classList.toggle('collapsed');
@@ -1105,8 +1097,6 @@ const events = {
         // If sidebar is already expanded, open the settings modal.
         if (DOM.settingsModal) {
           DOM.settingsModal.classList.remove('hidden');
-        } else {
-          console.log('Settings modal not found');
         }
       }
     });
@@ -1496,6 +1486,12 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // Initialize DOM FIRST so elements exist
   DOM.init();
+
+  // Ensure sidebar is expanded by default
+  const sidebar = document.querySelector('.sidebar');
+  if (sidebar) {
+    sidebar.classList.remove('collapsed');
+  }
 
   // Now we can safely apply user info
   if (DOM.userName) DOM.userName.textContent = user.username;
