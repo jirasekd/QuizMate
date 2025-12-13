@@ -75,9 +75,23 @@ const util = {
  ****************************************************/
 const DOM = {
   init() {
-    // Tabs
-    this.tabs = document.querySelectorAll(".tab-btn");
-    this.contents = document.querySelectorAll(".tab-content");
+    // Main sections
+    this.subjectsOverview = document.getElementById("subjects-overview");
+    this.subjectDetail = document.getElementById("subject-detail");
+    this.subjectsGrid = document.getElementById("subjectsGrid");
+    this.backToSubjects = document.getElementById("backToSubjects");
+    this.subjectDetailTitle = document.getElementById("subjectDetailTitle");
+    this.newSubjectOverviewBtn = document.getElementById("newSubjectOverviewBtn");
+
+    // Sidebar content
+    this.sidebarOverview = document.getElementById("sidebar-overview");
+    this.sidebarDetail = document.getElementById("sidebar-detail");
+    this.subjectIcon = document.getElementById("subjectIcon");
+    this.subjectName = document.getElementById("subjectName");
+    this.chatCount = document.getElementById("chatCount");
+    this.notesCount = document.getElementById("notesCount");
+    this.flashcardsCount = document.getElementById("flashcardsCount");
+    this.deleteSubjectBtn = document.getElementById("deleteSubjectBtn");
 
     // Sidebar
     this.userAvatar = document.getElementById("userAvatar");
@@ -284,6 +298,7 @@ const subjectState = {
     ui.renderDeckGrid();
     ui.renderTestsGrid();
     ui.renderFiles();
+    ui.updateSubjectSidebar();
   },
 
   getActiveSubject() {
@@ -464,6 +479,87 @@ const ui = {
 
       DOM.subjectList.appendChild(subjectItem);
     });
+  },
+
+  renderSubjectsGrid() {
+    DOM.subjectsGrid.innerHTML = "";
+
+    subjectState.subjects.forEach(subject => {
+      const card = document.createElement("div");
+      card.className = "subject-card";
+      card.dataset.id = subject.id;
+
+      const chatsCount = subject.chats ? subject.chats.length : 0;
+      const notesCount = subject.chats ? subject.chats.filter(c => c.notes && c.notes.content).length : 0;
+      const flashcardsCount = subject.chats ? subject.chats.filter(c => c.flashcards && c.flashcards.length > 0).length : 0;
+
+      card.innerHTML = `
+        <div class="subject-card-icon">${subject.icon}</div>
+        <div class="subject-card-title">${subject.name}</div>
+        <div class="subject-card-stats">
+          <div class="subject-stat">
+            <div class="subject-stat-number">${chatsCount}</div>
+            <div class="subject-stat-label">Chats</div>
+          </div>
+          <div class="subject-stat">
+            <div class="subject-stat-number">${notesCount}</div>
+            <div class="subject-stat-label">Notes</div>
+          </div>
+          <div class="subject-stat">
+            <div class="subject-stat-number">${flashcardsCount}</div>
+            <div class="subject-stat-label">Cards</div>
+          </div>
+        </div>
+      `;
+
+      card.addEventListener("click", () => ui.selectSubject(subject.id));
+      DOM.subjectsGrid.appendChild(card);
+    });
+  },
+
+  showSubjectsOverview() {
+    DOM.subjectsOverview.classList.remove("hidden");
+    DOM.subjectDetail.classList.add("hidden");
+    DOM.sidebarOverview.classList.remove("hidden");
+    DOM.sidebarDetail.classList.add("hidden");
+  },
+
+  showSubjectDetail() {
+    DOM.subjectsOverview.classList.add("hidden");
+    DOM.subjectDetail.classList.remove("hidden");
+    DOM.sidebarOverview.classList.add("hidden");
+    DOM.sidebarDetail.classList.remove("hidden");
+  },
+
+  selectSubject(subjectId) {
+    subjectState.setActive(subjectId);
+    ui.showSubjectDetail();
+    ui.updateSubjectSidebar();
+
+    // Render the subject detail content
+    ui.renderThreads();
+    ui.renderMessages();
+    ui.renderNotesGrid();
+    ui.renderDeckGrid();
+    ui.renderTestsGrid();
+    ui.renderFiles();
+  },
+
+  updateSubjectSidebar() {
+    const subject = subjectState.getActiveSubject();
+    if (!subject) return;
+
+    DOM.subjectIcon.textContent = subject.icon;
+    DOM.subjectName.textContent = subject.name;
+    DOM.subjectDetailTitle.textContent = subject.name;
+
+    const chatsCount = subject.chats ? subject.chats.length : 0;
+    const notesCount = subject.chats ? subject.chats.filter(c => c.notes && c.notes.content).length : 0;
+    const flashcardsCount = subject.chats ? subject.chats.filter(c => c.flashcards && c.flashcards.length > 0).length : 0;
+
+    DOM.chatCount.textContent = chatsCount;
+    DOM.notesCount.textContent = notesCount;
+    DOM.flashcardsCount.textContent = flashcardsCount;
   },
 
   /* THREADS */
@@ -1015,6 +1111,46 @@ const events = {
     });
   },
 
+  initSubjectsOverview() {
+    if (DOM.newSubjectOverviewBtn) {
+      DOM.newSubjectOverviewBtn.addEventListener("click", () => {
+        const name = prompt("Název nového předmětu:");
+        if (name) {
+          subjectState.addSubject(name).then(() => {
+            ui.renderSubjectsGrid();
+          });
+        }
+      });
+    }
+
+    if (DOM.backToSubjects) {
+      DOM.backToSubjects.addEventListener("click", () => {
+        ui.showSubjectsOverview();
+      });
+    }
+
+    if (DOM.deleteSubjectBtn) {
+      DOM.deleteSubjectBtn.addEventListener("click", () => {
+        const subject = subjectState.getActiveSubject();
+        if (!subject) return;
+
+        if (confirm(`Opravdu chcete smazat předmět "${subject.name}"?`)) {
+          const token = localStorage.getItem('authToken');
+          fetch(`/api/subjects/${subject.id}`, {
+            method: 'DELETE',
+            headers: { 'x-auth-token': token }
+          }).then(res => {
+            if (!res.ok) throw new Error('Smazání selhalo');
+
+            subjectState.subjects = subjectState.subjects.filter(s => s.id !== subject.id);
+            ui.showSubjectsOverview();
+            ui.renderSubjectsGrid();
+          }).catch(err => alert(err.message));
+        }
+      });
+    }
+  },
+
   async sendMessage() {
     const text = DOM.input.value.trim();
     if (!text) return;
@@ -1369,6 +1505,10 @@ document.addEventListener("DOMContentLoaded", async () => {
   await subjectState.init(); // Počkáme, až se předměty načtou ze serveru
   chatState.init(user.username);
 
+  // Show subjects overview by default
+  ui.showSubjectsOverview();
+  ui.renderSubjectsGrid();
+
   events.initTabs();
   events.initChat();
   events.initFlashcards();
@@ -1377,12 +1517,16 @@ document.addEventListener("DOMContentLoaded", async () => {
   events.initSidebar();
   events.initFileUpload();
   events.initSubjects();
+  events.initSubjectsOverview();
   events.initSettingsModal();
 
-  ui.renderSubjects();
-  ui.renderThreads();
-  ui.renderMessages();
-  ui.renderFiles();
+  // Only render subject detail content if we have subjects
+  if (subjectState.subjects.length > 0) {
+    ui.renderSubjects();
+    ui.renderThreads();
+    ui.renderMessages();
+    ui.renderFiles();
+  }
 
   // Back button for notes
   if (DOM.backToNotes) {

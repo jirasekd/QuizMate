@@ -599,7 +599,167 @@ body.dark-mode .plus-btn {
 }
 
 /****************************************************
- * 8. FILES TAB
+ * SUBJECTS OVERVIEW
+ ****************************************************/
+.subjects-overview {
+  padding: 30px;
+}
+
+.subjects-overview.hidden {
+  display: none;
+}
+
+.subjects-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+}
+
+.subjects-header h1 {
+  margin: 0;
+  color: var(--text-color);
+}
+
+.subjects-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+.subject-card {
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 24px;
+  border: 1px solid var(--border);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.subject-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+}
+
+.subject-card-icon {
+  font-size: 32px;
+  text-align: center;
+}
+
+.subject-card-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-color);
+  text-align: center;
+}
+
+.subject-card-stats {
+  display: flex;
+  justify-content: space-around;
+  margin-top: 8px;
+}
+
+.subject-stat {
+  text-align: center;
+}
+
+.subject-stat-number {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--primary-1);
+}
+
+.subject-stat-label {
+  font-size: 12px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/****************************************************
+ * SUBJECT DETAIL VIEW
+ ****************************************************/
+.subject-detail.hidden {
+  display: none;
+}
+
+.subject-detail-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 30px;
+  border-bottom: 1px solid var(--border);
+  background: var(--card);
+}
+
+.subject-detail-header h1 {
+  margin: 0;
+  color: var(--text-color);
+}
+
+/****************************************************
+ * SIDEBAR CONTENT SWITCHING
+ ****************************************************/
+.sidebar-content {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar-content.hidden {
+  display: none;
+}
+
+#sidebar-detail {
+  padding: 20px;
+}
+
+.subject-info {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.subject-icon {
+  font-size: 48px;
+  margin-bottom: 8px;
+}
+
+.subject-name {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+.subject-stats {
+  display: flex;
+  justify-content: space-around;
+  margin-bottom: 24px;
+}
+
+.stat-item {
+  text-align: center;
+}
+
+.stat-number {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--primary-1);
+  display: block;
+}
+
+.stat-label {
+  font-size: 12px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/****************************************************
+ * 8. FILE UPLOAD TAB
  ****************************************************/
 .upload-card {
   margin: 30px auto;
