@@ -564,8 +564,8 @@ const ui = {
     DOM.subjectDetailTitle.textContent = subject.name;
 
     const chatsCount = subject.chats ? subject.chats.length : 0;
-    const notesCount = subject.chats ? subject.chats.filter(c => c.notes && c.notes.content).length : 0;
-    const flashcardsCount = subject.chats ? subject.chats.filter(c => c.flashcards && c.flashcards.length > 0).length : 0;
+    const notesCount = subject.notes ? subject.notes.length : 0;
+    const flashcardsCount = subject.flashcards ? subject.flashcards.length : 0;
 
     DOM.chatCount.textContent = chatsCount;
     DOM.notesCount.textContent = notesCount;
@@ -1101,6 +1101,8 @@ const events = {
           if (!name) return;
 
           await chatState.addChat(name);
+          ui.updateSubjectSidebar();
+          ui.renderSubjectsGrid();
           ui.renderThreads();
           chatState.selectChat(subjectState.getActiveSubject().chats[0].id);
         });
@@ -1338,6 +1340,8 @@ const events = {
     
     // Uložíme a počkáme na dokončení, než přepneme tab
     await chatState.addNotes(reply);
+    ui.updateSubjectSidebar();
+    ui.renderSubjectsGrid();
     
     document.querySelector('[data-tab="notes"]').click();
   },
@@ -1392,6 +1396,8 @@ const events = {
 
     // Uložíme a počkáme na dokončení, než přepneme tab
     await chatState.addFlashcards(cards);
+    ui.updateSubjectSidebar();
+    ui.renderSubjectsGrid();
     document.querySelector('[data-tab="flashcards"]').click();
   },
 
@@ -1446,6 +1452,8 @@ const events = {
 
       // Uložíme a počkáme na dokončení, než přepneme tab
       await chatState.addTest(testData);
+      ui.updateSubjectSidebar();
+      ui.renderSubjectsGrid();
       document.querySelector('[data-tab="tests"]').click();
 
     } catch (error) {
