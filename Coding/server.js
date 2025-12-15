@@ -125,6 +125,7 @@ function toGeminiContents(openAiMessages) {
   for (const m of openAiMessages) {
     let role = m.role === "assistant" ? "model" : "user";
     const text = typeof m.content === "string" ? m.content : JSON.stringify(m.content);
+    if (!text || !text.trim()) continue; // Skip empty messages
     contents.push({
       role,
       parts: [{ text }]

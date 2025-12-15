@@ -1145,10 +1145,8 @@ const events = {
 
     // Re-attach action menu listeners
     if (DOM.actionMenu) {
-      const actionItems = DOM.actionMenu.querySelectorAll(".action-item");
-      actionItems.forEach(item => {
-        item.replaceWith(item.cloneNode(true));
-      });
+      DOM.actionMenu.replaceWith(DOM.actionMenu.cloneNode(true));
+      DOM.actionMenu = document.getElementById("actionMenu");
       
       DOM.actionMenu.addEventListener("click", (e) => {
         const act = e.target.dataset.action;
