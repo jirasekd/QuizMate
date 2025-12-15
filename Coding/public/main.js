@@ -492,8 +492,8 @@ const ui = {
       card.dataset.id = subject.id;
 
       const chatsCount = subject.chats ? subject.chats.length : 0;
-      const notesCount = subject.chats ? subject.chats.filter(c => c.notes && c.notes.content).length : 0;
-      const flashcardsCount = subject.chats ? subject.chats.filter(c => c.flashcards && c.flashcards.length > 0).length : 0;
+      const notesCount = subject.notes ? subject.notes.length : 0;
+      const flashcardsCount = subject.flashcards ? subject.flashcards.length : 0;
 
       card.innerHTML = `
         <div class="subject-card-icon">${subject.icon}</div>
