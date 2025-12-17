@@ -287,6 +287,19 @@
       passwordInput.classList.remove('input-error');
     });
 
+    // Allow pressing Enter to trigger login/register
+    usernameInput.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' && !actionBtn.disabled) {
+        actionBtn.click();
+      }
+    });
+
+    passwordInput.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' && !actionBtn.disabled) {
+        actionBtn.click();
+      }
+    });
+
     toggleModeEl.addEventListener("click", () => {
       mode = mode === 'login' ? 'register' : 'login';
       updateUIForMode();
