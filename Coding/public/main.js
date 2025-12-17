@@ -1442,24 +1442,18 @@ const events = {
 
     const prompt = `
       Jsi expert na tvorbu multiple-choice testů. Vytvoř test s ideálním počtem otázek ${levelText} k tématu "${topic}" na základě předchozí konverzace.
-      Odpověz POUZE ve formátu JSON, bez jakéhokoliv dalšího textu.
-      JSON by měl mít klíč "questions" obsahující pole objektů.
-      Každý objekt musí mít klíče: "text" (otázka), "options" (pole 4 stringů) a "correctAnswer" (string, který se přesně shoduje s jednou z možností).
+      Vrátí POUZE validní text ve formátu Q:/A: bez jakéhokoliv dalšího textu.
+      Každá otázka na novém řádku, formát:
+      Q: otázka text
+      Options: A) možnost1 B) možnost2 C) možnost3 D) možnost4
+      A: správná odpověď (přesně jedna z možností)
 
-      Příklad formátu:
-      \`\`\`json
-      {
-        "questions": [
-          {
-            "text": "Jaký je vzorec pro Pythagorovu větu?",
-            "options": ["a^2 + b^2 = c^2", "a + b = c", "a^2 - b^2 = c^2", "a * b = c"],
-            "correctAnswer": "a^2 + b^2 = c^2"
-          }
-        ]
-      }
-      \`\`\`
+      Příklad:
+      Q: Jaký je vzorec pro Pythagorovu větu?
+      Options: A) a^2 + b^2 = c^2 B) a + b = c C) a^2 - b^2 = c^2 D) a * b = c
+      A: a^2 + b^2 = c^2
 
-      Můžes přidat i příklady které si bude muset uživatel spočítat.
+      Udělej max 10 otázek.
     `;
 
     const ctx = api.getContextMessages();
@@ -1473,30 +1467,41 @@ const events = {
         throw new Error("API is overloaded, please try again later.");
       }
       
-      // Clean the response to get only the JSON part
-      const start = reply.indexOf('{');
-      if (start === -1) {
-        throw new Error("AI nevrátila platný JSON formát.");
-      }
-      const end = reply.lastIndexOf('}') + 1;
-      if (end === 0) {
-        throw new Error("AI nevrátila platný JSON formát.");
-      }
-      const jsonString = reply.substring(start, end);
-      const testData = JSON.parse(jsonString);
+      // Clean the reply from markdown code blocks
+      const cleanReply = reply.replace(/```[\s\S]*?```/g, '').replace(/```\w*\n?/g, '').trim();
 
-      if (!testData.questions || !Array.isArray(testData.questions)) {
-        throw new Error("AI vrátila neplatný formát testu.");
+      const questions = [];
+      const blocks = cleanReply.split('\n\n').filter(block => block.trim());
+
+      for (const block of blocks) {
+        const lines = block.split('\n').map(l => l.trim());
+        const qLine = lines.find(l => l.startsWith('Q:'));
+        const optionsLine = lines.find(l => l.startsWith('Options:'));
+        const aLine = lines.find(l => l.startsWith('A:'));
+
+        if (!qLine || !optionsLine || !aLine) continue;
+
+        const text = qLine.substring(2).trim();
+        const optionsStr = optionsLine.substring(8).trim(); // Remove "Options: "
+        const options = optionsStr.split(/ [A-D]\) /).filter(opt => opt.trim()).map(opt => opt.trim());
+        const correctAnswer = aLine.substring(2).trim();
+
+        if (options.length === 4 && correctAnswer) {
+          questions.push({ text, options, correctAnswer });
+        }
       }
-      if (testData.questions.length === 0) {
+
+      if (questions.length === 0) {
         throw new Error("Žádné otázky nebyly vygenerovány.");
       }
 
       // Uložíme a počkáme na dokončení, než přepneme tab
-      await chatState.addTest(testData);
+      await chatState.addTest({ questions });
       ui.updateSubjectSidebar();
       ui.renderSubjectsGrid();
       document.querySelector('[data-tab="tests"]').click();
+      // Open the test directly to show the questions
+      ui.openTestDetail(chat.id);
 
     } catch (error) {
       console.error("Chyba při generování testu:", error);
