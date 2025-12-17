@@ -1,65 +1,6 @@
-/*// server.js
-const express = require("express");
-const path = require("path");
-const dotenv = require("dotenv");
-dotenv.config();
-
-const app = express();
-
-// middlewares
-app.use(express.json());
-app.use(express.static(__dirname)); // servíruje index.html, css, js, obrázky z kořene
-
-if (!process.env.OPENAI_API_KEY) {
-  console.warn("⚠️  Chybí OPENAI_API_KEY v .env — /api/chat nebude fungovat.");
-}
-
-// Volání OpenAI (Node 18+ má fetch vestavěný)
-async function callOpenAI(messages) {
-  const resp = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      // Změň na model, který máš k dispozici (např. gpt-4o, gpt-4o-mini, o3-mini…)
-      model: "gpt-4o-mini",
-      temperature: 0.7,
-      messages
-    })
-  });
-
-  if (!resp.ok) {
-    const errText = await resp.text().catch(() => "");
-    throw new Error(`OpenAI ${resp.status}: ${errText}`);
-  }
-  const data = await resp.json();
-  return data.choices?.[0]?.message?.content ?? "(empty response)";
-}
-
-// API endpoint pro chat
-app.post("/api/chat", async (req, res) => {
-  try {
-    const { messages } = req.body || {};
-    if (!Array.isArray(messages) || messages.length === 0) {
-      return res.status(400).json({ error: "messages musí být neprázdné pole" });
-    }
-    const reply = await callOpenAI(messages);
-    res.json({ reply });
-  } catch (e) {
-    console.error(e);
-    res.status(500).json({ error: e.message });
-  }
-});
-
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`✅ Server běží na http://localhost:${PORT}`);
-});
-*/
-
-// server.js — Gemini backend (CommonJS)
+//  --------------------------------
+//  Gemini API
+//  -------------------------------- 
 const express = require("express");
 const path = require("path");
 const dotenv = require("dotenv");
@@ -152,7 +93,7 @@ async function callGemini(openAiMessages) {
     }
   };
 
-  const url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro:generateContent";
+  const url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-preview:generateContent";
   const resp = await fetch(`${url}?key=${encodeURIComponent(API_KEY)}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
