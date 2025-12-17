@@ -1323,7 +1323,7 @@ const events = {
     const chat = chatState.getCurrent();
     const topic = chat.name;
 
-    ui.addMessage("📝 Generuji výpisky...\nBudete přepnuti na notes.", "assistant");
+    ui.addMessage("📝 Generuji výpisky...\n\tBudete přepnuti na záložku notes.", "assistant");
 
     let levelText = "";
 
@@ -1368,7 +1368,7 @@ const events = {
     const chat = chatState.getCurrent();
     const topic = chat.name;
 
-    ui.addMessage("🧠 Generuji flashcards...\nBudete přepnuti na flashcards.", "assistant");
+    ui.addMessage("🧠 Generuji flashcards...\n\tBudete přepnuti na záložku flashcards.", "assistant");
 
     let levelText = "";
 
@@ -1424,7 +1424,7 @@ const events = {
     if (!chat) return;
     const topic = chat.name;
 
-    ui.addMessage("🧪 Generuji test...\nBudete přepnuti na tests.", "assistant");
+    ui.addMessage("🧪 Generuji test...\n\tBudete přepnuti na záložku tests.", "assistant");
 
     let levelText = "";
     if (window.quizmateLevel === "stredni") levelText = "pro středoškoláky";
@@ -1483,7 +1483,7 @@ const events = {
 
     } catch (error) {
       console.error("Chyba při generování testu:", error);
-      ui.addMessage(`⚠️ Nepodařilo se vygenerovat test: ${error.message}`, "assistant");
+      ui.addMessage(`⚠️ Nepodařilo se vygenerovat test, zkuste to prosím později. ${console.log(error.message)}`, "assistant");
     }
   },
 

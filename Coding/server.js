@@ -152,7 +152,7 @@ async function callGemini(openAiMessages) {
     }
   };
 
-  const url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
+  const url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro:generateContent";
   const resp = await fetch(`${url}?key=${encodeURIComponent(API_KEY)}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
