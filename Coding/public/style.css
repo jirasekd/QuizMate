@@ -820,8 +820,7 @@ body.dark-mode .plus-btn {
 .flashcard {
   width: 90%;
   max-width: 400px;
-  height: 250px;
-  padding-top: 230px;
+  height: 350px;
   margin: 40px auto; 
   position: relative;
   perspective: 1000px; /* Vytváří 3D prostor pro otáčecí animaci. */
@@ -843,6 +842,7 @@ body.dark-mode .plus-btn {
   text-align: center; /* Center the text inside the card */
   backface-visibility: hidden; /* Skryje odvrácenou stranu karty během animace. */
   transition: transform 0.6s; /* Definuje plynulost otáčecí animace. */
+  padding: 20px;
 }
 
 .flashcard.flipped .front {
@@ -862,7 +862,7 @@ body.dark-mode .plus-btn {
   justify-content: center;
   align-items: center;
   gap: 16px;
-  padding-top: 230px;
+  margin-top: 20px;
 }
 
 /****************************************************
