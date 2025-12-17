@@ -592,19 +592,27 @@ const ui = {
       del.textContent = "🗑️";
       del.className = "delete-thread-btn";
 
-      del.addEventListener("click", (e) => {
+      del.addEventListener("click", async (e) => {
         e.stopPropagation();
         if (confirm("Opravdu chcete smazat tento chat?")) {
-          activeSubject.chats = activeSubject.chats.filter((c) => c.id !== chat.id); 
-          subjectState.saveActiveSubject(); // Uložíme změnu na server
+          const chatToDelete = chat; // Store reference
+          try {
+            activeSubject.chats = activeSubject.chats.filter((c) => c.id !== chat.id); 
+            await subjectState.saveActiveSubject(); // Wait for save to succeed
 
-          if (chatState.currentChatId === chat.id) { // If we deleted the active chat
-            const newActiveChatId = activeSubject.chats[0]?.id || null;
-            chatState.selectChat(newActiveChatId); // Select the next available chat
+            if (chatState.currentChatId === chat.id) {
+              const newActiveChatId = activeSubject.chats[0]?.id || null;
+              chatState.selectChat(newActiveChatId);
+            }
+
+            ui.renderThreads();
+            ui.renderMessages();
+          } catch (error) {
+            alert("Chyba při mazání chatu: " + error.message);
+            // Revert the local change
+            activeSubject.chats.push(chatToDelete);
+            ui.renderThreads();
           }
-
-          ui.renderThreads();
-          ui.renderMessages();
         }
       });
 
@@ -675,6 +683,7 @@ const ui = {
     DOM.noteDetail.classList.add("hidden");
     DOM.backToNotes.classList.add("hidden");
     DOM.notesGrid.classList.remove("hidden");
+    DOM.newNoteBtn.classList.remove("hidden");
     DOM.notesGrid.innerHTML = "";
 
     // Find chats that have notes
@@ -721,6 +730,7 @@ const ui = {
     DOM.notesGrid.classList.add("hidden");
     DOM.noteDetail.classList.remove("hidden");
     DOM.backToNotes.classList.remove("hidden");
+    DOM.newNoteBtn.classList.add("hidden");
 
     DOM.noteDetail.scrollTop = 0;
 
@@ -777,6 +787,7 @@ const ui = {
     DOM.flashNav.classList.add("hidden");
     DOM.backToDecks.classList.add("hidden");
     DOM.flashcardDecks.classList.remove("hidden");
+    DOM.newFlashcardBtn.classList.remove("hidden");
     DOM.flashcardDecks.innerHTML = "";
 
     // Find chats that have flashcards
@@ -819,6 +830,7 @@ const ui = {
 
     DOM.flashcardDecks.classList.add("hidden");
     DOM.backToDecks.classList.remove("hidden");
+    DOM.newFlashcardBtn.classList.add("hidden");
 
     // Load the selected deck into the flashcard viewer
     flashcards.cards = chat.flashcards;
@@ -832,6 +844,7 @@ const ui = {
     DOM.testDetail.classList.add("hidden");
     DOM.backToTests.classList.add("hidden");
     DOM.testsGrid.classList.remove("hidden");
+    DOM.newTestBtn.classList.remove("hidden");
     DOM.testsGrid.innerHTML = "";
 
     const activeSubject = subjectState.getActiveSubject();
@@ -908,6 +921,7 @@ const ui = {
 
     DOM.testDetail.classList.remove("hidden");
     DOM.backToTests.classList.remove("hidden");
+    DOM.newTestBtn.classList.add("hidden");
 
     DOM.testDetail.scrollTop = 0;
 
@@ -1016,6 +1030,9 @@ const api = {
     });
 
     const data = await resp.json();
+    if (data.error) {
+      throw new Error("API error: " + JSON.stringify(data.error));
+    }
     return data.reply;
   }
 };
@@ -1306,7 +1323,7 @@ const events = {
     const chat = chatState.getCurrent();
     const topic = chat.name;
 
-    ui.addMessage("📝 Generuji výpisky...", "assistant");
+    ui.addMessage("📝 Generuji výpisky...\nBudete přepnuti na notes.", "assistant");
 
     let levelText = "";
 
@@ -1351,7 +1368,7 @@ const events = {
     const chat = chatState.getCurrent();
     const topic = chat.name;
 
-    ui.addMessage("🧠 Generuji flashcards...", "assistant");
+    ui.addMessage("🧠 Generuji flashcards...\nBudete přepnuti na flashcards.", "assistant");
 
     let levelText = "";
 
@@ -1407,7 +1424,7 @@ const events = {
     if (!chat) return;
     const topic = chat.name;
 
-    ui.addMessage("🧪 Generuji test...", "assistant");
+    ui.addMessage("🧪 Generuji test...\nBudete přepnuti na tests.", "assistant");
 
     let levelText = "";
     if (window.quizmateLevel === "stredni") levelText = "pro středoškoláky";
@@ -1443,7 +1460,15 @@ const events = {
       const reply = await api.askAI(messagesForAI);
       
       // Clean the response to get only the JSON part
-      const jsonString = reply.substring(reply.indexOf('{'), reply.lastIndexOf('}') + 1);
+      const start = reply.indexOf('{');
+      if (start === -1) {
+        throw new Error("AI nevrátila platný JSON formát.");
+      }
+      const end = reply.lastIndexOf('}') + 1;
+      if (end === 0) {
+        throw new Error("AI nevrátila platný JSON formát.");
+      }
+      const jsonString = reply.substring(start, end);
       const testData = JSON.parse(jsonString);
 
       if (!testData.questions || !Array.isArray(testData.questions)) {
