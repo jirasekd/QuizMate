@@ -223,11 +223,12 @@
             <h1 id="noteDetailTitle" class="note-title"></h1>
             <div id="noteDetailContent" class="note-content"></div>
           </div>
+
         </section>
 
 
         <!-- FLASHCARDS -->
-        <section id="flashcards" class="tab-content">
+        <section id="flashcards">
           <button id="newFlashcardBtn" class="newBtn">+ New Flashcard</button>
           <div class="flash-header">
             <h2>Flashcards</h2>
@@ -247,27 +248,24 @@
             <span id="flashIndex"></span>
             <button class="btn small" id="nextFlash">Next</button>
           </div>
-        </section>
 
-        
-        <!-- Testy -->
-        <section>
-          <div id="tests" class="tab-content">
+        </section>
+          <!-- Testy -->
+          <div id="tests">
             <button id="newTestBtn" class="newBtn">+ New Test</button>
             <div class="topic-grid" id="testsTopics">
               <!-- Test decks will be rendered here -->
-            
-              <div id="testDetail" class="hidden">
-                <button id="backToTests" class="back-btn">← Back to tests</button>
-                <h2 id="testDetailTitle"></h2>
-                <div id="testQuestionsContainer">
-                  <!-- Questions will be rendered here -->
-                </div>
+            </div>
+            <div id="testDetail" class="hidden">
+              <button id="backToTests" class="back-btn">← Back to tests</button>
+              <h2 id="testDetailTitle"></h2>
+              <div id="testQuestionsContainer">
+                <!-- Questions will be rendered here -->
               </div>
             </div>
           </div>
         </section>
-      </section>
+  </div>
 
   <!-- Settings Modal -->
   <div id="settings-modal" class="modal-overlay hidden">
