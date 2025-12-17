@@ -1404,9 +1404,12 @@ const events = {
     const cards = reply
       .split("\n\n")
       .map((pair) => {
-        const q = pair.match(/Q:\s*(.+)/i)?.[1];
-        const a = pair.match(/A:\s*(.+)/i)?.[1];
-        if (!q || !a) return null;
+        const lines = pair.split('\n').map(l => l.trim());
+        const qLine = lines.find(l => l.startsWith('Q:'));
+        const aLine = lines.find(l => l.startsWith('A:'));
+        if (!qLine || !aLine) return null;
+        const q = qLine.substring(2).trim();
+        const a = aLine.substring(2).trim();
         return { q, a };
       })
       .filter(Boolean);
@@ -1416,6 +1419,8 @@ const events = {
     ui.updateSubjectSidebar();
     ui.renderSubjectsGrid();
     document.querySelector('[data-tab="flashcards"]').click();
+    // Open the deck directly to show the flashcards
+    ui.openDeckDetail(chatState.currentChatId);
   },
 
   /* GENERATE TEST */
