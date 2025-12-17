@@ -1412,7 +1412,10 @@ const events = {
       if (!Array.isArray(cards)) {
         throw new Error("Not an array");
       }
-      cards = cards.filter(card => card.q && card.a);
+      cards = cards.map(card => ({
+        q: card.q || card.question || card.Question || '',
+        a: card.a || card.answer || card.Answer || ''
+      })).filter(card => card.q && card.a);
     } catch (e) {
       console.error("Failed to parse flashcards JSON:", e);
       // Fallback to old parsing
