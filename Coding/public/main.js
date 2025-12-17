@@ -1397,6 +1397,11 @@ const events = {
 
     const reply = await api.askAI(messagesForAI);
 
+    // Check for API errors
+    if (reply.includes("error") || reply.includes("503") || reply.includes("unavailable") || reply.includes("overloaded")) {
+      throw new Error("API is overloaded, please try again later.");
+    }
+
     // Clean the reply from markdown code blocks
     const cleanReply = reply.replace(/```[\s\S]*?```/g, '').replace(/```\w*\n?/g, '').trim();
 
@@ -1427,6 +1432,10 @@ const events = {
       if (currentCard.q && currentCard.a) {
         cards.push(currentCard);
       }
+    }
+
+    if (cards.length === 0) {
+      throw new Error("No flashcards were generated. Please try again.");
     }
 
     // Uložíme a počkáme na dokončení, než přepneme tab
@@ -1478,6 +1487,11 @@ const events = {
 
     try {
       const reply = await api.askAI(messagesForAI);
+
+      // Check for API errors
+      if (reply.includes("error") || reply.includes("503") || reply.includes("unavailable") || reply.includes("overloaded")) {
+        throw new Error("API is overloaded, please try again later.");
+      }
       
       // Clean the response to get only the JSON part
       const start = reply.indexOf('{');
@@ -1493,6 +1507,9 @@ const events = {
 
       if (!testData.questions || !Array.isArray(testData.questions)) {
         throw new Error("AI vrátila neplatný formát testu.");
+      }
+      if (testData.questions.length === 0) {
+        throw new Error("Žádné otázky nebyly vygenerovány.");
       }
 
       // Uložíme a počkáme na dokončení, než přepneme tab
