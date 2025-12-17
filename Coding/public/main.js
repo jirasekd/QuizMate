@@ -1401,18 +1401,27 @@ const events = {
 
     const reply = await api.askAI(messagesForAI);
 
-    const cards = reply
-      .split("\n\n")
-      .map((pair) => {
-        const lines = pair.split('\n').map(l => l.trim());
-        const qLine = lines.find(l => l.startsWith('Q:'));
-        const aLine = lines.find(l => l.startsWith('A:'));
-        if (!qLine || !aLine) return null;
-        const q = qLine.substring(2).trim();
-        const a = aLine.substring(2).trim();
-        return { q, a };
-      })
-      .filter(Boolean);
+    // Clean the reply from markdown code blocks
+    const cleanReply = reply.replace(/```[\s\S]*?```/g, '').replace(/```\w*\n?/g, '').trim();
+
+    // Parse the reply for flashcards
+    const lines = cleanReply.split('\n');
+    const cards = [];
+    let currentCard = {};
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (trimmed.startsWith('Q:')) {
+        if (currentCard.q && currentCard.a) {
+          cards.push(currentCard);
+        }
+        currentCard = { q: trimmed.substring(2).trim() };
+      } else if (trimmed.startsWith('A:')) {
+        currentCard.a = trimmed.substring(2).trim();
+      }
+    }
+    if (currentCard.q && currentCard.a) {
+      cards.push(currentCard);
+    }
 
     // Uložíme a počkáme na dokončení, než přepneme tab
     await chatState.addFlashcards(cards);
