@@ -1405,41 +1405,18 @@ const events = {
     // Clean the reply from markdown code blocks
     const cleanReply = reply.replace(/```[\s\S]*?```/g, '').replace(/```\w*\n?/g, '').trim();
 
-    // Parse as JSON
-    let cards = [];
-    try {
-      cards = JSON.parse(cleanReply);
-      if (!Array.isArray(cards)) {
-        throw new Error("Not an array");
-      }
-      cards = cards.map(card => ({
-        q: card.q || card.question || card.Question || '',
-        a: card.a || card.answer || card.Answer || ''
-      })).filter(card => card.q && card.a);
-    } catch (e) {
-      console.error("Failed to parse flashcards JSON:", e);
-      // Fallback to old parsing
-      const lines = cleanReply.split('\n');
-      let currentCard = {};
-      for (const line of lines) {
-        const trimmed = line.trim();
-        if (trimmed.startsWith('Q:')) {
-          if (currentCard.q && currentCard.a) {
-            cards.push(currentCard);
-          }
-          currentCard = { q: trimmed.substring(2).trim() };
-        } else if (trimmed.startsWith('A:')) {
-          currentCard.a = trimmed.substring(2).trim();
-        }
-      }
-      if (currentCard.q && currentCard.a) {
-        cards.push(currentCard);
-      }
-    }
-
-    if (cards.length === 0) {
-      throw new Error("No flashcards were generated. Please try again.");
-    }
+    const cards = cleanReply
+      .split("\n\n")
+      .map((pair) => {
+        const lines = pair.split('\n').map(l => l.trim());
+        const qLine = lines.find(l => l.startsWith('Q:'));
+        const aLine = lines.find(l => l.startsWith('A:'));
+        if (!qLine || !aLine) return null;
+        const q = qLine.substring(2).trim();
+        const a = aLine.substring(2).trim();
+        return { q, a };
+      })
+      .filter(Boolean);
 
     // Uložíme a počkáme na dokončení, než přepneme tab
     await chatState.addFlashcards(cards);
