@@ -1385,14 +1385,10 @@ const events = {
     const prompt = `
       ${levelText}
       Jsi expert na tvorbu vzdělávacích flashcards.
-      Tvým úkolem je vytvořit ideální počet flashcards pro téma "${topic}" ve formátu:
-      Q: otázka
-      A: odpověď.
-      Pro každý zadaný tematický okruh: zahrň pouze nejdůležitější pojmy, definice, pravidla, postupy a typické chyby.
-      Každou dvojici odděl prázdným řádkem.
-      Vybírej klíčové pojmy, vzorce, definice.
-      A nedělej více než 30 flashcards.
-      Každou kartičku udělej krátkou a konkrétní.
+      Tvým úkolem je vytvořit ideální počet flashcards pro téma "${topic}".
+      Vrátí POUZE validní JSON pole objektů, každý s klíči "q" (otázka) a "a" (odpověď).
+      Příklad: [{"q": "Co je 2+2?", "a": "4"}, {"q": "Co je hlavní město Francie?", "a": "Paříž"}]
+      Udělej max 30 flashcards, krátké a konkrétní.
       `;
 
     // Get the previous messages and add the new instruction at the end.
@@ -1404,23 +1400,33 @@ const events = {
     // Clean the reply from markdown code blocks
     const cleanReply = reply.replace(/```[\s\S]*?```/g, '').replace(/```\w*\n?/g, '').trim();
 
-    // Parse the reply for flashcards
-    const lines = cleanReply.split('\n');
-    const cards = [];
-    let currentCard = {};
-    for (const line of lines) {
-      const trimmed = line.trim();
-      if (trimmed.startsWith('Q:')) {
-        if (currentCard.q && currentCard.a) {
-          cards.push(currentCard);
-        }
-        currentCard = { q: trimmed.substring(2).trim() };
-      } else if (trimmed.startsWith('A:')) {
-        currentCard.a = trimmed.substring(2).trim();
+    // Parse as JSON
+    let cards = [];
+    try {
+      cards = JSON.parse(cleanReply);
+      if (!Array.isArray(cards)) {
+        throw new Error("Not an array");
       }
-    }
-    if (currentCard.q && currentCard.a) {
-      cards.push(currentCard);
+      cards = cards.filter(card => card.q && card.a);
+    } catch (e) {
+      console.error("Failed to parse flashcards JSON:", e);
+      // Fallback to old parsing
+      const lines = cleanReply.split('\n');
+      let currentCard = {};
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (trimmed.startsWith('Q:')) {
+          if (currentCard.q && currentCard.a) {
+            cards.push(currentCard);
+          }
+          currentCard = { q: trimmed.substring(2).trim() };
+        } else if (trimmed.startsWith('A:')) {
+          currentCard.a = trimmed.substring(2).trim();
+        }
+      }
+      if (currentCard.q && currentCard.a) {
+        cards.push(currentCard);
+      }
     }
 
     // Uložíme a počkáme na dokončení, než přepneme tab
