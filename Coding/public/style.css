@@ -846,16 +846,23 @@ body.dark-mode .plus-btn {
   color: var(--text-color);
 }
 
-.flashcard.flipped .front {
-  transform: rotateY(180deg); /* Otočí přední stranu, když má karta třídu .flipped. */
+.flashcard .front {
+  z-index: 1;
 }
 
 .flashcard .back {
   transform: rotateY(180deg); /* Zadní strana je na začátku otočená. */
+  z-index: 0;
+}
+
+.flashcard.flipped .front {
+  transform: rotateY(180deg); /* Otočí přední stranu, když má karta třídu .flipped. */
+  z-index: 0;
 }
 
 .flashcard.flipped .back {
   transform: rotateY(0deg); /* Otočí zadní stranu do původní polohy, když má karta třídu .flipped. */
+  z-index: 1;
 }
 
 .flash-nav {
