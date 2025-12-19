@@ -1339,7 +1339,7 @@ const events = {
 
     // Conditionally add formula instruction for math-related subjects
     const subject = subjectState.getActiveSubject();
-    const isMathSubject = subject && subject.name.toLowerCase().includes('math' || 'matematika' || 'matika');
+    const isMathSubject = subject && ['math', 'matematika', 'matika'].some(k => subject.name.toLowerCase().includes(k));
     const formulaInstruction = isMathSubject ? "vzorce (KaTeX), " : "";
 
     const prompt = `
@@ -1405,25 +1405,40 @@ const events = {
     // Clean the reply from markdown code blocks
     const cleanReply = reply.replace(/```[\s\S]*?```/g, '').replace(/```\w*\n?/g, '').trim();
 
-    const cards = cleanReply
-      .split("\n\n")
-      .map((pair) => {
-        const lines = pair.split('\n').map(l => l.trim());
-        const qLine = lines.find(l => l.startsWith('Q:'));
-        const aLine = lines.find(l => l.startsWith('A:'));
-        if (!qLine || !aLine) return null;
-        const q = qLine.substring(2).trim();
-        const a = aLine.substring(2).trim();
-        return { q, a };
-      })
-      .filter(Boolean);
+    let cards = [];
 
-    // Uložíme a počkáme na dokončení, než přepneme tab
+    // 1) Try JSON parse (preferred)
+    try {
+      const parsed = JSON.parse(cleanReply);
+      if (Array.isArray(parsed)) {
+        cards = parsed.map(c => ({ q: (c.q || '').toString(), a: (c.a || '').toString() })).filter(c => c.q && c.a);
+      }
+    } catch (e) {
+      // not JSON — fall back to Q/A style parsing
+      cards = cleanReply
+        .split("\n\n")
+        .map((pair) => {
+          const lines = pair.split('\n').map(l => l.trim());
+          const qLine = lines.find(l => l.startsWith('Q:'));
+          const aLine = lines.find(l => l.startsWith('A:'));
+          if (!qLine || !aLine) return null;
+          const q = qLine.substring(2).trim();
+          const a = aLine.substring(2).trim();
+          return { q, a };
+        })
+        .filter(Boolean);
+    }
+
+    // If still empty, throw helpful error
+    if (!cards || cards.length === 0) {
+      throw new Error("Nebyla vygenerována žádná flashcards (AI odpověď nebyla rozpoznána jako JSON ani Q/A). Zkuste to znovu nebo upravte prompt.");
+    }
+
+    // Ulož a přepni záložku
     await chatState.addFlashcards(cards);
     ui.updateSubjectSidebar();
     ui.renderSubjectsGrid();
     document.querySelector('[data-tab="flashcards"]').click();
-    // Open the deck directly to show the flashcards
     ui.openDeckDetail(chatState.currentChatId);
   },
 
