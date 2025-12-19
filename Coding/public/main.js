@@ -836,7 +836,7 @@ const ui = {
     DOM.newFlashcardBtn.classList.add("hidden");
 
     // Load the selected deck into the flashcard viewer
-    flashcards.cards = deck.cards;
+    flashcards.cards = chat.flashcards;
     flashcards.index = 0;
     flashcards.render();
   },
@@ -1480,13 +1480,13 @@ const events = {
     }
 
     // === ULOŽENÍ ===
-    const deckId = await chatState.addFlashcards(cards);
+    await chatState.addFlashcards(cards);
 
     // === UI ===
     ui.updateSubjectSidebar();
     ui.renderSubjectsGrid();
     document.querySelector('[data-tab="flashcards"]').click();
-    ui.openDeckDetail(deckId);
+    ui.openDeckDetail(chat.id);
   },
 
   /* GENERATE TEST */
