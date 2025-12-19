@@ -1399,14 +1399,14 @@ const events = {
       Jsi expert na tvorbu vzdělávacích flashcards.
       Tvým úkolem je vytvořit ideální počet flashcards pro téma "${topic}".
 
-      Vrať POUZE validní JSON pole objektů s klíči:
-      - "q" (otázka)
-      - "a" (odpověď)
+      Vrať flashcards v následujícím formátu:
 
-      Příklad:
-      [
-        { "q": "Co je 2+2?", "a": "4" }
-      ]
+      Front: Otázka
+      Back: Odpověď
+      ---
+      Front: Otázka
+      Back: Odpověď
+      ---
 
       Maximálně 30 krátkých a konkrétních flashcards.
       `;
@@ -1453,29 +1453,17 @@ const events = {
 
     let cards = [];
 
-    // === PARSE JSON ===
-    try {
-      const parsed = JSON.parse(cleanReply);
-      if (Array.isArray(parsed)) {
-        cards = parsed
-          .map(c => ({
-            q: String(c.q || "").trim(),
-            a: String(c.a || "").trim()
-          }))
-          .filter(c => c.q && c.a);
-      }
-    } catch {
-      // fallback Q/A
-      cards = cleanReply
-        .split(/\n{2,}/)
-        .map(block => {
-          const q = block.match(/"q"\s*:\s*"(.+?)"/);
-          const a = block.match(/"a"\s*:\s*"(.+?)"/);
-          if (!q || !a) return null;
-          return { q: q[1], a: a[1] };
-        })
-        .filter(Boolean);
-    }
+    // === PARSE TEXT ===
+    const blocks = cleanReply.split(/---/).map(b => b.trim()).filter(b => b);
+    cards = blocks.map(block => {
+      const frontMatch = block.match(/Front:\s*(.+?)(?:\n|$)/);
+      const backMatch = block.match(/Back:\s*(.+?)(?:\n|$)/);
+      if (!frontMatch || !backMatch) return null;
+      return {
+        q: frontMatch[1].trim(),
+        a: backMatch[1].trim()
+      };
+    }).filter(Boolean);
 
     if (!cards.length) {
       console.error("AI OUTPUT:", cleanReply);
