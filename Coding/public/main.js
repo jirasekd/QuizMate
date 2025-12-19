@@ -836,11 +836,10 @@ const ui = {
     DOM.newFlashcardBtn.classList.add("hidden");
 
     // Load the selected deck into the flashcard viewer
-    flashcards.cards = chat.flashcards;
+    flashcards.cards = deck.cards;
     flashcards.index = 0;
     flashcards.render();
-  }
-  ,
+  },
 
   /* TESTS */
   renderTestsGrid() {
