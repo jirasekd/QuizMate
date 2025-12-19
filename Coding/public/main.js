@@ -492,7 +492,7 @@ const ui = {
       card.dataset.id = subject.id;
 
       const chatsCount = subject.chats ? subject.chats.length : 0;
-      const notesCount = subject.chats ? subject.chats.filter(chat => chat.notes && chat.notes.trim() !== "").length : 0;
+      const notesCount = subject.chats ? subject.chats.filter(chat => typeof chat.notes === "string" ? chat.notes.trim() !== "" : chat.notes && Object.keys(chat.notes).length > 0).length : 0;
       const flashcardsCount = subject.flashcards ? subject.flashcards.length : 0;
 
       card.innerHTML = `
