@@ -1366,9 +1366,14 @@ const events = {
     document.querySelector('[data-tab="notes"]').click();
   },
 
-    /* GENERATE FLASHCARDS */
-    async generateFlashcards() {
+  /* GENERATE FLASHCARDS */
+  async generateFlashcards() {
     const chat = chatState.getCurrent();
+    if (!chat) {
+      ui.showError("Nejprve vyberte nebo vytvořte chat.");
+      return;
+    }
+
     const topic = chat.name;
 
     ui.addMessage(
@@ -1377,7 +1382,6 @@ const events = {
     );
 
     let levelText = "";
-
     if (window.quizmateLevel === "zakladka") {
       levelText = "Piš základoškolskou úrovní. Vysvětluj jako pro studenty na základní škole.";
     }
@@ -1389,32 +1393,46 @@ const events = {
     }
 
     const prompt = `
-  ${levelText}
-  Jsi expert na tvorbu vzdělávacích flashcards.
-  Tvým úkolem je vytvořit ideální počet flashcards pro téma "${topic}".
+      ${levelText}
+      Jsi expert na tvorbu vzdělávacích flashcards.
+      Tvým úkolem je vytvořit ideální počet flashcards pro téma "${topic}".
 
-  Vrať POUZE validní JSON pole objektů, každý s klíči:
-  - "q" (otázka)
-  - "a" (odpověď)
+      Vrať POUZE validní JSON pole objektů s klíči:
+      - "q" (otázka)
+      - "a" (odpověď)
 
-  Příklad:
-  [
-    { "q": "Co je 2+2?", "a": "4" },
-    { "q": "Co je hlavní město Francie?", "a": "Paříž" }
-  ]
+      Příklad:
+      [
+        { "q": "Co je 2+2?", "a": "4" }
+      ]
 
-  Vytvoř maximálně 30 krátkých a konkrétních flashcards.
-  `;
+      Maximálně 30 krátkých a konkrétních flashcards.
+      `;
 
-    // Kontext + prompt
     const ctx = api.getContextMessages();
     const messagesForAI = [...ctx, { role: "user", content: prompt }];
 
     // === AI CALL ===
     const aiResponse = await api.askAI(messagesForAI);
 
-    // EXTRAKCE TEXTU Z aiResponse
-    const reply = typeof aiResponse === "string" ? aiResponse : aiResponse?.candidates?.[0]?.content?.parts ?.map(p => p.text || "").join("").trim();
+    // === BEZPEČNÁ EXTRAKCE TEXTU ===
+    let reply = "";
+
+    if (typeof aiResponse === "string") {
+      reply = aiResponse;
+    } else if (
+      aiResponse?.candidates?.[0]?.content?.parts &&
+      Array.isArray(aiResponse.candidates[0].content.parts)
+    ) {
+      reply = aiResponse.candidates[0].content.parts
+        .map(p => p.text || "")
+        .join("")
+        .trim();
+    }
+
+    if (!reply) {
+      throw new Error("AI nevrátila žádný textový výstup.");
+    }
 
     if (
       reply.includes("error") ||
@@ -1427,55 +1445,47 @@ const events = {
 
     // === CLEAN OUTPUT ===
     const cleanReply = reply
-      .replace(/```[\s\S]*?```/g, "")
-      .replace(/```\w*\n?/g, "")
+      .replace(/```json/gi, "")
+      .replace(/```/g, "")
       .trim();
 
     let cards = [];
 
-    // === PARSE JSON (preferred) ===
+    // === PARSE JSON ===
     try {
       const parsed = JSON.parse(cleanReply);
       if (Array.isArray(parsed)) {
         cards = parsed
           .map(c => ({
-            q: (c.q || "").toString().trim(),
-            a: (c.a || "").toString().trim()
+            q: String(c.q || "").trim(),
+            a: String(c.a || "").trim()
           }))
           .filter(c => c.q && c.a);
       }
-    } catch (e) {
-      // fallback Q/A parser
+    } catch {
+      // fallback Q/A
       cards = cleanReply
-        .split("\n\n")
-        .map(pair => {
-          const lines = pair.split("\n").map(l => l.trim());
-          const qLine = lines.find(l => l.startsWith("Q:"));
-          const aLine = lines.find(l => l.startsWith("A:"));
-          if (!qLine || !aLine) return null;
-          return {
-            q: qLine.substring(2).trim(),
-            a: aLine.substring(2).trim()
-          };
+        .split(/\n{2,}/)
+        .map(block => {
+          const q = block.match(/"q"\s*:\s*"(.+?)"/);
+          const a = block.match(/"a"\s*:\s*"(.+?)"/);
+          if (!q || !a) return null;
+          return { q: q[1], a: a[1] };
         })
         .filter(Boolean);
     }
 
     if (!cards.length) {
-      throw new Error(
-        "Nepodařilo se vytvořit žádné flashcards (AI nevrátila validní data)."
-      );
+      console.error("AI OUTPUT:", cleanReply);
+      throw new Error("Nepodařilo se převést AI odpověď na flashcards.");
     }
 
-    // === ULOŽENÍ FLASHCARDS ===
-    // ⚠️ DŮLEŽITÉ: addFlashcards MUSÍ VRÁTIT deckId
+    // === ULOŽENÍ ===
     const deckId = await chatState.addFlashcards(cards);
 
-    // === UI UPDATE ===
+    // === UI ===
     ui.updateSubjectSidebar();
     ui.renderSubjectsGrid();
-
-    // Přepnout a otevřít SPRÁVNÝ deck
     document.querySelector('[data-tab="flashcards"]').click();
     ui.openDeckDetail(deckId);
   },
