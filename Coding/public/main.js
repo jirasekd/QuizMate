@@ -492,7 +492,7 @@ const ui = {
       card.dataset.id = subject.id;
 
       const chatsCount = subject.chats ? subject.chats.length : 0;
-      const notesCount = subject.notes ? subject.notes.length : 0;
+      const notesCount = subject.chats ? subject.chats.filter(chat => chat.notes && chat.notes.trim() !== "").length : 0;
       const flashcardsCount = subject.flashcards ? subject.flashcards.length : 0;
 
       card.innerHTML = `
@@ -664,7 +664,10 @@ const ui = {
   renderMessages() {
     DOM.messages.innerHTML = "";
     const chat = chatState.getCurrent(); // This now gets the chat from the active subject
-    if (!chat) return;
+    if (!chat) {
+      ui.showError("Nejprve vyberte nebo vytvořte chat.");
+      return;
+    }
 
     chat.messages.forEach((m) => {
       DOM.messages.appendChild(ui.createMessageElement(m));
@@ -1363,12 +1366,15 @@ const events = {
     document.querySelector('[data-tab="notes"]').click();
   },
 
-  /* GENERATE FLASHCARDS */
-  async generateFlashcards() {
+    /* GENERATE FLASHCARDS */
+    async generateFlashcards() {
     const chat = chatState.getCurrent();
     const topic = chat.name;
 
-    ui.addMessage("🧠 Generuji flashcards...\n\tBudete přepnuti na záložku flashcards.", "assistant");
+    ui.addMessage(
+      "🧠 Generuji flashcards...\n\tPo dokončení budete přepnuti na záložku flashcards.",
+      "assistant"
+    );
 
     let levelText = "";
 
@@ -1383,63 +1389,92 @@ const events = {
     }
 
     const prompt = `
-      ${levelText}
-      Jsi expert na tvorbu vzdělávacích flashcards.
-      Tvým úkolem je vytvořit ideální počet flashcards pro téma "${topic}".
-      Vrátí POUZE validní JSON pole objektů, každý s klíči "q" (otázka) a "a" (odpověď).
-      Příklad: [{"q": "Co je 2+2?", "a": "4"}, {"q": "Co je hlavní město Francie?", "a": "Paříž"}]
-      Udělej max 30 flashcards, krátké a konkrétní.
-      `;
+  ${levelText}
+  Jsi expert na tvorbu vzdělávacích flashcards.
+  Tvým úkolem je vytvořit ideální počet flashcards pro téma "${topic}".
 
-    // Get the previous messages and add the new instruction at the end.
+  Vrať POUZE validní JSON pole objektů, každý s klíči:
+  - "q" (otázka)
+  - "a" (odpověď)
+
+  Příklad:
+  [
+    { "q": "Co je 2+2?", "a": "4" },
+    { "q": "Co je hlavní město Francie?", "a": "Paříž" }
+  ]
+
+  Vytvoř maximálně 30 krátkých a konkrétních flashcards.
+  `;
+
+    // Kontext + prompt
     const ctx = api.getContextMessages();
     const messagesForAI = [...ctx, { role: "user", content: prompt }];
 
+    // === AI CALL ===
     const reply = await api.askAI(messagesForAI);
 
-    // Check for API errors
-    if (reply.includes("error") || reply.includes("503") || reply.includes("unavailable") || reply.includes("overloaded")) {
-      throw new Error("API is overloaded, please try again later.");
+    if (
+      reply.includes("error") ||
+      reply.includes("503") ||
+      reply.includes("unavailable") ||
+      reply.includes("overloaded")
+    ) {
+      throw new Error("API je momentálně přetížené, zkuste to prosím později.");
     }
 
-    // Clean the reply from markdown code blocks
-    const cleanReply = reply.replace(/```[\s\S]*?```/g, '').replace(/```\w*\n?/g, '').trim();
+    // === CLEAN OUTPUT ===
+    const cleanReply = reply
+      .replace(/```[\s\S]*?```/g, "")
+      .replace(/```\w*\n?/g, "")
+      .trim();
 
     let cards = [];
 
-    // 1) Try JSON parse (preferred)
+    // === PARSE JSON (preferred) ===
     try {
       const parsed = JSON.parse(cleanReply);
       if (Array.isArray(parsed)) {
-        cards = parsed.map(c => ({ q: (c.q || '').toString(), a: (c.a || '').toString() })).filter(c => c.q && c.a);
+        cards = parsed
+          .map(c => ({
+            q: (c.q || "").toString().trim(),
+            a: (c.a || "").toString().trim()
+          }))
+          .filter(c => c.q && c.a);
       }
     } catch (e) {
-      // not JSON — fall back to Q/A style parsing
+      // fallback Q/A parser
       cards = cleanReply
         .split("\n\n")
-        .map((pair) => {
-          const lines = pair.split('\n').map(l => l.trim());
-          const qLine = lines.find(l => l.startsWith('Q:'));
-          const aLine = lines.find(l => l.startsWith('A:'));
+        .map(pair => {
+          const lines = pair.split("\n").map(l => l.trim());
+          const qLine = lines.find(l => l.startsWith("Q:"));
+          const aLine = lines.find(l => l.startsWith("A:"));
           if (!qLine || !aLine) return null;
-          const q = qLine.substring(2).trim();
-          const a = aLine.substring(2).trim();
-          return { q, a };
+          return {
+            q: qLine.substring(2).trim(),
+            a: aLine.substring(2).trim()
+          };
         })
         .filter(Boolean);
     }
 
-    // If still empty, throw helpful error
-    if (!cards || cards.length === 0) {
-      throw new Error("Nebyla vygenerována žádná flashcards (AI odpověď nebyla rozpoznána jako JSON ani Q/A). Zkuste to znovu nebo upravte prompt.");
+    if (!cards.length) {
+      throw new Error(
+        "Nepodařilo se vytvořit žádné flashcards (AI nevrátila validní data)."
+      );
     }
 
-    // Ulož a přepni záložku
-    await chatState.addFlashcards(cards);
+    // === ULOŽENÍ FLASHCARDS ===
+    // ⚠️ DŮLEŽITÉ: addFlashcards MUSÍ VRÁTIT deckId
+    const deckId = await chatState.addFlashcards(cards);
+
+    // === UI UPDATE ===
     ui.updateSubjectSidebar();
     ui.renderSubjectsGrid();
+
+    // Přepnout a otevřít SPRÁVNÝ deck
     document.querySelector('[data-tab="flashcards"]').click();
-    ui.openDeckDetail(chatState.currentChatId);
+    ui.openDeckDetail(deckId);
   },
 
   /* GENERATE TEST */
