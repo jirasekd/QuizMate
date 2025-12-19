@@ -832,6 +832,9 @@ const ui = {
     if (!chat || !Array.isArray(chat.flashcards) || chat.flashcards.length === 0) return;
 
     DOM.flashcardDecks.classList.add("hidden");
+    DOM.flashcard.classList.remove("hidden");
+    DOM.flashcard.classList.remove('flipped'); // Ensure card starts on front
+    DOM.flashNav.classList.remove("hidden");
     DOM.backToDecks.classList.remove("hidden");
     DOM.newFlashcardBtn.classList.add("hidden");
 
