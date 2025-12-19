@@ -1411,7 +1411,10 @@ const events = {
     const messagesForAI = [...ctx, { role: "user", content: prompt }];
 
     // === AI CALL ===
-    const reply = await api.askAI(messagesForAI);
+    const aiResponse = await api.askAI(messagesForAI);
+
+    // EXTRAKCE TEXTU Z aiResponse
+    const reply = typeof aiResponse === "string" ? aiResponse : aiResponse?.candidates?.[0]?.content?.parts ?.map(p => p.text || "").join("").trim();
 
     if (
       reply.includes("error") ||
