@@ -843,8 +843,7 @@ body.dark-mode .plus-btn {
   text-align: center; /* Center the text inside the card */
   backface-visibility: hidden; /* Skryje odvrácenou stranu karty během animace. */
   transition: transform 0.6s; /* Definuje plynulost otáčecí animace. */
-  text-decoration-color: white;
-  color: white;
+  color: var(--text-color);
 }
 
 .flashcard.flipped .front {
