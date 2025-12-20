@@ -1456,13 +1456,13 @@ const events = {
     // === PARSE TEXT ===
     const blocks = cleanReply.split(/---/).map(b => b.trim()).filter(b => b);
     cards = blocks.map(block => {
-      const frontMatch = block.match(/Front:\s*(.+?)(?:\n|$)/);
-      const backMatch = block.match(/Back:\s*(.+?)(?:\n|$)/);
-      if (!frontMatch || !backMatch) return null;
-      return {
-        q: frontMatch[1].trim(),
-        a: backMatch[1].trim()
-      };
+      const lines = block.split('\n').map(l => l.trim());
+      const frontLine = lines.find(l => l.startsWith('Front:'));
+      const backLine = lines.find(l => l.startsWith('Back:'));
+      const q = frontLine ? frontLine.substring(6).trim() : '';
+      const a = backLine ? backLine.substring(5).trim() : '';
+      if (!q || !a) return null;
+      return { q, a };
     }).filter(Boolean);
 
     if (!cards.length) {
