@@ -202,6 +202,16 @@ const subjectState = {
         await this.addSubject('Mathematics', '🧮');
         await this.addSubject('Biology', '🧬');
         await this.addSubject('History', '📜');
+
+        const refresh = await fetch('/api/subjects', {
+          headers: { 'x-auth-token': token }
+        });
+        const refreshedSubjects = await refresh.json();
+        this.subjects = refreshedSubjects.map(s => ({
+          ...s,
+          id: s._id,
+          chats: s.chats.map(c => ({ ...c, id: c._id }))
+        }));
       }
 
       this.activeSubjectId = this.subjects[0]?.id || null;
