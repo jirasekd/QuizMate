@@ -876,43 +876,6 @@ body.dark-mode .plus-btn {
 /****************************************************
  * 10. NOTES TAB
  ****************************************************/
-.flash-header {
-  position: relative;
-}
-
-.notes-header-bar {
-  position: relative;
-}
-
-.tests-header {
-  position: relative;
-}
-
-#submitTestBtn {
-  width: 100%;
-  padding: 12px 24px;
-  font-size: 16px;
-  font-weight: 600;
-  background: var(--accent-a);
-  color: white;
-  border: none;
-  border-radius: var(--radius);
-  cursor: pointer;
-  transition: all 0.3s ease;
-  margin-top: 24px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-#submitTestBtn:hover {
-  background: var(--accent);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
-}
-
-#submitTestBtn:active {
-  transform: translateY(0);
-}
-
 .flash-header .btn.small.hidden {
   display: none;
 }

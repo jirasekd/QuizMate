@@ -933,7 +933,6 @@ const ui = {
     // Add submit button
     const submitBtn = document.createElement('button');
     submitBtn.id = 'submitTestBtn';
-    submitBtn.className = 'btn primary';
     submitBtn.textContent = 'Submit Test';
     submitBtn.onclick = () => events.submitTest(chatId);
     DOM.testQuestionsContainer.appendChild(submitBtn);
