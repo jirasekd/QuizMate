@@ -841,12 +841,20 @@ const ui = {
     const chat = activeSubject.chats.find((c) => c.id === chatId);
     if (!chat || !Array.isArray(chat.flashcards) || chat.flashcards.length === 0) return;
 
-    DOM.flashcardDecks.classList.add("hidden");
-    DOM.flashcard.classList.remove("hidden");
-    DOM.flashcard.classList.remove('flipped'); // Ensure card starts on front
-    DOM.flashNav.classList.remove("hidden");
-    DOM.backToDecks.classList.remove("hidden");
-    DOM.newFlashcardBtn.classList.add("hidden");
+    const flashcardDecks = document.getElementById("flashcardDecks");
+    const flashcard = document.getElementById("flashcard");
+    const flashNav = document.getElementById("flashNav");
+    const backToDecks = document.getElementById("backToDecks");
+    const newFlashcardBtn = document.getElementById("newFlashcardBtn");
+
+    if (flashcardDecks) flashcardDecks.classList.add("hidden");
+    if (flashcard) {
+      flashcard.classList.remove("hidden");
+      flashcard.classList.remove('flipped');
+    }
+    if (flashNav) flashNav.classList.remove("hidden");
+    if (backToDecks) backToDecks.classList.remove("hidden");
+    if (newFlashcardBtn) newFlashcardBtn.classList.add("hidden");
 
     // Load the selected deck into the flashcard viewer
     flashcards.cards = chat.flashcards;
@@ -955,19 +963,31 @@ const flashcards = {
   render() {
     if (!this.cards || this.cards.length === 0) {
       console.log('[FLASHCARD] No cards to render');
-      DOM.flashcard.classList.add("hidden");
-      DOM.flashNav.classList.add("hidden");
+      const flashcard = document.getElementById("flashcard");
+      if (flashcard) flashcard.classList.add("hidden");
+      const flashNav = document.getElementById("flashNav");
+      if (flashNav) flashNav.classList.add("hidden");
       return;
     }
 
-    DOM.flashcard.classList.remove("hidden");
-    DOM.flashNav.classList.remove("hidden");
+    // Get FRESH DOM references every time
+    const flashcard = document.getElementById("flashcard");
+    const flashFront = document.getElementById("flashFront");
+    const flashBack = document.getElementById("flashBack");
+    const flashNav = document.getElementById("flashNav");
+    const flashIndex = document.getElementById("flashIndex");
+
+    if (!flashcard || !flashFront || !flashBack) {
+      console.error('[FLASHCARD] DOM elements not found!', { flashcard, flashFront, flashBack });
+      return;
+    }
+
+    flashcard.classList.remove("hidden");
+    flashNav.classList.remove("hidden");
 
     const card = this.cards[this.index];
     console.log('[FLASHCARD] Rendering card', this.index, 'Total cards:', this.cards.length);
     console.log('[FLASHCARD] Card object:', card);
-    console.log('[FLASHCARD] Card.q:', card?.q);
-    console.log('[FLASHCARD] Card.a:', card?.a);
 
     if (!card) {
       console.error('[FLASHCARD] Card is null/undefined!');
@@ -977,56 +997,47 @@ const flashcards = {
     const htmlFront = util.markdownToHtml(card.q);
     const htmlBack = util.markdownToHtml(card.a);
     
-    console.log('[FLASHCARD] HTML Front:', htmlFront);
-    console.log('[FLASHCARD] HTML Back:', htmlBack);
+    console.log('[FLASHCARD] Setting innerHTML on freshly fetched element');
+    flashFront.innerHTML = htmlFront;
+    flashBack.innerHTML = htmlBack;
 
-    DOM.flashFront.innerHTML = htmlFront;
-    DOM.flashBack.innerHTML = htmlBack;
+    console.log('[FLASHCARD] After setting innerHTML, flashFront is in DOM:', document.contains(flashFront));
 
-    // Debug: check if elements are actually in DOM and visible
-    console.log('[FLASHCARD] flashFront element:', DOM.flashFront);
-    console.log('[FLASHCARD] flashFront is in DOM:', document.contains(DOM.flashFront));
-    console.log('[FLASHCARD] flashFront display:', window.getComputedStyle(DOM.flashFront).display);
-    console.log('[FLASHCARD] flashFront visibility:', window.getComputedStyle(DOM.flashFront).visibility);
-    console.log('[FLASHCARD] flashFront color:', window.getComputedStyle(DOM.flashFront).color);
-    console.log('[FLASHCARD] flashFront fontSize:', window.getComputedStyle(DOM.flashFront).fontSize);
-    console.log('[FLASHCARD] flashFront innerHTML:', DOM.flashFront.innerHTML);
+    flashIndex.textContent = `${this.index + 1} / ${this.cards.length}`;
 
-    DOM.flashIndex.textContent = `${this.index + 1} / ${this.cards.length}`;
-
-    // Render math on both sides of the card - DELAY this to ensure DOM is updated
+    // Render math on both sides of the card
     setTimeout(() => {
-      console.log('[FLASHCARD] Calling renderMathInElement on front');
-      ui.renderMathInElement(DOM.flashFront);
-      console.log('[FLASHCARD] Calling renderMathInElement on back');
-      ui.renderMathInElement(DOM.flashBack);
+      ui.renderMathInElement(flashFront);
+      ui.renderMathInElement(flashBack);
     }, 100);
   },
 
   next() {
     if (this.index >= this.cards.length - 1) return;
 
-    const wasFlipped = DOM.flashcard.classList.contains("flipped");
-    DOM.flashcard.classList.remove("flipped");
+    const flashcard = document.getElementById("flashcard");
+    const wasFlipped = flashcard.classList.contains("flipped");
+    flashcard.classList.remove("flipped");
 
     // Wait for the flip animation to finish before changing content
     setTimeout(() => {
       this.index++;
       this.render();
-    }, wasFlipped ? 300 : 0); // Use a shorter delay for a snappier feel
+    }, wasFlipped ? 300 : 0);
   },
 
   prev() {
     if (this.index <= 0) return;
 
-    const wasFlipped = DOM.flashcard.classList.contains("flipped");
-    DOM.flashcard.classList.remove("flipped");
+    const flashcard = document.getElementById("flashcard");
+    const wasFlipped = flashcard.classList.contains("flipped");
+    flashcard.classList.remove("flipped");
 
     // Wait for the flip animation to finish before changing content
     setTimeout(() => {
       this.index--;
       this.render();
-    }, wasFlipped ? 300 : 0); // Use a shorter delay for a snappier feel
+    }, wasFlipped ? 300 : 0);
   }
 };
 
