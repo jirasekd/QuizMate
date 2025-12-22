@@ -983,11 +983,24 @@ const flashcards = {
     DOM.flashFront.innerHTML = htmlFront;
     DOM.flashBack.innerHTML = htmlBack;
 
+    // Debug: check if elements are actually in DOM and visible
+    console.log('[FLASHCARD] flashFront element:', DOM.flashFront);
+    console.log('[FLASHCARD] flashFront is in DOM:', document.contains(DOM.flashFront));
+    console.log('[FLASHCARD] flashFront display:', window.getComputedStyle(DOM.flashFront).display);
+    console.log('[FLASHCARD] flashFront visibility:', window.getComputedStyle(DOM.flashFront).visibility);
+    console.log('[FLASHCARD] flashFront color:', window.getComputedStyle(DOM.flashFront).color);
+    console.log('[FLASHCARD] flashFront fontSize:', window.getComputedStyle(DOM.flashFront).fontSize);
+    console.log('[FLASHCARD] flashFront innerHTML:', DOM.flashFront.innerHTML);
+
     DOM.flashIndex.textContent = `${this.index + 1} / ${this.cards.length}`;
 
-    // Render math on both sides of the card
-    ui.renderMathInElement(DOM.flashFront);
-    ui.renderMathInElement(DOM.flashBack);
+    // Render math on both sides of the card - DELAY this to ensure DOM is updated
+    setTimeout(() => {
+      console.log('[FLASHCARD] Calling renderMathInElement on front');
+      ui.renderMathInElement(DOM.flashFront);
+      console.log('[FLASHCARD] Calling renderMathInElement on back');
+      ui.renderMathInElement(DOM.flashBack);
+    }, 100);
   },
 
   next() {
