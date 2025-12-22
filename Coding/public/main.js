@@ -215,7 +215,7 @@ const subjectState = {
   async saveActiveSubject() {
     const token = localStorage.getItem('authToken');
     const subject = this.getActiveSubject();
-    if (!token || !subject) return;
+    if (!token || !subject) return null;
 
     // Vytvoříme kopii dat pro odeslání, bez `id` které Mongoose nemá rád v těle
     const subjectData = { ...subject };
@@ -237,13 +237,19 @@ const subjectState = {
       const updatedSubjectFromServer = await response.json();
       const subjectIndex = this.subjects.findIndex(s => s.id === subject.id);
       if (subjectIndex !== -1) {
-        const updatedSubjectWithMappedIds = { ...updatedSubjectFromServer, id: updatedSubjectFromServer._id, chats: updatedSubjectFromServer.chats.map(c => ({...c, id: c._id})) };
+        const updatedSubjectWithMappedIds = { 
+          ...updatedSubjectFromServer, 
+          id: updatedSubjectFromServer._id, 
+          chats: updatedSubjectFromServer.chats.map(c => ({...c, id: c._id})) 
+        };
         this.subjects[subjectIndex] = updatedSubjectWithMappedIds;
+        return updatedSubjectWithMappedIds; // Vrátíme aktualizovaná data S IDs!
       }
-      return updatedSubjectFromServer; // Vrátíme aktualizovaná data
+      return updatedSubjectFromServer;
     } catch (error) {
       console.error("Chyba při ukládání předmětu:", error);
       alert("Chyba při ukládání změn. Zkuste obnovit stránku.");
+      return null;
     }
   },
 
@@ -355,8 +361,12 @@ const chatState = {
     // Vytvoříme chat bez ID, to přiřadí databáze
     const chat = { name, messages: [], notes: null, flashcards: null, tests: null };
     activeSubject.chats.unshift(chat);
-    await subjectState.saveActiveSubject(); // Uložíme na server a POČKÁME
-    return chat;
+    
+    // DŮLEŽITÉ: Musíme počkat na server a aktualizovat lokální data s vrácenými IDs
+    const updatedSubject = await subjectState.saveActiveSubject();
+    
+    // Vrátíme first chat (nyní s ID z serveru)
+    return updatedSubject?.chats?.[0] || activeSubject.chats[0];
   },
 
   addMessage(text, role) {
@@ -1470,10 +1480,10 @@ const events = {
       throw new Error("Nepodařilo se převést AI odpověď na flashcards.");
     }
 
-    // === ULOŽENÍ ===
+    // === ULOŽENÍ - MUSÍME POČKAT! ===
     await chatState.addFlashcards(cards);
 
-    // === UI ===
+    // === UI - AŽ POTÉ! ===
     ui.updateSubjectSidebar();
     ui.renderSubjectsGrid();
     document.querySelector('[data-tab="flashcards"]').click();
