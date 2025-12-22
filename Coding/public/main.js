@@ -1,5 +1,5 @@
 /****************************************************
- * 1 UTILITIES
+ * 1. KONSTANTY A UTILITY FUNKCE
  ****************************************************/
 const util = {
   genId: () => Math.random().toString(36).slice(2, 10),
@@ -69,10 +69,6 @@ const util = {
   }
 };
 
-
-/****************************************************
- * 2. DOM
- ****************************************************/
 const DOM = {
   init() {
     // Main sections
@@ -160,7 +156,7 @@ const DOM = {
 };
 
 /****************************************************
- * 3. SUBJECT STATE
+ * 2. STAV APLIKACE (STATE OBJEKTY)
  ****************************************************/
 const subjectState = {
   subjects: [],
@@ -315,9 +311,7 @@ const fileState = {
     // subjectState.saveActiveSubject(); // Až budeme řešit soubory
   }
 };
-/****************************************************
- * 4. CHAT STATE
- ****************************************************/
+
 const chatState = {
   currentChatId: null,
 
@@ -416,9 +410,57 @@ const chatState = {
   }
 };
 
+/****************************************************
+ * 3. PRÁCE S API / BACKENDEM / AI
+ ****************************************************/
+const api = {
+  MAX_CONTEXT: 10,
+
+  getContextMessages() {
+    const chat = chatState.getCurrent();
+    return chat.messages.slice(-this.MAX_CONTEXT);
+  },
+
+  async askAI(messages) {
+    const topic = chatState.getCurrent()?.name || "(téma)";
+    const subjectName = subjectState.getActiveSubject()?.name || "všeobecné";
+    const subject = subjectState.getActiveSubject();
+
+    let fileContext = "";
+    if (subject && subject.files && subject.files.length > 0) {
+      const fileContents = subject.files.map(f => `Kontext ze souboru "${f.name}":\n${f.content}`).join('\n\n---\n\n');
+      fileContext = `
+      Máš k dispozici následující materiály. Aktivně z nich čerpej a odkazuj se na ně. Nikdy neříkej, že k souborům nemáš přístup. Pokud je použiješ, na začátku odpovědi to stručně zmiň (např. "Podle poskytnutých materiálů...").
+      --- SOUBORY ---
+      ${fileContents}
+      --- KONEC SOUBORŮ ---
+      `;
+    }
+
+    // The role should be "system" for system-level instructions.
+    // This helps the model better distinguish instructions from user conversation.
+    const system = {
+      role: "system",
+      content: `Jsi expert na téma **${subjectName}**. Odpovídej na otázky v kontextu tohoto předmětu.
+      Téma chatu je: ${topic}. Odpovídej česky. ${fileContext}`
+    };
+
+    const resp = await fetch("/api/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ messages: [system, ...messages] })
+    });
+
+    const data = await resp.json();
+    if (data.error) {
+      throw new Error("API error: " + JSON.stringify(data.error));
+    }
+    return data.reply;
+  }
+};
 
 /****************************************************
- * 5. UI
+ * 4. UI LOGIKA (RENDER FUNKCE)
  ****************************************************/
 const ui = {
   /**
@@ -936,10 +978,6 @@ const ui = {
   }
 };
 
-
-/****************************************************
- * FLASHCARDS
- ****************************************************/
 const flashcards = {
   cards: [],
   index: 0,
@@ -1023,59 +1061,8 @@ const flashcards = {
   }
 };
 
-
 /****************************************************
- * 7. API
- ****************************************************/
-const api = {
-  MAX_CONTEXT: 10,
-
-  getContextMessages() {
-    const chat = chatState.getCurrent();
-    return chat.messages.slice(-this.MAX_CONTEXT);
-  },
-
-  async askAI(messages) {
-    const topic = chatState.getCurrent()?.name || "(téma)";
-    const subjectName = subjectState.getActiveSubject()?.name || "všeobecné";
-    const subject = subjectState.getActiveSubject();
-
-    let fileContext = "";
-    if (subject && subject.files && subject.files.length > 0) {
-      const fileContents = subject.files.map(f => `Kontext ze souboru "${f.name}":\n${f.content}`).join('\n\n---\n\n');
-      fileContext = `
-      Máš k dispozici následující materiály. Aktivně z nich čerpej a odkazuj se na ně. Nikdy neříkej, že k souborům nemáš přístup. Pokud je použiješ, na začátku odpovědi to stručně zmiň (např. "Podle poskytnutých materiálů...").
-      --- SOUBORY ---
-      ${fileContents}
-      --- KONEC SOUBORŮ ---
-      `;
-    }
-
-    // The role should be "system" for system-level instructions.
-    // This helps the model better distinguish instructions from user conversation.
-    const system = {
-      role: "system",
-      content: `Jsi expert na téma **${subjectName}**. Odpovídej na otázky v kontextu tohoto předmětu.
-      Téma chatu je: ${topic}. Odpovídej česky. ${fileContext}`
-    };
-
-    const resp = await fetch("/api/chat", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ messages: [system, ...messages] })
-    });
-
-    const data = await resp.json();
-    if (data.error) {
-      throw new Error("API error: " + JSON.stringify(data.error));
-    }
-    return data.reply;
-  }
-};
-
-
-/****************************************************
- * 8. EVENTS
+ * 5. EVENT HANDLERY
  ****************************************************/
 const events = {
   initTabs() {
@@ -1740,7 +1727,7 @@ const events = {
 
 
 /****************************************************
- * 9. INIT
+ * 6. INICIALIZACE APLIKACE (DOMContentLoaded / init)
  ****************************************************/
 document.addEventListener("DOMContentLoaded", async () => {
 
