@@ -954,7 +954,7 @@ const flashcards = {
 
   render() {
     if (!this.cards || this.cards.length === 0) {
-      // Ensure the card is hidden if there are no cards to show
+      console.log('[FLASHCARD] No cards to render');
       DOM.flashcard.classList.add("hidden");
       DOM.flashNav.classList.add("hidden");
       return;
@@ -964,9 +964,24 @@ const flashcards = {
     DOM.flashNav.classList.remove("hidden");
 
     const card = this.cards[this.index];
+    console.log('[FLASHCARD] Rendering card', this.index, 'Total cards:', this.cards.length);
+    console.log('[FLASHCARD] Card object:', card);
+    console.log('[FLASHCARD] Card.q:', card?.q);
+    console.log('[FLASHCARD] Card.a:', card?.a);
 
-    DOM.flashFront.innerHTML = util.markdownToHtml(card.q);
-    DOM.flashBack.innerHTML = util.markdownToHtml(card.a);
+    if (!card) {
+      console.error('[FLASHCARD] Card is null/undefined!');
+      return;
+    }
+
+    const htmlFront = util.markdownToHtml(card.q);
+    const htmlBack = util.markdownToHtml(card.a);
+    
+    console.log('[FLASHCARD] HTML Front:', htmlFront);
+    console.log('[FLASHCARD] HTML Back:', htmlBack);
+
+    DOM.flashFront.innerHTML = htmlFront;
+    DOM.flashBack.innerHTML = htmlBack;
 
     DOM.flashIndex.textContent = `${this.index + 1} / ${this.cards.length}`;
 
