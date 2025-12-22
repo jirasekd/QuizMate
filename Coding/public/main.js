@@ -933,6 +933,7 @@ const ui = {
     // Add submit button
     const submitBtn = document.createElement('button');
     submitBtn.id = 'submitTestBtn';
+    submitBtn.className = 'btn primary';
     submitBtn.textContent = 'Submit Test';
     submitBtn.onclick = () => events.submitTest(chatId);
     DOM.testQuestionsContainer.appendChild(submitBtn);
@@ -962,7 +963,6 @@ const flashcards = {
 
   render() {
     if (!this.cards || this.cards.length === 0) {
-      console.log('[FLASHCARD] No cards to render');
       const flashcard = document.getElementById("flashcard");
       if (flashcard) flashcard.classList.add("hidden");
       const flashNav = document.getElementById("flashNav");
@@ -978,7 +978,7 @@ const flashcards = {
     const flashIndex = document.getElementById("flashIndex");
 
     if (!flashcard || !flashFront || !flashBack) {
-      console.error('[FLASHCARD] DOM elements not found!', { flashcard, flashFront, flashBack });
+      console.error('[FLASHCARD] DOM elements not found!');
       return;
     }
 
@@ -986,9 +986,6 @@ const flashcards = {
     flashNav.classList.remove("hidden");
 
     const card = this.cards[this.index];
-    console.log('[FLASHCARD] Rendering card', this.index, 'Total cards:', this.cards.length);
-    console.log('[FLASHCARD] Card object:', card);
-
     if (!card) {
       console.error('[FLASHCARD] Card is null/undefined!');
       return;
@@ -997,11 +994,8 @@ const flashcards = {
     const htmlFront = util.markdownToHtml(card.q);
     const htmlBack = util.markdownToHtml(card.a);
     
-    console.log('[FLASHCARD] Setting innerHTML on freshly fetched element');
     flashFront.innerHTML = htmlFront;
     flashBack.innerHTML = htmlBack;
-
-    console.log('[FLASHCARD] After setting innerHTML, flashFront is in DOM:', document.contains(flashFront));
 
     flashIndex.textContent = `${this.index + 1} / ${this.cards.length}`;
 
