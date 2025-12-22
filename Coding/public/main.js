@@ -196,25 +196,7 @@ const subjectState = {
         chats: s.chats.map(c => ({...c, id: c._id}))
       }));
 
-      // Pokud uživatel nemá žádné předměty, vytvoříme mu výchozí
-      if (this.subjects.length === 0) {
-        console.log("Vytvářím výchozí předměty pro nového uživatele...");
-        await this.addSubject('Mathematics', '🧮');
-        await this.addSubject('Biology', '🧬');
-        await this.addSubject('History', '📜');
-
-        const refresh = await fetch('/api/subjects', {
-          headers: { 'x-auth-token': token }
-        });
-        const refreshedSubjects = await refresh.json();
-        this.subjects = refreshedSubjects.map(s => ({
-          ...s,
-          id: s._id,
-          chats: s.chats.map(c => ({ ...c, id: c._id }))
-        }));
-      }
-
-      this.activeSubjectId = this.subjects[0]?.id || null;
+    this.activeSubjectId = this.subjects[0]?.id || null;
 
     } catch (error) {
       console.error("Chyba při inicializaci předmětů:", error);
@@ -851,20 +833,12 @@ const ui = {
     const chat = activeSubject.chats.find((c) => c.id === chatId);
     if (!chat || !Array.isArray(chat.flashcards) || chat.flashcards.length === 0) return;
 
-    const flashcardDecks = document.getElementById("flashcardDecks");
-    const flashcard = document.getElementById("flashcard");
-    const flashNav = document.getElementById("flashNav");
-    const backToDecks = document.getElementById("backToDecks");
-    const newFlashcardBtn = document.getElementById("newFlashcardBtn");
-
-    if (flashcardDecks) flashcardDecks.classList.add("hidden");
-    if (flashcard) {
-      flashcard.classList.remove("hidden");
-      flashcard.classList.remove('flipped');
-    }
-    if (flashNav) flashNav.classList.remove("hidden");
-    if (backToDecks) backToDecks.classList.remove("hidden");
-    if (newFlashcardBtn) newFlashcardBtn.classList.add("hidden");
+    DOM.flashcardDecks.classList.add("hidden");
+    DOM.flashcard.classList.remove("hidden");
+    DOM.flashcard.classList.remove('flipped'); // Ensure card starts on front
+    DOM.flashNav.classList.remove("hidden");
+    DOM.backToDecks.classList.remove("hidden");
+    DOM.newFlashcardBtn.classList.add("hidden");
 
     // Load the selected deck into the flashcard viewer
     flashcards.cards = chat.flashcards;
@@ -972,6 +946,7 @@ const flashcards = {
 
   render() {
     if (!this.cards || this.cards.length === 0) {
+      console.log('[FLASHCARD] No cards to render');
       const flashcard = document.getElementById("flashcard");
       if (flashcard) flashcard.classList.add("hidden");
       const flashNav = document.getElementById("flashNav");
@@ -987,7 +962,7 @@ const flashcards = {
     const flashIndex = document.getElementById("flashIndex");
 
     if (!flashcard || !flashFront || !flashBack) {
-      console.error('[FLASHCARD] DOM elements not found!');
+      console.error('[FLASHCARD] DOM elements not found!', { flashcard, flashFront, flashBack });
       return;
     }
 
@@ -995,6 +970,9 @@ const flashcards = {
     flashNav.classList.remove("hidden");
 
     const card = this.cards[this.index];
+    console.log('[FLASHCARD] Rendering card', this.index, 'Total cards:', this.cards.length);
+    console.log('[FLASHCARD] Card object:', card);
+
     if (!card) {
       console.error('[FLASHCARD] Card is null/undefined!');
       return;
@@ -1003,8 +981,11 @@ const flashcards = {
     const htmlFront = util.markdownToHtml(card.q);
     const htmlBack = util.markdownToHtml(card.a);
     
+    console.log('[FLASHCARD] Setting innerHTML on freshly fetched element');
     flashFront.innerHTML = htmlFront;
     flashBack.innerHTML = htmlBack;
+
+    console.log('[FLASHCARD] After setting innerHTML, flashFront is in DOM:', document.contains(flashFront));
 
     flashIndex.textContent = `${this.index + 1} / ${this.cards.length}`;
 
@@ -1018,29 +999,27 @@ const flashcards = {
   next() {
     if (this.index >= this.cards.length - 1) return;
 
-    const flashcard = document.getElementById("flashcard");
-    const wasFlipped = flashcard.classList.contains("flipped");
-    flashcard.classList.remove("flipped");
+    const wasFlipped = DOM.flashcard.classList.contains("flipped");
+    DOM.flashcard.classList.remove("flipped");
 
     // Wait for the flip animation to finish before changing content
     setTimeout(() => {
       this.index++;
       this.render();
-    }, wasFlipped ? 300 : 0);
+    }, wasFlipped ? 300 : 0); // Use a shorter delay for a snappier feel
   },
 
   prev() {
     if (this.index <= 0) return;
 
-    const flashcard = document.getElementById("flashcard");
-    const wasFlipped = flashcard.classList.contains("flipped");
-    flashcard.classList.remove("flipped");
+    const wasFlipped = DOM.flashcard.classList.contains("flipped");
+    DOM.flashcard.classList.remove("flipped");
 
     // Wait for the flip animation to finish before changing content
     setTimeout(() => {
       this.index--;
       this.render();
-    }, wasFlipped ? 300 : 0);
+    }, wasFlipped ? 300 : 0); // Use a shorter delay for a snappier feel
   }
 };
 
