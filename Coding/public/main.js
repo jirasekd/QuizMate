@@ -189,7 +189,7 @@ const subjectState = {
         ...s, 
         id: s._id,
         // Zajistíme, že i vnořené chaty mají správné `id`
-        chats: s.chats.map(c => ({...c, id: c._id}))
+        chats: s.chats ? s.chats.map(c => ({...c, id: c._id})) : []
       }));
 
     this.activeSubjectId = this.subjects[0]?.id || null;
@@ -228,7 +228,7 @@ const subjectState = {
         const updatedSubjectWithMappedIds = { 
           ...updatedSubjectFromServer, 
           id: updatedSubjectFromServer._id, 
-          chats: updatedSubjectFromServer.chats.map(c => ({...c, id: c._id})) 
+          chats: updatedSubjectFromServer.chats ? updatedSubjectFromServer.chats.map(c => ({...c, id: c._id})) : []
         };
         this.subjects[subjectIndex] = updatedSubjectWithMappedIds;
         return updatedSubjectWithMappedIds; // Vrátíme aktualizovaná data S IDs!
@@ -284,7 +284,8 @@ const subjectState = {
     
     // When switching subjects, reset the active chat.
     // This prevents "data leakage" between subjects (e.g., showing old flashcards).
-    const firstChatId = this.getActiveSubject()?.chats[0]?.id || null;
+    const activeSubject = this.getActiveSubject();
+    const firstChatId = (activeSubject?.chats && activeSubject.chats.length > 0) ? activeSubject.chats[0].id : null;
     chatState.selectChat(firstChatId);
 
     // Re-render the UI to reflect the change
@@ -319,14 +320,15 @@ const chatState = {
     // Chat state now initializes based on the active subject
     this.username = username;
     const key = `quizmate_current_chat_${username}`;
-    this.currentChatId = localStorage.getItem(key) || subjectState.getActiveSubject()?.chats[0]?.id || null;
+    const activeSubject = subjectState.getActiveSubject();
+    this.currentChatId = localStorage.getItem(key) || (activeSubject?.chats && activeSubject.chats.length > 0 ? activeSubject.chats[0].id : null) || null;
 
     if(this.currentChatId) localStorage.setItem(key, this.currentChatId);
   },
 
   getCurrent() {
     const activeSubject = subjectState.getActiveSubject();
-    if (!activeSubject) return null;
+    if (!activeSubject || !activeSubject.chats) return null;
     return activeSubject.chats.find((c) => c.id === this.currentChatId);
   },
 
@@ -344,6 +346,9 @@ const chatState = {
     const activeSubject = subjectState.getActiveSubject();
     if (!activeSubject) return null;
 
+    // Ujistíme se, že chats pole existuje
+    if (!activeSubject.chats) activeSubject.chats = [];
+
     // Vytvoříme chat bez ID, to přiřadí databáze
     const chat = { name, messages: [], notes: null, flashcards: null, tests: null };
     activeSubject.chats.unshift(chat);
@@ -357,6 +362,8 @@ const chatState = {
 
   addMessage(text, role) {
     const chat = this.getCurrent();
+    if (!chat) return null;
+    
     chat.messages.push({
       id: util.genId(),
       role,
@@ -418,6 +425,7 @@ const api = {
 
   getContextMessages() {
     const chat = chatState.getCurrent();
+    if (!chat) return [];
     return chat.messages.slice(-this.MAX_CONTEXT);
   },
 
@@ -620,7 +628,7 @@ const ui = {
   renderThreads() {
     DOM.threadListEl.innerHTML = "";
     const activeSubject = subjectState.getActiveSubject();
-    if (!activeSubject) return;
+    if (!activeSubject || !activeSubject.chats || activeSubject.chats.length === 0) return;
 
     activeSubject.chats.forEach((chat) => {
       const li = document.createElement("li");
@@ -735,7 +743,7 @@ const ui = {
 
     // Find chats that have notes
     const activeSubject = subjectState.getActiveSubject();
-    if (!activeSubject) return;
+    if (!activeSubject || !activeSubject.chats) return;
 
     const chatsWithNotes = activeSubject.chats.filter(
       (chat) => chat.notes && chat.notes.content.trim()
@@ -766,7 +774,7 @@ const ui = {
 
   openNoteDetail(chatId) {
     const activeSubject = subjectState.getActiveSubject();
-    if (!activeSubject) return;
+    if (!activeSubject || !activeSubject.chats) return;
 
     const chat = activeSubject.chats.find((c) => c.id === chatId);
     if (!chat || !chat.notes) return;
@@ -839,7 +847,7 @@ const ui = {
 
     // Find chats that have flashcards
     const activeSubject = subjectState.getActiveSubject();
-    if (!activeSubject) return;
+    if (!activeSubject || !activeSubject.chats) return;
 
     const chatsWithDecks = activeSubject.chats.filter(
       (c) => Array.isArray(c.flashcards) && c.flashcards.length > 0
@@ -870,7 +878,7 @@ const ui = {
 
   openDeckDetail(chatId) {
     const activeSubject = subjectState.getActiveSubject();
-    if (!activeSubject) return;
+    if (!activeSubject || !activeSubject.chats) return;
 
     const chat = activeSubject.chats.find((c) => c.id === chatId);
     if (!chat || !Array.isArray(chat.flashcards) || chat.flashcards.length === 0) return;
@@ -897,7 +905,7 @@ const ui = {
     DOM.testsGrid.innerHTML = "";
 
     const activeSubject = subjectState.getActiveSubject();
-    if (!activeSubject) return;
+    if (!activeSubject || !activeSubject.chats) return;
 
     const chatsWithTests = activeSubject.chats.filter(
       (c) => Array.isArray(c.tests) && c.tests.length > 0
@@ -927,7 +935,7 @@ const ui = {
 
   openTestDetail(chatId) {
     const activeSubject = subjectState.getActiveSubject();
-    if (!activeSubject) return;
+    if (!activeSubject || !activeSubject.chats) return;
 
     const chat = activeSubject.chats.find((c) => c.id === chatId);
     if (!chat || !Array.isArray(chat.tests) || chat.tests.length === 0) return;
@@ -1140,11 +1148,11 @@ const events = {
           const name = prompt("Název nového chatu:");
           if (!name) return;
 
-          await chatState.addChat(name);
+          const newChat = await chatState.addChat(name);
           ui.updateSubjectSidebar();
           ui.renderSubjectsGrid();
           ui.renderThreads();
-          chatState.selectChat(subjectState.getActiveSubject().chats[0].id);
+          if (newChat) chatState.selectChat(newChat.id);
         });
       }
     }
@@ -1581,7 +1589,12 @@ const events = {
   },
 
   submitTest(chatId) {
-    const chat = subjectState.getActiveSubject().chats.find(c => c.id === chatId);
+    const activeSubject = subjectState.getActiveSubject();
+    if (!activeSubject || !activeSubject.chats) return;
+    
+    const chat = activeSubject.chats.find(c => c.id === chatId);
+    if (!chat || !chat.tests || chat.tests.length === 0) return;
+    
     const test = chat.tests[0];
     let score = 0;
 
@@ -1608,8 +1621,9 @@ const events = {
     if (!topic) return;
 
     // Create a new chat for this topic
-    await chatState.addChat(topic);
-    const newChat = subjectState.getActiveSubject().chats[0];
+    const newChat = await chatState.addChat(topic);
+    if (!newChat) return;
+    
     chatState.selectChat(newChat.id);
 
     // Generate notes
