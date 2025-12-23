@@ -716,10 +716,10 @@ const ui = {
   renderMessages() {
     DOM.messages.innerHTML = "";
     const chat = chatState.getCurrent(); // This now gets the chat from the active subject
-    if (!chat) {
-      ui.showError("Nejprve vyberte nebo vytvořte chat.");
+    /*if (!chat) {
+      console.log("Nejprve vyberte nebo vytvořte chat.");
       return;
-    }
+    }*/  
 
     chat.messages.forEach((m) => {
       DOM.messages.appendChild(ui.createMessageElement(m));
