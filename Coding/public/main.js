@@ -321,7 +321,7 @@ const chatState = {
     this.username = username;
     const key = `quizmate_current_chat_${username}`;
     const activeSubject = subjectState.getActiveSubject();
-    this.currentChatId = localStorage.getItem(key) /*|| (activeSubject?.chats && activeSubject.chats.length > 0 ? activeSubject.chats[0].id : null) || null*/;
+    this.currentChatId = localStorage.getItem(key) || (activeSubject?.chats && activeSubject.chats.length > 0 ? activeSubject.chats[0].id : null) || null;
 
     if(this.currentChatId) localStorage.setItem(key, this.currentChatId);
   },
@@ -362,8 +362,6 @@ const chatState = {
 
   addMessage(text, role) {
     const chat = this.getCurrent();
-    if (!chat) return null;
-    
     chat.messages.push({
       id: util.genId(),
       role,
@@ -425,7 +423,6 @@ const api = {
 
   getContextMessages() {
     const chat = chatState.getCurrent();
-    if (!chat) return [];
     return chat.messages.slice(-this.MAX_CONTEXT);
   },
 
@@ -713,20 +710,20 @@ const ui = {
     return row;
   },
 
-  /*renderMessages() {
+  renderMessages() {
     DOM.messages.innerHTML = "";
     const chat = chatState.getCurrent(); // This now gets the chat from the active subject
     if (!chat) {
-      console.log("Nejprve vyberte nebo vytvořte chat.");
+      ui.showError("Nejprve vyberte nebo vytvořte chat.");
       return;
-    };  
+    }
 
     chat.messages.forEach((m) => {
       DOM.messages.appendChild(ui.createMessageElement(m));
     });
 
     DOM.messages.scrollTop = DOM.messages.scrollHeight;
-  },*/
+  },
 
   addMessage(text, role) {
     chatState.addMessage(text, role);
@@ -878,7 +875,7 @@ const ui = {
 
   openDeckDetail(chatId) {
     const activeSubject = subjectState.getActiveSubject();
-    if (!activeSubject || !activeSubject.chats) return;
+    if (!activeSubject) return;
 
     const chat = activeSubject.chats.find((c) => c.id === chatId);
     if (!chat || !Array.isArray(chat.flashcards) || chat.flashcards.length === 0) return;
@@ -935,7 +932,7 @@ const ui = {
 
   openTestDetail(chatId) {
     const activeSubject = subjectState.getActiveSubject();
-    if (!activeSubject || !activeSubject.chats) return;
+    if (!activeSubject) return;
 
     const chat = activeSubject.chats.find((c) => c.id === chatId);
     if (!chat || !Array.isArray(chat.tests) || chat.tests.length === 0) return;
