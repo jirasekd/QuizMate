@@ -321,7 +321,7 @@ const chatState = {
     this.username = username;
     const key = `quizmate_current_chat_${username}`;
     const activeSubject = subjectState.getActiveSubject();
-    this.currentChatId = localStorage.getItem(key) || (activeSubject?.chats && activeSubject.chats.length > 0 ? activeSubject.chats[0].id : null) || null;
+    this.currentChatId = localStorage.getItem(key) /*|| (activeSubject?.chats && activeSubject.chats.length > 0 ? activeSubject.chats[0].id : null) || null*/;
 
     if(this.currentChatId) localStorage.setItem(key, this.currentChatId);
   },
