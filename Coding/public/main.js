@@ -321,14 +321,14 @@ const chatState = {
     this.username = username;
     const key = `quizmate_current_chat_${username}`;
     const activeSubject = subjectState.getActiveSubject();
-    this.currentChatId = localStorage.getItem(key) || (activeSubject?.chats && activeSubject.chats.length > 0 ? activeSubject.chats[0].id : null) || null;
+    this.currentChatId = localStorage.getItem(key) || subjectState.getActiveSubject()?.chats[0]?.id || null;
 
     if(this.currentChatId) localStorage.setItem(key, this.currentChatId);
   },
 
   getCurrent() {
     const activeSubject = subjectState.getActiveSubject();
-    if (!activeSubject || !activeSubject.chats) return null;
+    if (!activeSubject) return null;
     return activeSubject.chats.find((c) => c.id === this.currentChatId);
   },
 
@@ -346,22 +346,16 @@ const chatState = {
     const activeSubject = subjectState.getActiveSubject();
     if (!activeSubject) return null;
 
-    // Ujistíme se, že chats pole existuje
-    if (!activeSubject.chats) activeSubject.chats = [];
-
     // Vytvoříme chat bez ID, to přiřadí databáze
     const chat = { name, messages: [], notes: null, flashcards: null, tests: null };
     activeSubject.chats.unshift(chat);
-    
-    // DŮLEŽITÉ: Musíme počkat na server a aktualizovat lokální data s vrácenými IDs
-    const updatedSubject = await subjectState.saveActiveSubject();
-    
-    // Vrátíme first chat (nyní s ID z serveru)
-    return updatedSubject?.chats?.[0] || activeSubject.chats[0];
+    await subjectState.saveActiveSubject(); // Uložíme na server a POČKÁME
+    return chat;
   },
 
   addMessage(text, role) {
     const chat = this.getCurrent();
+    if (!chat) return;
     chat.messages.push({
       id: util.genId(),
       role,
@@ -385,7 +379,7 @@ const chatState = {
   addNotes(content) {
     const chat = this.getCurrent();
     if (!chat) return;
-    
+
     let cleaned = content;
 
     // Remove intro lines (AI intros)
@@ -625,12 +619,11 @@ const ui = {
   renderThreads() {
     DOM.threadListEl.innerHTML = "";
     const activeSubject = subjectState.getActiveSubject();
-    if (!activeSubject || !activeSubject.chats || activeSubject.chats.length === 0) return;
+    if (!activeSubject) return;
 
     activeSubject.chats.forEach((chat) => {
       const li = document.createElement("li");
-      li.className =
-        "thread-item" + (chat.id === chatState.currentChatId ? " active" : "");
+      li.className = "thread-item" + (chat.id === chatState.currentChatId ? " active" : "");
 
       const name = document.createElement("span");
       name.textContent = chat.name;
@@ -714,7 +707,7 @@ const ui = {
     DOM.messages.innerHTML = "";
     const chat = chatState.getCurrent(); // This now gets the chat from the active subject
     if (!chat) {
-      ui.showError("Nejprve vyberte nebo vytvořte chat.");
+      DOM.messages.innerHTML = "Zatím zde není žádný chat. Vytvořte nový.";
       return;
     }
 
@@ -1349,6 +1342,7 @@ const events = {
   /* GENERATE NOTES */
   async generateNotes() {
     const chat = chatState.getCurrent();
+    if (!chat) { ui.renderMessages(); return; }
     const topic = chat.name;
 
     ui.addMessage("📝 Generuji výpisky...\n\tBudete přepnuti na záložku notes.", "assistant");
@@ -1394,17 +1388,14 @@ const events = {
   /* GENERATE FLASHCARDS */
   async generateFlashcards() {
     const chat = chatState.getCurrent();
-    if (!chat) {
-      ui.showError("Nejprve vyberte nebo vytvořte chat.");
-      return;
+    if (!chat) 
+    { 
+      ui.renderMessages(); 
+      return; 
     }
-
     const topic = chat.name;
 
-    ui.addMessage(
-      "🧠 Generuji flashcards...\n\tPo dokončení budete přepnuti na záložku flashcards.",
-      "assistant"
-    );
+    ui.addMessage("🧠 Generuji flashcards...\n\tPo dokončení budete přepnuti na záložku flashcards.","assistant");
 
     let levelText = "";
     if (window.quizmateLevel === "zakladka") {
@@ -1431,7 +1422,7 @@ const events = {
       Back: Odpověď
       ---
 
-      Maximálně 30 krátkých a konkrétních flashcards.
+      Maximálně 20 krátkých a konkrétních flashcards.
       `;
 
     const ctx = api.getContextMessages();
