@@ -713,20 +713,20 @@ const ui = {
     return row;
   },
 
-  renderMessages() {
+  /*renderMessages() {
     DOM.messages.innerHTML = "";
     const chat = chatState.getCurrent(); // This now gets the chat from the active subject
-    /*if (!chat) {
+    if (!chat) {
       console.log("Nejprve vyberte nebo vytvořte chat.");
       return;
-    }*/  
+    };  
 
     chat.messages.forEach((m) => {
       DOM.messages.appendChild(ui.createMessageElement(m));
     });
 
     DOM.messages.scrollTop = DOM.messages.scrollHeight;
-  },
+  },*/
 
   addMessage(text, role) {
     chatState.addMessage(text, role);
