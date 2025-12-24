@@ -1369,6 +1369,7 @@ const events = {
       Vytvoř přehledné, strukturované a kvalitní výpisky k tématu **${topic}**.
       Použij nadpisy, odrážky, vysvětlení, ${formulaInstruction}příklady.
       Vycházej z předchozí konverzace.
+      Piš kapitoly a podkapitoly pomocí: 1., 1.1., 1.1.1., atd.
       `;
 
     // Get the previous messages and add the new instruction at the end.
