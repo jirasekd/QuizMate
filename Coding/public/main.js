@@ -1837,6 +1837,30 @@ const events = {
       console.error(err);
     }
   });
+
+  // === CHANGE AVATAR ===
+  const changeAvatarBtn = getElementById("changeAvatarBtn");
+
+  let uploadedAvatarBase64 = null;
+
+  avatarFile.addEventListener("change", () => {
+      const file = avatarFile.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        uploadedAvatarBase64 = e.target.result;
+
+        // Preview
+        avatarPreview.src = uploadedAvatarBase64;
+        avatarPreview.classList.remove("hidden");
+
+        // Clear text avatar if any
+        avatarText.value = "";
+      };
+      reader.readAsDataURL(file);
+    });
+    
   }
 };
 
