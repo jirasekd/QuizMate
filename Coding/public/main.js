@@ -1720,6 +1720,8 @@ const events = {
 
   function closeSettingsModal() {
     DOM.settingsModal.classList.add('hidden');
+    passwordForm.classList.add("hidden");
+    passwordForm.reset();
   }
 
   // === CLOSE MODAL ===
@@ -1777,38 +1779,65 @@ const events = {
     });
   }
 
-  // === CHANGE PASSWORD ===
+  // === PASSWORD FORM ELEMENTS ===
   const changePasswordBtn = document.getElementById("changePasswordBtn");
-  if (changePasswordBtn) {
-    changePasswordBtn.addEventListener("click", async () => {
-      const oldPassword = prompt("Old password:");
-      if (oldPassword === null) return;
-      else{
-        const newPassword = prompt("New password:");
-        if (newPassword === null) return;
-      }
+  const passwordForm = document.getElementById("changePasswordForm");
+  const oldPasswordInput = document.getElementById("oldPasswordInput");
+  const newPasswordInput = document.getElementById("newPasswordInput");
+  const cancelBtn = document.getElementById("cancelPasswordChange");
 
-      if (!oldPassword || !newPassword) return;
+  if (!changePasswordBtn || !passwordForm) return;
 
-      const token = localStorage.getItem("authToken");
+  // === OPEN FORM ===
+  changePasswordBtn.addEventListener("click", () => {
+    passwordForm.classList.toggle("hidden");
+    oldPasswordInput.focus();
+  });
 
+  // === CANCEL ===
+  if (cancelBtn) {
+    cancelBtn.addEventListener("click", () => {
+      passwordForm.classList.add("hidden");
+      passwordForm.reset();
+    });
+  }
+
+  // === SUBMIT ===
+  passwordForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const oldPassword = oldPasswordInput.value;
+    const newPassword = newPasswordInput.value;
+
+    if (!oldPassword || !newPassword) return;
+
+    const token = localStorage.getItem("authToken");
+
+    try {
       const res = await fetch("/api/user/password", {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          "x-auth-token": token,
+          "x-auth-token": token
         },
-        body: JSON.stringify({ oldPassword, newPassword }),
+        body: JSON.stringify({ oldPassword, newPassword })
       });
 
       const data = await res.json();
-      if (!res.ok) return alert(data.msg || "Failed to change password");
+      if (!res.ok) {
+        alert(data.msg || "Password change failed");
+        return;
+      }
 
-      alert("Password changed");
+      alert("Password changed successfully");
       closeSettingsModal();
-    });
+
+    } catch (err) {
+      alert("Server error");
+      console.error(err);
+    }
+  });
   }
-}
 };
 
 
