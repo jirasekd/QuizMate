@@ -1250,6 +1250,22 @@ body.dark-mode .plus-btn {
     width: 100%;
 }
 
+#settings-modal .settings-form input {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  background: var(--input-bg);
+  font-size: 14px;
+}
+
+#settings-modal .settings-form input:focus {
+  outline: none;
+  border-color: var(--primary-1);
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.25);
+}
+
+
 
 /****************************************************
  * 14. UTILITY CLASSES
