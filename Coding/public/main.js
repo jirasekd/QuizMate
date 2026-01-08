@@ -1716,20 +1716,95 @@ const events = {
   },
 
   initSettingsModal() {
-    if (!DOM.settingsModal || !DOM.userAvatar || !DOM.closeModalButton) return;
+  if (!DOM.settingsModal) return;
 
-    function closeSettingsModal() {
-        DOM.settingsModal.classList.add('hidden');
-    }
+  function closeSettingsModal() {
+    DOM.settingsModal.classList.add('hidden');
+  }
 
-    // The logic to open the modal is now in initSidebar, so we only need to handle closing it here.
+  // === CLOSE MODAL ===
+  if (DOM.closeModalButton) {
     DOM.closeModalButton.addEventListener('click', closeSettingsModal);
+  }
 
-    // Close modal if user clicks on the background overlay
-    DOM.settingsModal.addEventListener('click', (event) => {
-        if (event.target === DOM.settingsModal) closeSettingsModal();
+  // Close modal when clicking on overlay
+  DOM.settingsModal.addEventListener('click', (event) => {
+    if (event.target === DOM.settingsModal) {
+      closeSettingsModal();
+    }
+  });
+
+  // === LOGOUT ===
+  const logoutBtn = document.getElementById("logoutBtn");
+  if (logoutBtn) {
+    logoutBtn.addEventListener("click", () => {
+      localStorage.removeItem("quizmate_current_user");
+      localStorage.removeItem("authToken");
+      window.location.href = "/login";
     });
   }
+
+  // === CHANGE USERNAME ===
+  const changeUsernameBtn = document.getElementById("changeUsernameBtn");
+  if (changeUsernameBtn) {
+    changeUsernameBtn.addEventListener("click", async () => {
+      const newUsername = prompt("Enter new username:");
+      if (!newUsername) return;
+
+      const token = localStorage.getItem("authToken");
+
+      const res = await fetch("/api/user/username", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "x-auth-token": token,
+        },
+        body: JSON.stringify({ newUsername }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) return alert(data.msg || "Failed to change username");
+
+      // update localStorage + UI
+      const user = JSON.parse(localStorage.getItem("quizmate_current_user"));
+      user.username = data.username;
+      localStorage.setItem("quizmate_current_user", JSON.stringify(user));
+
+      if (DOM.userName) DOM.userName.textContent = data.username;
+
+      alert("Username changed");
+      closeSettingsModal();
+    });
+  }
+
+  // === CHANGE PASSWORD ===
+  const changePasswordBtn = document.getElementById("changePasswordBtn");
+  if (changePasswordBtn) {
+    changePasswordBtn.addEventListener("click", async () => {
+      const oldPassword = prompt("Old password:");
+      const newPassword = prompt("New password:");
+
+      if (!oldPassword || !newPassword) return;
+
+      const token = localStorage.getItem("authToken");
+
+      const res = await fetch("/api/user/password", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "x-auth-token": token,
+        },
+        body: JSON.stringify({ oldPassword, newPassword }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) return alert(data.msg || "Failed to change password");
+
+      alert("Password changed");
+      closeSettingsModal();
+    });
+  }
+}
 };
 
 
