@@ -1782,7 +1782,11 @@ const events = {
   if (changePasswordBtn) {
     changePasswordBtn.addEventListener("click", async () => {
       const oldPassword = prompt("Old password:");
-      const newPassword = prompt("New password:");
+      if (oldPassword === null) return;
+      else{
+        const newPassword = prompt("New password:");
+        if (newPassword === null) return;
+      }
 
       if (!oldPassword || !newPassword) return;
 
