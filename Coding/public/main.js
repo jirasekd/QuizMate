@@ -1908,8 +1908,19 @@ const events = {
     });
   }
 
+  // Reset image when typing text
+  if (avatarText) {
+    avatarText.addEventListener("input", () => {
+      if (avatarText.value.trim() !== "") {
+        uploadedAvatarBase64 = null;
+        if (avatarFile) avatarFile.value = "";
+      }
+    });
+  }
+
   if (changeAvatarBtn) {
-    changeAvatarBtn.addEventListener("click", async () => {
+    changeAvatarBtn.addEventListener("click", async (e) => {
+      if (e) e.preventDefault();
       const token = localStorage.getItem("authToken");
       let avatar = uploadedAvatarBase64;
       
