@@ -1091,7 +1091,7 @@ body.dark-mode .plus-btn {
 .test-detail {
   display: block;
   overflow-y: auto;
-  padding-right: 10px;
+  padding-right: 10px;;
 }
 
 #testDetail {
