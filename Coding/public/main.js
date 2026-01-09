@@ -1765,12 +1765,17 @@ const events = {
           body: JSON.stringify({ newUsername }),
         });
 
+        if (res.status === 404) {
+          throw new Error("Endpoint /api/user/username not found. Please check server.js registration.");
+        }
+
         let data;
         const contentType = res.headers.get("content-type");
         if (contentType && contentType.includes("application/json")) {
           data = await res.json();
         } else {
-          throw new Error(`Server error: ${res.status} (Endpoint likely missing)`);
+          const text = await res.text();
+          throw new Error(`Server error: ${res.status} - ${text.substring(0, 50)}...`);
         }
 
         if (!res.ok) throw new Error(data.msg || "Failed to change username");
@@ -1807,8 +1812,14 @@ const events = {
   if (!changePasswordBtn || !passwordForm) return;
 
   // Fix: Add autocomplete attributes to silence browser warnings
-  if (oldPasswordInput) oldPasswordInput.setAttribute("autocomplete", "current-password");
-  if (newPasswordInput) newPasswordInput.setAttribute("autocomplete", "new-password");
+  if (oldPasswordInput) {
+    oldPasswordInput.setAttribute("autocomplete", "current-password");
+    oldPasswordInput.setAttribute("name", "current-password");
+  }
+  if (newPasswordInput) {
+    newPasswordInput.setAttribute("autocomplete", "new-password");
+    newPasswordInput.setAttribute("name", "new-password");
+  }
 
   // === OPEN FORM ===
   changePasswordBtn.addEventListener("click", () => {
@@ -1845,7 +1856,14 @@ const events = {
         body: JSON.stringify({ oldPassword, newPassword })
       });
 
-      const data = await res.json();
+      let data;
+      const contentType = res.headers.get("content-type");
+      if (contentType && contentType.includes("application/json")) {
+        data = await res.json();
+      } else {
+        throw new Error(`Server error: ${res.status} (Endpoint likely missing)`);
+      }
+
       if (!res.ok) {
         alert(data.msg || "Password change failed");
         return;
@@ -1855,7 +1873,7 @@ const events = {
       closeSettingsModal();
 
     } catch (err) {
-      alert("Server error");
+      alert("Server error: " + err.message);
       console.error(err);
     }
   });
@@ -1911,7 +1929,14 @@ const events = {
           body: JSON.stringify({ avatar }),
         });
 
-        const data = await res.json();
+        let data;
+        const contentType = res.headers.get("content-type");
+        if (contentType && contentType.includes("application/json")) {
+          data = await res.json();
+        } else {
+          throw new Error(`Server error: ${res.status} (Endpoint likely missing)`);
+        }
+
         if (!res.ok) throw new Error(data.msg || "Chyba při změně avataru");
 
         // Update LocalStorage
