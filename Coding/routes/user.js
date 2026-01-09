@@ -1,3 +1,9 @@
+const express = require('express');
+const router = express.Router();
+const bcrypt = require('bcryptjs');
+const User = require('../models/User');
+const auth = require('../middleware/auth');
+
 router.put('/username', auth, async (req, res) => {
   const { newUsername } = req.body;
 
@@ -37,3 +43,23 @@ router.put('/password', auth, async (req, res) => {
 
   res.json({ msg: 'Heslo změněno' });
 });
+
+router.put('/avatar', auth, async (req, res) => {
+  const { avatar } = req.body;
+
+  if (!avatar) {
+    return res.status(400).json({ msg: 'Chybí avatar' });
+  }
+
+  try {
+    const user = await User.findById(req.user.id);
+    user.avatar = avatar;
+    await user.save();
+    res.json({ avatar: user.avatar });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Chyba serveru');
+  }
+});
+
+module.exports = router;

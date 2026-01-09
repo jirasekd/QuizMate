@@ -1772,7 +1772,13 @@ const events = {
       user.username = data.username;
       localStorage.setItem("quizmate_current_user", JSON.stringify(user));
 
-      if (DOM.userName) DOM.userName.textContent = data.username;
+      // Aktualizace UI - zkusíme DOM.userName, případně najdeme element znovu
+      if (DOM.userName) {
+        DOM.userName.textContent = data.username;
+      } else {
+        const userNameEl = document.getElementById("userName");
+        if (userNameEl) userNameEl.textContent = data.username;
+      }
 
       alert("Username changed");
       closeSettingsModal();
@@ -1839,11 +1845,15 @@ const events = {
   });
 
   // === CHANGE AVATAR ===
-  const changeAvatarBtn = getElementById("changeAvatarBtn");
+  const changeAvatarBtn = document.getElementById("changeAvatarBtn");
+  const avatarFile = document.getElementById("avatarFile");
+  const avatarPreview = document.getElementById("avatarPreview");
+  const avatarText = document.getElementById("avatarText");
 
   let uploadedAvatarBase64 = null;
 
-  avatarFile.addEventListener("change", () => {
+  if (avatarFile) {
+    avatarFile.addEventListener("change", () => {
       const file = avatarFile.files[0];
       if (!file) return;
 
@@ -1852,14 +1862,67 @@ const events = {
         uploadedAvatarBase64 = e.target.result;
 
         // Preview
-        avatarPreview.src = uploadedAvatarBase64;
-        avatarPreview.classList.remove("hidden");
+        if (avatarPreview) {
+          avatarPreview.src = uploadedAvatarBase64;
+          avatarPreview.classList.remove("hidden");
+        }
 
         // Clear text avatar if any
-        avatarText.value = "";
+        if (avatarText) avatarText.value = "";
       };
       reader.readAsDataURL(file);
     });
+  }
+
+  if (changeAvatarBtn) {
+    changeAvatarBtn.addEventListener("click", async () => {
+      const token = localStorage.getItem("authToken");
+      let avatar = uploadedAvatarBase64;
+      
+      if (!avatar && avatarText) {
+        avatar = avatarText.value.trim();
+      }
+
+      if (!avatar) return alert("Vyberte obrázek nebo zadejte text.");
+
+      try {
+        const res = await fetch("/api/user/avatar", {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            "x-auth-token": token,
+          },
+          body: JSON.stringify({ avatar }),
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.msg || "Chyba při změně avataru");
+
+        // Update LocalStorage
+        const user = JSON.parse(localStorage.getItem("quizmate_current_user"));
+        user.avatar = data.avatar;
+        localStorage.setItem("quizmate_current_user", JSON.stringify(user));
+
+        // Update UI
+        if (DOM.userAvatar) {
+          if (data.avatar.startsWith("data:image")) {
+            DOM.userAvatar.style.backgroundImage = `url(${data.avatar})`;
+            DOM.userAvatar.style.backgroundSize = "cover";
+            DOM.userAvatar.style.backgroundPosition = "center";
+            DOM.userAvatar.textContent = "";
+          } else {
+            DOM.userAvatar.style.backgroundImage = "";
+            DOM.userAvatar.textContent = data.avatar;
+          }
+        }
+
+        alert("Avatar úspěšně změněn");
+        closeSettingsModal();
+      } catch (err) {
+        alert(err.message);
+      }
+    });
+  }
     
   }
 };
