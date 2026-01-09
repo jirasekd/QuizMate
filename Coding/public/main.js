@@ -1880,6 +1880,9 @@ const events = {
 
   // === CHANGE AVATAR ===
   const changeAvatarBtn = document.getElementById("changeAvatarBtn");
+  const avatarForm = document.getElementById("changeAvatarForm");
+  const saveAvatarBtn = document.getElementById("saveAvatarBtn");
+  const cancelAvatarBtn = document.getElementById("cancelAvatarBtn");
   const avatarFile = document.getElementById("avatarFile");
   const avatarPreview = document.getElementById("avatarPreview");
   const avatarText = document.getElementById("avatarText");
@@ -1914,12 +1917,35 @@ const events = {
       if (avatarText.value.trim() !== "") {
         uploadedAvatarBase64 = null;
         if (avatarFile) avatarFile.value = "";
+        if (avatarPreview) {
+          avatarPreview.classList.add("hidden");
+          avatarPreview.src = "";
+        }
       }
     });
   }
 
   if (changeAvatarBtn) {
-    changeAvatarBtn.addEventListener("click", async (e) => {
+    changeAvatarBtn.addEventListener("click", () => {
+      if (avatarForm) avatarForm.classList.toggle("hidden");
+    });
+  }
+
+  if (cancelAvatarBtn) {
+    cancelAvatarBtn.addEventListener("click", () => {
+      if (avatarForm) avatarForm.classList.add("hidden");
+      uploadedAvatarBase64 = null;
+      if (avatarFile) avatarFile.value = "";
+      if (avatarText) avatarText.value = "";
+      if (avatarPreview) {
+        avatarPreview.classList.add("hidden");
+        avatarPreview.src = "";
+      }
+    });
+  }
+
+  if (saveAvatarBtn) {
+    saveAvatarBtn.addEventListener("click", async (e) => {
       if (e) e.preventDefault();
       const token = localStorage.getItem("authToken");
       let avatar = uploadedAvatarBase64;
@@ -1969,7 +1995,7 @@ const events = {
         }
 
         alert("Avatar úspěšně změněn");
-        closeSettingsModal();
+        if (avatarForm) avatarForm.classList.add("hidden");
       } catch (err) {
         alert(err.message);
       }

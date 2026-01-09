@@ -280,6 +280,18 @@
                 </div>
               </form>
             <button id="changeAvatarBtn" class="btn outline">Change avatar</button>
+            <div id="changeAvatarForm" class="hidden settings-form">
+              <div style="display: flex; flex-direction: column; align-items: center; gap: 10px; margin-bottom: 10px;">
+                <img id="avatarPreview" class="hidden" style="width: 64px; height: 64px; border-radius: 50%; object-fit: cover;" />
+                <input type="file" id="avatarFile" accept="image/*" />
+                <span>OR</span>
+                <input type="text" id="avatarText" placeholder="Initials (e.g. JD)" maxlength="2" style="text-align: center; width: 80px;" />
+              </div>
+              <div style="display:flex; gap:8px;">
+                <button id="saveAvatarBtn" class="btn primary small">Save</button>
+                <button id="cancelAvatarBtn" class="btn outline small">Cancel</button>
+              </div>
+            </div>
             <button id="logoutBtn" class="btn outline">Logout</button>
         </div>
     </div>
