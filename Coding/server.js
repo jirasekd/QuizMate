@@ -38,6 +38,11 @@ connectDB();
 // Přidáme cesty pro registraci a přihlášení
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/subjects', require('./routes/subjects'));
+app.use('/api/user', require('./routes/user'));
+
+// ==================================
+//  GEMINI CHAT API
+// ==================================
 
 const API_KEY = process.env.GOOGLE_API_KEY;
 if (!API_KEY) {
