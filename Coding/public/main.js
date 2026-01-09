@@ -1755,33 +1755,45 @@ const events = {
 
       const token = localStorage.getItem("authToken");
 
-      const res = await fetch("/api/user/username", {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          "x-auth-token": token,
-        },
-        body: JSON.stringify({ newUsername }),
-      });
+      try {
+        const res = await fetch("/api/user/username", {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            "x-auth-token": token,
+          },
+          body: JSON.stringify({ newUsername }),
+        });
 
-      const data = await res.json();
-      if (!res.ok) return alert(data.msg || "Failed to change username");
+        let data;
+        const contentType = res.headers.get("content-type");
+        if (contentType && contentType.includes("application/json")) {
+          data = await res.json();
+        } else {
+          throw new Error(`Server error: ${res.status} (Endpoint likely missing)`);
+        }
 
-      // update localStorage + UI
-      const user = JSON.parse(localStorage.getItem("quizmate_current_user"));
-      user.username = data.username;
-      localStorage.setItem("quizmate_current_user", JSON.stringify(user));
+        if (!res.ok) throw new Error(data.msg || "Failed to change username");
 
-      // Aktualizace UI - zkusíme DOM.userName, případně najdeme element znovu
-      if (DOM.userName) {
-        DOM.userName.textContent = data.username;
-      } else {
-        const userNameEl = document.getElementById("userName");
-        if (userNameEl) userNameEl.textContent = data.username;
+        // update localStorage + UI
+        const user = JSON.parse(localStorage.getItem("quizmate_current_user"));
+        user.username = data.username;
+        localStorage.setItem("quizmate_current_user", JSON.stringify(user));
+
+        // Aktualizace UI - zkusíme DOM.userName, případně najdeme element znovu
+        if (DOM.userName) {
+          DOM.userName.textContent = data.username;
+        } else {
+          const userNameEl = document.getElementById("userName");
+          if (userNameEl) userNameEl.textContent = data.username;
+        }
+
+        alert("Username changed");
+        closeSettingsModal();
+      } catch (err) {
+        console.error(err);
+        alert(err.message);
       }
-
-      alert("Username changed");
-      closeSettingsModal();
     });
   }
 
@@ -1793,6 +1805,10 @@ const events = {
   const cancelBtn = document.getElementById("cancelPasswordChange");
 
   if (!changePasswordBtn || !passwordForm) return;
+
+  // Fix: Add autocomplete attributes to silence browser warnings
+  if (oldPasswordInput) oldPasswordInput.setAttribute("autocomplete", "current-password");
+  if (newPasswordInput) newPasswordInput.setAttribute("autocomplete", "new-password");
 
   // === OPEN FORM ===
   changePasswordBtn.addEventListener("click", () => {
