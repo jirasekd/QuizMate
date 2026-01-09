@@ -17,6 +17,9 @@ router.put('/username', auth, async (req, res) => {
   }
 
   const user = await User.findById(req.user.id);
+  if (!user) {
+    return res.status(404).json({ msg: 'Uživatel nenalezen' });
+  }
   user.username = newUsername;
   await user.save();
 
@@ -31,6 +34,9 @@ router.put('/password', auth, async (req, res) => {
   }
 
   const user = await User.findById(req.user.id);
+  if (!user) {
+    return res.status(404).json({ msg: 'Uživatel nenalezen' });
+  }
 
   const isMatch = await bcrypt.compare(oldPassword, user.password);
   if (!isMatch) {
@@ -53,6 +59,9 @@ router.put('/avatar', auth, async (req, res) => {
 
   try {
     const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ msg: 'Uživatel nenalezen' });
+    }
     user.avatar = avatar;
     await user.save();
     res.json({ avatar: user.avatar });
