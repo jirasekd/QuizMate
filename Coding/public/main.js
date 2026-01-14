@@ -958,6 +958,8 @@ const ui = {
     const submitBtn = document.createElement('button');
     submitBtn.id = 'submitTestBtn';
     submitBtn.className = 'newBtn';
+    submitBtn.style.position = 'center';
+    submitBtn.style.marginBottom = '10px';
     submitBtn.textContent = 'Submit Test';
     submitBtn.onclick = () => events.submitTest(chatId);
     DOM.testQuestionsContainer.appendChild(submitBtn);
@@ -1621,7 +1623,6 @@ const events = {
 
     // Generate notes
     await events.generateNotes();
-    console.log('Notes generated for new chat:', newChat.id);
 
     // Switch to notes tab
     document.querySelector('[data-tab="notes"]').click();
