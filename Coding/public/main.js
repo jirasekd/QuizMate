@@ -1615,18 +1615,13 @@ const events = {
     if (!topic) return;
 
     // Create a new chat for this topic
-    const newChat = await chatState.addChat(topic);
-    if (!newChat) return;
-    console.log('New chat created for notes:', newChat);
-    
+    await chatState.addChat(topic);
+    const newChat = subjectState.getActiveSubject().chats[0];
     chatState.selectChat(newChat.id);
-    console.log('Selected new chat for notes:', newChat.id);
-
 
     // Generate notes
     await events.generateNotes();
     console.log('Notes generated for new chat:', newChat.id);
-
 
     // Switch to notes tab
     document.querySelector('[data-tab="notes"]').click();
