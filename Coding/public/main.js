@@ -957,6 +957,7 @@ const ui = {
     // Add submit button
     const submitBtn = document.createElement('button');
     submitBtn.id = 'submitTestBtn';
+    submitBtn.className = 'newBtn';
     submitBtn.textContent = 'Submit Test';
     submitBtn.onclick = () => events.submitTest(chatId);
     DOM.testQuestionsContainer.appendChild(submitBtn);
@@ -1616,11 +1617,16 @@ const events = {
     // Create a new chat for this topic
     const newChat = await chatState.addChat(topic);
     if (!newChat) return;
+    console.log('New chat created for notes:', newChat);
     
     chatState.selectChat(newChat.id);
+    console.log('Selected new chat for notes:', newChat.id);
+
 
     // Generate notes
     await events.generateNotes();
+    console.log('Notes generated for new chat:', newChat.id);
+
 
     // Switch to notes tab
     document.querySelector('[data-tab="notes"]').click();
