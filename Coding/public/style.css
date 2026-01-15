@@ -1004,6 +1004,10 @@ body.dark-mode .plus-btn {
   gap: 24px;
 }
 
+#testQuestionContainer .newBtn {
+  text-align: center;
+}
+
 .flash-header {
   display: flex;
   justify-content: space-between;
