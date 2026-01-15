@@ -1007,6 +1007,19 @@ body.dark-mode .plus-btn {
 #testQuestionContainer .submitBtn {
   display: relative;
   margin-bottom: 10px;
+  background: linear-gradient(135deg, var(--primary-1), var(--primary-2));
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 16px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  width: fit-content;
+}
+
+.submitBtn:hover {
+  opacity: 0.96;
 }
 
 .flash-header {
