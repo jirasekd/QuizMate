@@ -958,6 +958,26 @@ const ui = {
     const submitBtn = document.createElement('button');
     submitBtn.id = 'submitTestBtn';
     submitBtn.className = 'submitBtn';
+    
+    submitBtn.style.cssText = `
+        position: relative;
+        display: block;
+        margin-top: 20px;
+        margin-bottom: 10px;
+        background: linear-gradient(135deg, var(--primary-1), var(--primary-2));
+        color: white;
+        border: none;
+        border-radius: 8px;
+        padding: 10px 16px;
+        cursor: pointer;
+        font-weight: 500;
+        transition: all 0.2s ease;
+        width: fit-content;
+    `;
+    submitBtn.onmouseenter = () => { submitBtn.style.opacity = '0.96'; };
+    submitBtn.onmouseleave = () => { submitBtn.style.opacity = '1'; };
+
+
     submitBtn.textContent = 'Submit Test';
     submitBtn.onclick = () => events.submitTest(chatId);
     DOM.testQuestionsContainer.appendChild(submitBtn);
