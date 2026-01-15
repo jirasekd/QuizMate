@@ -1004,8 +1004,9 @@ body.dark-mode .plus-btn {
   gap: 24px;
 }
 
-#testQuestionContainer .newBtn {
-  text-align: center;
+#testQuestionContainer .submitBtn {
+  display: relative;
+  margin-bottom: 10px;
 }
 
 .flash-header {

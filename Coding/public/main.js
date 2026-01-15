@@ -957,9 +957,7 @@ const ui = {
     // Add submit button
     const submitBtn = document.createElement('button');
     submitBtn.id = 'submitTestBtn';
-    submitBtn.className = 'newBtn';
-    submitBtn.style.position = 'center';
-    submitBtn.style.marginBottom = '10px';
+    submitBtn.className = 'submitBtn';
     submitBtn.textContent = 'Submit Test';
     submitBtn.onclick = () => events.submitTest(chatId);
     DOM.testQuestionsContainer.appendChild(submitBtn);
@@ -2003,6 +2001,7 @@ const events = {
       }
     });
   }
+
     
   }
 };
