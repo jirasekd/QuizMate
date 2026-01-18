@@ -470,20 +470,6 @@ const api = {
  * 4. UI LOGIKA (RENDER FUNKCE)
  ****************************************************/
 const ui = {
-  /**
-   * Renders KaTeX math expressions within a given DOM element.
-   * @param {HTMLElement} element The element to scan for math.
-   */
-  renderMathInElement(element) {
-    if (window.renderMathInElement) {
-      renderMathInElement(element, {
-        delimiters: [
-          { left: "$$", right: "$$", display: true },
-          { left: "$", right: "$", display: false }
-        ]
-      });
-    }
-  },
   
   async readFileData(file) {
     const extension = file.name.split('.').pop().toLowerCase();
@@ -537,6 +523,22 @@ const ui = {
     throw new Error("Nepodporovaný formát souboru.");
   },
   
+
+   /**
+   * Renders KaTeX math expressions within a given DOM element.
+   * @param {HTMLElement} element The element to scan for math.
+   */
+  renderMathInElement(element) {
+    if (window.renderMathInElement) {
+      renderMathInElement(element, {
+        delimiters: [
+          { left: "$$", right: "$$", display: true },
+          { left: "$", right: "$", display: false }
+        ]
+      });
+    }
+  },
+
   
   /* SUBJECTS */
   renderSubjects() {
