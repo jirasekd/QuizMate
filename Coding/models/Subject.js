@@ -15,21 +15,10 @@ const FileSchema = new Schema({
   content: { type: String, required: true },
 });
 
-const SubjectSchema = new Schema({
-  user: {
-    type: Schema.Types.ObjectId,
-    ref: 'User',
-    required: true,
-  },
-  name: {
-    type: String,
-    required: true,
-  },
-  icon: {
-    type: String,
-    default: '📘',
-  },
-  // Do budoucna sem přijdou pole pro chaty, soubory atd.
+const SubjectSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  icon: { type: String, default: "📘" },
+  user: { type: mongoose.Schema.Types.ObjectId, ref: 'user' },
   chats: [{
     name: String,
     messages: Array,
@@ -37,14 +26,15 @@ const SubjectSchema = new Schema({
     flashcards: Array,
     tests: Array
   }],
+
   files: [{
-    id: String,
-    name: String,
-    content: String,
-    size: Number,
-    type: String,
-    uploadedAt: {type: Date, default: Date.now}
-  }],
+  id: String,
+  name: String,
+  content: String,
+  type: String,
+  size: Number,
+    uploadedAt: { type: Date, default: Date.now }
+  }]
 });
 
 module.exports = mongoose.model('Subject', SubjectSchema);

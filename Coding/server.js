@@ -62,22 +62,30 @@ app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
-// Mapování OpenAI-style zpráv na Gemini "contents"
 function toGeminiContents(openAiMessages) {
-  // Gemini role: "user" nebo "model"
-  // OpenAI: 'user' | 'assistant' | 'system'
-  // System zprávy sloučíme na začátek jako user text (nejjednodušší varianta).
-  const contents = [];
-  for (const m of openAiMessages) {
-    let role = m.role === "assistant" ? "model" : "user";
-    const text = typeof m.content === "string" ? m.content : JSON.stringify(m.content);
-    if (!text || !text.trim()) continue; // Skip empty messages
-    contents.push({
-      role,
-      parts: [{ text }]
-    });
-  }
-  return contents;
+  return openAiMessages.map(m => {
+    const parts = [];
+    
+    // Pokud obsah zprávy obsahuje Base64 obrázek (začíná data:image)
+    if (typeof m.content === "string" && m.content.startsWith("data:image")) {
+      const [mimeInfo, base64Data] = m.content.split(",");
+      const mimeType = mimeInfo.match(/:(.*?);/)[1];
+      
+      parts.push({
+        inline_data: {
+          mime_type: mimeType,
+          data: base64Data
+        }
+      });
+    } else {
+      parts.push({ text: m.content });
+    }
+
+    return {
+      role: m.role === "assistant" ? "model" : "user",
+      parts: parts
+    };
+  });
 }
 
 // Volání Gemini REST API (non-stream)

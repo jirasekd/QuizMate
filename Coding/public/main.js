@@ -820,19 +820,41 @@ const ui = {
     DOM.fileList.innerHTML = `<div class="file-item typing">${message}</div>`;
   },
 
-  readFileAsText(file) {
-    return new Promise((resolve, reject) => {
-      // Check for large files to prevent browser freeze
-      if (file.size > 5 * 1024 * 1024) { // 5MB limit
-        return reject(new Error("Soubor je příliš velký (limit 5MB)."));
-      }
+  async readFileData(file) {
+    const extension = file.name.split('.').pop().toLowerCase();
 
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result);
-      reader.onerror = (error) => reject(error);
-      reader.readAsText(file);
-    });
-  },
+    if (extension === 'txt' || extension === 'md') {
+      return await file.text();
+    } 
+    
+    if (extension === 'docx') {
+      const arrayBuffer = await file.arrayBuffer();
+      const result = await mammoth.extractRawText({ arrayBuffer });
+      return result.value; // Vrátí čistý text z Wordu
+    }
+
+    if (extension === 'pdf') {
+      const arrayBuffer = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      let fullText = "";
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const content = await page.getTextContent();
+        fullText += content.items.map(item => item.str).join(" ") + "\n";
+      }
+      return fullText;
+    }
+
+    if (['png', 'jpg', 'jpeg'].includes(extension)) {
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (e) => resolve(e.target.result); // Base64 pro obrázek
+        reader.readAsDataURL(file);
+      });
+    }
+
+    throw new Error("Nepodporovaný formát souboru.");
+},
 
   /* FLASHCARDS */
   renderDeckGrid() {
