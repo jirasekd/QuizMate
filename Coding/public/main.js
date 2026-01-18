@@ -304,12 +304,20 @@ const subjectState = {
 };
 
 const fileState = {
-  addFile(fileData) {
+  async addFile(fileData) {
     const subject = subjectState.getActiveSubject();
+    
     if (!subject) return;
+    
     if (!subject.files) subject.files = [];
-    subject.files.push(fileData); // TODO: Ukládání souborů přes API
-    // subjectState.saveActiveSubject(); // Až budeme řešit soubory
+   
+    // Přidáme nový soubor do pole
+    subject.files.push(fileData);
+
+    // Odesílání do DB a čekání na dokončení
+    ui.showFileProcessingLoader("Ukládání do databáze...");
+    await subjectState.saveActiveSubject();
+    ui.renderFiles();
   }
 };
 
@@ -1329,7 +1337,8 @@ const events = {
                 type: file.type,
                 uploadedAt: new Date().toISOString()
               };
-              fileState.addFile(fileData);
+              // Musíme použít await, aby se soubory ukládaly postupně a korektně
+              await fileState.addFile(fileData); 
             } catch (error) {
               alert(`Chyba při nahrávání souboru ${file.name}: ${error.message}`);
             }
@@ -2002,9 +2011,40 @@ const events = {
     });
   }
 
-    
+  // Change level of study
+  const levelSelect = document.getElementById("levelSelect");
+
+  if (levelSelect) {
+    // 1. Načtení aktuální hodnoty z localStorage při otevření modalu
+    const user = JSON.parse(localStorage.getItem("quizmate_current_user") || "{}");
+    if (user.level) {
+        levelSelect.value = user.level;
+        window.quizmateLevel = user.level; // Nastavení globální proměnné
+    }
+
+    // 2. Uložení při změně
+    levelSelect.addEventListener("change", () => {
+        const newLevel = levelSelect.value;
+        
+        // Aktualizace v objektu uživatele
+        const user = JSON.parse(localStorage.getItem("quizmate_current_user") || "{}");
+        user.level = newLevel;
+        localStorage.setItem("quizmate_current_user", JSON.stringify(user));
+        
+        // Důležité: aktualizace globální proměnné, kterou používá AI pro generování
+        window.quizmateLevel = newLevel; 
+        
+        console.log("Level updated to:", newLevel);
+        
+        // Volitelně: vizuální zpětná vazba (dočasná změna barvy okraje)
+        levelSelect.style.borderColor = "var(--primary-1)";
+        setTimeout(() => levelSelect.style.borderColor = "var(--border)", 1000);
+    });
   }
+}
 };
+
+
 
 
 /****************************************************

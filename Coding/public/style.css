@@ -1284,6 +1284,33 @@ body.dark-mode .plus-btn {
 }
 
 
+#settings-modal label[for="levelSelect"] {
+    display: block;
+    margin-top: 10px;
+    margin-bottom: 5px;
+    font-size: 0.9rem;
+    color: var(--muted);
+    text-align: left;
+    padding-left: 4px;
+}
+
+#levelSelect {
+    width: 100%;
+    margin-bottom: 10px;
+    cursor: pointer;
+    background-color: var(--card);
+    color: var(--text-color);
+    text-align: center; /* Vycentruje text uvnitř selectu */
+}
+
+
+body.dark-mode #levelSelect {
+    background-color: var(--card);
+    color: var(--text-color);
+    border-color: var(--border);
+}
+
+
 
 /****************************************************
  * 14. UTILITY CLASSES

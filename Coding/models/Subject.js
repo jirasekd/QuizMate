@@ -30,8 +30,21 @@ const SubjectSchema = new Schema({
     default: '📘',
   },
   // Do budoucna sem přijdou pole pro chaty, soubory atd.
-  chats: [ChatSchema],
-  files: [FileSchema],
+  chats: [{
+    name: String,
+    messages: Array,
+    notes: Object,
+    flashcards: Array,
+    tests: Array
+  }],
+  files: [{
+    id: String,
+    name: String,
+    content: String,
+    size: Number,
+    type: String,
+    uploadedAt: {type: Date, default: Date.now}
+  }],
 });
 
 module.exports = mongoose.model('Subject', SubjectSchema);
