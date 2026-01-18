@@ -12,11 +12,10 @@ const ChatSchema = new Schema({
 });
 
 const FileSchema = new Schema({
-  id: { type: String, required: true },
   name: { type: String, required: true },
   content: { type: String, required: true },
-  type: { type: String, required: true },
-  size: { type: Number, required: true },
+  type: { type: String },
+  size: { type: Number },
   uploadedAt: { type: Date, default: Date.now }
 });
 
@@ -24,8 +23,14 @@ const SubjectSchema = new mongoose.Schema({
   name: { type: String, required: true },
   icon: { type: String, default: "📘" },
   user: { type: mongoose.Schema.Types.ObjectId, ref: 'user' },
-  chats: [ChatSchema],
-  files: [FileSchema]
+  chats: [{
+    name: String,
+    messages: Array,
+    notes: Object,
+    flashcards: Array,
+    tests: Array
+  }],
+  files: [FileSchema] // Použijeme to schéma, co jsme definovali výše
 });
 
 module.exports = mongoose.model('Subject', SubjectSchema);

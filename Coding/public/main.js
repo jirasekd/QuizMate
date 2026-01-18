@@ -310,6 +310,13 @@ const fileState = {
     if (!subject) return;
     
     if (!subject.files) subject.files = [];
+
+    const cleanFileData = {
+      name: fileData.name,
+      content: fileData.content,
+      type: fileData.type,
+      size: fileData.size
+    };
    
     // Přidáme nový soubor do pole
     subject.files.push(fileData);
