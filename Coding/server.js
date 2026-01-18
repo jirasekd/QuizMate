@@ -66,24 +66,47 @@ function toGeminiContents(openAiMessages) {
   return openAiMessages.map(m => {
     const parts = [];
     
-    // Pokud obsah zprávy obsahuje Base64 obrázek (začíná data:image)
-    if (typeof m.content === "string" && m.content.startsWith("data:image")) {
-      const [mimeInfo, base64Data] = m.content.split(",");
-      const mimeType = mimeInfo.match(/:(.*?);/)[1];
-      
-      parts.push({
-        inline_data: {
-          mime_type: mimeType,
-          data: base64Data
+    // Handle content as array (multiple parts like images + text)
+    const contentArray = Array.isArray(m.content) ? m.content : [m.content];
+    
+    contentArray.forEach(content => {
+      // If content is a base64 image string (starts with data:image)
+      if (typeof content === "string" && content.startsWith("data:image")) {
+        const [mimeInfo, base64Data] = content.split(",");
+        const mimeType = mimeInfo.match(/:(.*?);/)[1];
+        
+        parts.push({
+          inline_data: {
+            mime_type: mimeType,
+            data: base64Data
+          }
+        });
+      } else if (typeof content === "string") {
+        // Regular text content
+        parts.push({ text: content });
+      } else if (typeof content === "object" && content !== null) {
+        // Already formatted part (e.g., {type: 'text', text: '...'} or {type: 'image_url', ...})
+        if (content.type === "text" && content.text) {
+          parts.push({ text: content.text });
+        } else if (content.type === "image_url" && content.image_url?.url) {
+          const url = content.image_url.url;
+          if (url.startsWith("data:image")) {
+            const [mimeInfo, base64Data] = url.split(",");
+            const mimeType = mimeInfo.match(/:(.*?);/)[1];
+            parts.push({
+              inline_data: {
+                mime_type: mimeType,
+                data: base64Data
+              }
+            });
+          }
         }
-      });
-    } else {
-      parts.push({ text: m.content });
-    }
+      }
+    });
 
     return {
       role: m.role === "assistant" ? "model" : "user",
-      parts: parts
+      parts: parts.length > 0 ? parts : [{ text: "" }]
     };
   });
 }
