@@ -484,7 +484,60 @@ const ui = {
       });
     }
   },
+  
+  async readFileData(file) {
+    const extension = file.name.split('.').pop().toLowerCase();
+    
+    // Inicializace PDF.js workeru
+    if (window.pdfjsLib) {
+      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+    }
 
+    // TEXT & MARKDOWN
+    if (extension === 'txt' || extension === 'md') {
+      return await file.text();
+    } 
+
+    // WORD (.docx)
+    if (extension === 'docx') {
+      if (!window.mammoth) throw new Error("Knihovna Mammoth.js není načtena v index.html");
+      const arrayBuffer = await file.arrayBuffer();
+      const result = await window.mammoth.extractRawText({ arrayBuffer });
+      return result.value;
+    }
+
+    // PDF
+    if (extension === 'pdf') {
+      if (!window.pdfjsLib) throw new Error("Knihovna PDF.js není načtena v index.html");
+      const arrayBuffer = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      let fullText = "";
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const content = await page.getTextContent();
+        fullText += content.items.map(item => item.str).join(" ") + "\n";
+      }
+      return fullText;
+    }
+
+    // OBRÁZKY (pro Gemini Vision)
+    if (['png', 'jpg', 'jpeg'].includes(extension)) {
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (e) => resolve(e.target.result);
+        reader.readAsDataURL(file);
+      });
+    }
+
+    // PPTX (zatím nepodporováno přímo)
+    if (extension === 'pptx') {
+      throw new Error("Formát .pptx zatím není podporován. Uložte prezentaci jako PDF a nahrajte ji znovu.");
+    }
+
+    throw new Error("Nepodporovaný formát souboru.");
+  },
+  
+  
   /* SUBJECTS */
   renderSubjects() {
     DOM.subjectList.innerHTML = ""; // Clear existing subjects
@@ -819,54 +872,6 @@ const ui = {
   showFileProcessingLoader(message) {
     DOM.fileList.innerHTML = `<div class="file-item typing">${message}</div>`;
   },
-
-  async readFileData(file) {
-  const extension = file.name.split('.').pop().toLowerCase();
-  
-  // PDF.js worker (nutné pro PDF)
-  if (window.pdfjsLib) {
-    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
-  }
-
-  if (extension === 'txt' || extension === 'md') {
-    return await file.text();
-  } 
-
-  if (extension === 'docx') {
-    if (!window.mammoth) throw new Error("Knihovna Mammoth.js není načtena.");
-    const arrayBuffer = await file.arrayBuffer();
-    const result = await mammoth.extractRawText({ arrayBuffer });
-    return result.value;
-  }
-
-  if (extension === 'pdf') {
-    if (!window.pdfjsLib) throw new Error("Knihovna PDF.js není načtena.");
-    const arrayBuffer = await file.arrayBuffer();
-    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-    let fullText = "";
-    for (let i = 1; i <= pdf.numPages; i++) {
-      const page = await pdf.getPage(i);
-      const content = await page.getTextContent();
-      fullText += content.items.map(item => item.str).join(" ") + "\n";
-    }
-    return fullText;
-  }
-
-  if (['png', 'jpg', 'jpeg'].includes(extension)) {
-    return new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onload = (e) => resolve(e.target.result);
-      reader.readAsDataURL(file);
-    });
-  }
-
-  // Pro .pptx zatím nemáme knihovnu, tak vyhodíme srozumitelnou chybu
-  if (extension === 'pptx') {
-    throw new Error("Formát .pptx zatím není podporován. Zkuste soubor uložit jako PDF a nahrát znovu.");
-  }
-
-  throw new Error("Nepodporovaný formát souboru.");
-},
 
   /* FLASHCARDS */
   renderDeckGrid() {
