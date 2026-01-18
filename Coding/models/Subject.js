@@ -8,33 +8,24 @@ const ChatSchema = new Schema({
   notes: { type: Object, default: null },
   flashcards: { type: Array, default: null },
   tests: { type: Array, default: null },
+
 });
 
 const FileSchema = new Schema({
+  id: { type: String, required: true },
   name: { type: String, required: true },
   content: { type: String, required: true },
+  type: { type: String, required: true },
+  size: { type: Number, required: true },
+  uploadedAt: { type: Date, default: Date.now }
 });
 
 const SubjectSchema = new mongoose.Schema({
   name: { type: String, required: true },
   icon: { type: String, default: "📘" },
   user: { type: mongoose.Schema.Types.ObjectId, ref: 'user' },
-  chats: [{
-    name: String,
-    messages: Array,
-    notes: Object,
-    flashcards: Array,
-    tests: Array
-  }],
-
-  files: [{
-  id: String,
-  name: String,
-  content: String,
-  type: String,
-  size: Number,
-    uploadedAt: { type: Date, default: Date.now }
-  }]
+  chats: [ChatSchema],
+  files: [FileSchema]
 });
 
 module.exports = mongoose.model('Subject', SubjectSchema);

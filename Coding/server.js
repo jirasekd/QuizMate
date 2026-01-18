@@ -12,7 +12,7 @@ dotenv.config();
 
 const app = express();
 
-app.use(express.json({ limit: '50mb' }));
+app.use(express.json({ limit: '16mb' })); //Maximálnáí velikost kterou přijme MongoDB je 16MB
 // Servíruj statické soubory (HTML, CSS, JS) pouze z adresáře 'public'
 app.use(express.static(path.join(__dirname, "public")));
 app.use(cors()); // Povolí komunikaci mezi frontendem a backendem na různých portech (pro vývoj)
