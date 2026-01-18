@@ -1357,38 +1357,39 @@ const events = {
   },
 
   initFileUpload() {
+  if (DOM.upload) {
+    DOM.upload.replaceWith(DOM.upload.cloneNode(true));
+    DOM.upload = document.getElementById("fileUpload");
     if (DOM.upload) {
-      DOM.upload.replaceWith(DOM.upload.cloneNode(true));
-      DOM.upload = document.getElementById("fileUpload");
-      if (DOM.upload) {
-        DOM.upload.addEventListener("change", async (e) => {
-          const files = e.target.files;
-          if (!files.length) return;
+      DOM.upload.addEventListener("change", async (e) => {
+        const files = e.target.files;
+        if (!files.length) return;
 
-          ui.showFileProcessingLoader("Zpracovávám soubory...");
+        ui.showFileProcessingLoader("Zpracovávám soubor...");
 
-          for (const file of files) {
-            try {
-              const content = await readFileData(file);
-              const fileData = {
-                id: util.genId(),
-                name: file.name,
-                content: content,
-                size: file.size,
-                type: file.type,
-                uploadedAt: new Date().toISOString()
-              };
-              // Musíme použít await, aby se soubory ukládaly postupně a korektně
-              await fileState.addFile(fileData); 
-            } catch (error) {
-              alert(`Chyba při nahrávání souboru ${file.name}: ${error.message}`);
-            }
+        for (const file of files) {
+          try {
+            // Tady byla ta chyba - musí tu být ui.readFileData
+            const content = await ui.readFileData(file); 
+            
+            const fileData = {
+              id: util.genId(),
+              name: file.name,
+              content: content,
+              size: file.size,
+              type: file.type,
+              uploadedAt: new Date().toISOString()
+            };
+            await fileState.addFile(fileData);
+          } catch (error) {
+            alert(`Chyba při nahrávání souboru ${file.name}: ${error.message}`);
           }
-          ui.renderFiles();
-        });
-      }
+        }
+        ui.renderFiles();
+      });
     }
-  },
+  }
+},
 
   /* GENERATE NOTES */
   async generateNotes() {
