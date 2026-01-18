@@ -435,43 +435,63 @@ const api = {
     return chat.messages.slice(-this.MAX_CONTEXT);
   },
 
-  async askAI(messages) {
-    const topic = chatState.getCurrent()?.name || "(téma)";
-    const subjectName = subjectState.getActiveSubject()?.name || "všeobecné";
-    const subject = subjectState.getActiveSubject();
+  async askAI(userMessage) {
+  const subject = subjectState.getActiveSubject();
+  const chat = chatState.getCurrent();
+  if (!chat) return;
 
-    let fileContext = "";
-    if (subject && subject.files && subject.files.length > 0) {
-      const fileContents = subject.files.map(f => `Kontext ze souboru "${f.name}":\n${f.content}`).join('\n\n---\n\n');
-      fileContext = `
-      Máš k dispozici následující materiály. Aktivně z nich čerpej a odkazuj se na ně. Nikdy neříkej, že k souborům nemáš přístup. Pokud je použiješ, na začátku odpovědi to stručně zmiň (např. "Podle poskytnutých materiálů...").
-      --- SOUBORY ---
-      ${fileContents}
-      --- KONEC SOUBORŮ ---
-      `;
-    }
-
-    // The role should be "system" for system-level instructions.
-    // This helps the model better distinguish instructions from user conversation.
-    const system = {
+  // 1. Příprava systémové zprávy
+  const messages = [
+    {
       role: "system",
-      content: `Jsi expert na téma **${subjectName}**. Odpovídej na otázky v kontextu tohoto předmětu.
-      Téma chatu je: ${topic}. Odpovídej česky. ${fileContext}`
-    };
-
-    const resp = await fetch("/api/chat", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ messages: [system, ...messages] })
-    });
-
-    const data = await resp.json();
-    if (data.error) {
-      throw new Error("API error: " + JSON.stringify(data.error));
+      content: `Jsi QuizMate AI asistent pro úroveň: ${window.quizmateLevel || "stredni"}. 
+      Pomáhej studentovi s tématem: ${subject.name}. 
+      Pokud jsou v kontextu soubory, čerpej primárně z nich.`
     }
-    return data.reply;
+  ];
+
+  // 2. Přidání kontextu ze SOUBORŮ
+  if (subject.files && subject.files.length > 0) {
+    subject.files.forEach(file => {
+      if (file.content.startsWith("data:image")) {
+        // Pokud je to obrázek, pošleme ho jako zprávu s Base64 (náš server.js to zpracuje)
+        messages.push({
+          role: "user",
+          content: file.content // server.js rozpozná "data:image" a převede na inline_data
+        });
+        messages.push({
+          role: "system",
+          content: `Výše je nahraný obrázek: ${file.name}. Analyzuj ho a měj ho v paměti.`
+        });
+      } else {
+        // Pokud je to text (TXT, PDF, Word), přidáme ho jako textový kontext
+        messages.push({
+          role: "system",
+          content: `Kontext ze souboru ${file.name}:\n${file.content}`
+        });
+      }
+    });
   }
+
+  // 3. Přidání historie chatu
+  chat.messages.forEach(m => messages.push(m));
+
+  // 4. Přidání aktuální zprávy uživatele
+  messages.push({ role: "user", content: userMessage });
+
+  // 5. Volání backendu
+  const response = await fetch("/api/chat", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ messages })
+  });
+
+  if (!response.ok) throw new Error("AI neodpovídá.");
+  const data = await response.json();
+  return data.reply;
+}
 };
+
 
 /****************************************************
  * 4. UI LOGIKA (RENDER FUNKCE)
