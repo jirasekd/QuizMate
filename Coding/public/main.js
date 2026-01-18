@@ -1350,7 +1350,7 @@ const events = {
 
           for (const file of files) {
             try {
-              const content = await ui.readFileAsText(file);
+              const content = await readFileData(file);
               const fileData = {
                 id: util.genId(),
                 name: file.name,
