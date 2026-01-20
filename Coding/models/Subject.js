@@ -21,16 +21,19 @@ const FileSchema = new Schema({
 
 const SubjectSchema = new mongoose.Schema({
   name: { type: String, required: true },
-  icon: { type: String, default: "📘" },
+  icon: { type: String, default: "📘" },  // Emoji reprezentující předmět.
+  
+  // Reference na ID vlastníka (propojení s kolekcí User).
   user: { type: mongoose.Schema.Types.ObjectId, ref: 'user' },
-  chats: [{
-    name: String,
-    messages: Array,
-    notes: Object,
-    flashcards: Array,
-    tests: Array
+  
+  chats: [{                 
+    name: String,           // Název předmětu (např. "Matematika").
+    messages: Array,        // Pole objektů obsahující historii zpráv
+    notes: Object,          // Pole vygenerovaných výpisků.
+    flashcards: Array,      // Pole objektů se sadami kartiček (otázka/odpověď).
+    tests: Array            // Pole vygenerovaných testů s klíčem správných odpovědí.
   }],
-  files: [FileSchema] // Použijeme to schéma, co jsme definovali výše
+  files: [FileSchema] 
 });
 
 module.exports = mongoose.model('Subject', SubjectSchema);
