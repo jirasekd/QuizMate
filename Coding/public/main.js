@@ -436,66 +436,82 @@ const api = {
   },
 
   async askAI(userMessage) {
-  
-  const cleanedMessages = messages.map(m => ({
-        role: m.role === "assistant" ? "assistant" : "user",
+    const subject = subjectState.getActiveSubject();
+    const chat = chatState.getCurrent();
+    if (!chat) return;
+
+    // --- 1. Sestavení pole zpráv (Konstrukce historie) ---
+    
+    // A) Systémová zpráva
+    const rawMessages = [
+      {
+        role: "system",
+        content: `Jsi QuizMate AI asistent na předmět ${subject.name} pro úroveň: ${window.quizmateLevel || "stredni"}. 
+        Pomáhej studentovi s tématem: ${chat.name}. 
+        Pokud jsou v kontextu soubory, čerpej primárně z nich.`
+      }
+    ];
+
+    // B) Přidání kontextu ze SOUBORŮ
+    if (subject.files && subject.files.length > 0) {
+      subject.files.forEach(file => {
+        if (file.content.startsWith("data:image")) {
+          // Obrázek
+          rawMessages.push({
+            role: "user",
+            content: file.content 
+          });
+          rawMessages.push({
+            role: "system",
+            content: `Výše je nahraný obrázek: ${file.name}. Analyzuj ho a měj ho v paměti.`
+          });
+        } else {
+          // Text (TXT, PDF...)
+          rawMessages.push({
+            role: "system",
+            content: `Kontext ze souboru ${file.name}:\n${file.content}`
+          });
+        }
+      });
+    }
+
+    // C) Přidání historie chatu
+    // Pozor: Zde jen kopírujeme, nečistíme. To uděláme až nakonec.
+    chat.messages.forEach(m => rawMessages.push(m));
+
+    // D) Přidání aktuální zprávy uživatele
+    rawMessages.push({ role: "user", content: userMessage });
+
+    // --- 2. Sanitizace a příprava pro API (Tady opravujeme chybu) ---
+    // Teprve teď, když máme 'rawMessages' plné, uděláme mapování.
+    const cleanedMessages = rawMessages.map(m => ({
+        // Gemini API vyžaduje roli 'model' místo 'assistant'
+        role: m.role === "assistant" ? "model" : (m.role === "system" ? "user" : m.role), 
+        // Zajistíme, že content je String (pokud je to objekt, převedeme na JSON)
         content: typeof m.content === "string" ? m.content : JSON.stringify(m.content)
     }));
-  
-  const subject = subjectState.getActiveSubject();
-  const chat = chatState.getCurrent();
-  if (!chat) return;
 
-  // 1. Příprava systémové zprávy
-  const messages = [
-    {
-      role: "system",
-      content: `Jsi QuizMate AI asistent na předmět ${subject.name} pro úroveň: ${window.quizmateLevel || "stredni"}. 
-      Pomáhej studentovi s tématem: ${chat.name}. 
-      Pokud jsou v kontextu soubory, čerpej primárně z nich.`
-    }
-  ];
+    // --- 3. Volání backendu ---
+    try {
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages: cleanedMessages }) // Posíláme vyčištěná data
+      });
 
-  // 2. Přidání kontextu ze SOUBORŮ
-  if (subject.files && subject.files.length > 0) {
-    subject.files.forEach(file => {
-      if (file.content.startsWith("data:image")) {
-        // Pokud je to obrázek, pošleme ho jako zprávu s Base64 (náš server.js to zpracuje)
-        messages.push({
-          role: "user",
-          content: file.content // server.js rozpozná "data:image" a převede na inline_data
-        });
-        messages.push({
-          role: "system",
-          content: `Výše je nahraný obrázek: ${file.name}. Analyzuj ho a měj ho v paměti.`
-        });
-      } else {
-        // Pokud je to text (TXT, PDF, Word), přidáme ho jako textový kontext
-        messages.push({
-          role: "system",
-          content: `Kontext ze souboru ${file.name}:\n${file.content}`
-        });
+      if (!response.ok) {
+         const errData = await response.json();
+         throw new Error(errData.error || "AI neodpovídá.");
       }
-    });
+      
+      const data = await response.json();
+      return data.reply;
+
+    } catch (error) {
+      console.error("AskAI Error:", error);
+      throw error; // Vyhodíme chybu výš, aby ji zachytil volající (sendMessage)
+    }
   }
-
-  // 3. Přidání historie chatu
-  chat.messages.forEach(m => messages.push(m));
-
-  // 4. Přidání aktuální zprávy uživatele
-  messages.push({ role: "user", content: userMessage });
-
-  // 5. Volání backendu
-  const response = await fetch("/api/chat", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ messages: cleanedMessages })
-  });
-
-  if (!response.ok) throw new Error("AI neodpovídá.");
-  const data = await response.json();
-  return data.reply;
-}
 };
 
 
