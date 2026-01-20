@@ -436,6 +436,7 @@ const api = {
   },
 
   async askAI(userMessage) {
+    const chatTitleEl = DOM.chatTitleEl;
   const subject = subjectState.getActiveSubject();
   const chat = chatState.getCurrent();
   if (!chat) return;
