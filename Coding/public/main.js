@@ -436,6 +436,12 @@ const api = {
   },
 
   async askAI(userMessage) {
+  
+  const cleanedMessages = messages.map(m => ({
+        role: m.role === "assistant" ? "assistant" : "user",
+        content: typeof m.content === "string" ? m.content : JSON.stringify(m.content)
+    }));
+  
   const subject = subjectState.getActiveSubject();
   const chat = chatState.getCurrent();
   if (!chat) return;
@@ -483,7 +489,7 @@ const api = {
   const response = await fetch("/api/chat", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ messages })
+    body: JSON.stringify({ messages: cleanedMessages })
   });
 
   if (!response.ok) throw new Error("AI neodpovídá.");

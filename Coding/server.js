@@ -129,7 +129,7 @@ async function callGemini(openAiMessages) {
     }
   };
 
-  const url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2-flash:generateContent";
+  const url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
   const resp = await fetch(`${url}?key=${encodeURIComponent(API_KEY)}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -144,6 +144,11 @@ async function callGemini(openAiMessages) {
   const data = await resp.json();
   console.log("Gemini response:", JSON.stringify(data, null, 2)); // DEBUG: log full response
 
+  if (data?.candidates?.[0]?.content?.parts) {
+    const text = data.candidates[0].content.parts.map(p => p.text || "").join("");
+    if (text.trim()) return text; // Pokud máme text, vrátíme ho
+}
+  
   // Check for finish reason to see if response was truncated
   if (data?.candidates?.[0]) {
     const cand = data.candidates[0];
