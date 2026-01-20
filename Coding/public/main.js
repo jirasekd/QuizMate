@@ -444,8 +444,8 @@ const api = {
   const messages = [
     {
       role: "system",
-      content: `Jsi QuizMate AI asistent pro úroveň: ${window.quizmateLevel || "stredni"}. 
-      Pomáhej studentovi s tématem: ${subject.name}. 
+      content: `Jsi QuizMate AI asistent na předmět ${subject.name} pro úroveň: ${window.quizmateLevel || "stredni"}. 
+      Pomáhej studentovi s tématem: ${chatTitleEl.name}. 
       Pokud jsou v kontextu soubory, čerpej primárně z nich.`
     }
   ];
