@@ -1030,8 +1030,9 @@ const ui = {
 
     const test = chat.tests[0];
 
-    DOM.testDetailTitle.textContent = `Test: ${chat.name}`;
-    DOM.testQuestionsContainer.innerHTML = "";
+    // Bezpečné nastavení textu (pokud element existuje)
+    if (DOM.testDetailTitle) DOM.testDetailTitle.textContent = `Test: ${chat.name}`;
+    if (DOM.testQuestionsContainer) DOM.testQuestionsContainer.innerHTML = "";
 
     test.questions.forEach((q, index) => {
       const questionEl = document.createElement('div');
@@ -1055,27 +1056,36 @@ const ui = {
     // Add submit button
     const submitBtn = document.createElement('button');
     submitBtn.id = 'submitTestBtn';
-    submitBtn.className = 'submitBtn';
+    // OPRAVA: Třídy přidáme rovnou zde, ne přes neexistující DOM.submitBtn
+    submitBtn.className = 'submitBtn newBtn'; 
     submitBtn.textContent = 'Submit Test';
     submitBtn.onclick = () => events.submitTest(chatId);
+    
     DOM.testQuestionsContainer.appendChild(submitBtn);
 
-    DOM.submitBtn.classList.add('newBtn');
+    // --- ZDE BYLA CHYBA (DOM.submitBtn neexistuje), řádek smazán ---
 
-    DOM.testsGrid.classList.add("hidden");
+    // Skrývání a zobrazování sekcí
+    if (DOM.testsGrid) DOM.testsGrid.classList.add("hidden");
+    if (DOM.newTestBtn) DOM.newTestBtn.classList.add("hidden");
 
-    // Add classes to the back button to style it like the others
-    DOM.backToTests.classList.add('btn', 'small', 'outline');
+    if (DOM.testDetail) {
+        DOM.testDetail.classList.remove("hidden");
+        DOM.testDetail.scrollTop = 0;
+    }
 
-    DOM.testDetail.classList.remove("hidden");
-    DOM.backToTests.classList.remove("hidden");
-    DOM.newTestBtn.classList.add("hidden");
+    // Bezpečné zobrazení tlačítka zpět
+    if (DOM.backToTests) {
+        DOM.backToTests.classList.add('btn', 'small', 'outline');
+        DOM.backToTests.classList.remove("hidden");
+    }
 
-    DOM.testDetail.scrollTop = 0;
-
-    this.renderMathInElement(DOM.testQuestionsContainer);
+    // Renderování matematiky (pokud je funkce dostupná)
+    if (this.renderMathInElement && DOM.testQuestionsContainer) {
+        this.renderMathInElement(DOM.testQuestionsContainer);
+    }
   }
-};
+  };
 
 const flashcards = {
   cards: [],
@@ -1622,20 +1632,23 @@ const events = {
     else if (window.quizmateLevel === "vysoka") levelText = "pro vysokoškoláky";
     else levelText = "pro žáky základní školy";
 
+    // UPRAVENÝ PROMPT S ODDĚLOVAČEM
     const prompt = `
-      Jsi expert na tvorbu multiple-choice testů. Vytvoř test s ideálním počtem otázek ${levelText} k tématu "${topic}" na základě předchozí konverzace.
-      Vrátí POUZE validní text ve formátu Q:/A: bez jakéhokoliv dalšího textu.
-      Každá otázka na novém řádku, formát:
-      Q: otázka text
+      Jsi expert na tvorbu multiple-choice testů. Vytvoř test s ideálním počtem otázek (min 5, max 10) ${levelText} k tématu "${topic}".
+      
+      DŮLEŽITÉ: Mezi každou otázku vlož oddělovač: ---NEXT---
+      
+      Formát každé otázky:
+      Q: Text otázky
       Options: A) možnost1 B) možnost2 C) možnost3 D) možnost4
-      A: správná odpověď (přesně jedna z možností)
+      A: správná odpověď (celý text odpovědi)
 
       Příklad:
-      Q: Jaký je vzorec pro Pythagorovu větu?
-      Options: A) a^2 + b^2 = c^2 B) a + b = c C) a^2 - b^2 = c^2 D) a * b = c
-      A: a^2 + b^2 = c^2
-
-      !Udělej min. 5 a max. 20 otázek dle potřeby!.
+      Q: Kolik je 2+2?
+      Options: A) 3 B) 4 C) 5 D) 6
+      A: 4
+      ---NEXT---
+      Q: Další otázka...
     `;
 
     const ctx = api.getContextMessages();
@@ -1644,50 +1657,65 @@ const events = {
     try {
       const reply = await api.askAI(messagesForAI);
 
-      // Check for API errors
-      if (reply.includes("error") || reply.includes("503") || reply.includes("unavailable") || reply.includes("overloaded")) {
-        throw new Error("API is overloaded, please try again later.");
+      if (reply.includes("error") || reply.includes("503")) {
+        throw new Error("API is overloaded.");
       }
       
-      // Clean the reply from markdown code blocks
       const cleanReply = reply.replace(/```[\s\S]*?```/g, '').replace(/```\w*\n?/g, '').trim();
 
       const questions = [];
-      const blocks = cleanReply.split('\n\n').filter(block => block.trim());
+      
+      // OPRAVA PARSOVÁNÍ: Dělíme podle oddělovače ---NEXT---
+      const blocks = cleanReply.split(/---NEXT---/i).filter(block => block.trim());
 
       for (const block of blocks) {
-        const lines = block.split('\n').map(l => l.trim());
-        const qLine = lines.find(l => l.startsWith('Q:'));
-        const optionsLine = lines.find(l => l.startsWith('Options:'));
-        const aLine = lines.find(l => l.startsWith('A:'));
+        const lines = block.split('\n').map(l => l.trim()).filter(l => l);
+        
+        const qLine = lines.find(l => l.match(/^Q:/i));
+        const optionsLine = lines.find(l => l.match(/^Options:/i));
+        const aLine = lines.find(l => l.match(/^A:/i));
 
         if (!qLine || !optionsLine || !aLine) continue;
 
-        const text = qLine.substring(2).trim();
-        const optionsStr = optionsLine.substring(8).trim(); // Remove "Options: "
-        const options = optionsStr.split(/ [A-D]\) /).filter(opt => opt.trim()).map(opt => opt.trim());
-        const correctAnswer = aLine.substring(2).trim();
+        const text = qLine.replace(/^Q:\s*/i, '').trim();
+        const optionsStr = optionsLine.replace(/^Options:\s*/i, '').trim();
+        
+        // Robustnější rozdělení možností
+        let options = optionsStr.split(/\s[A-D]\)\s/).filter(opt => opt.trim());
+        // Fix pro první možnost A), která může zůstat přilepená
+        if (options.length === 1 && options[0].includes("B)")) {
+             const parts = optionsStr.split(/[A-D]\)/).filter(p => p.trim());
+             if (parts.length >= 2) options = parts;
+        } else if (optionsStr.includes("A)")) {
+             // Fallback split
+             const parts = optionsStr.split(/[A-D]\)/).filter(p => p.trim());
+             if (parts.length >= 2) options = parts;
+        }
+        
+        const correctAnswer = aLine.replace(/^A:\s*/i, '').trim();
 
-        if (options.length === 4 && correctAnswer) {
+        if (options.length >= 2 && correctAnswer) {
           questions.push({ text, options, correctAnswer });
         }
       }
 
       if (questions.length === 0) {
-        throw new Error("Žádné otázky nebyly vygenerovány.");
+        console.error("RAW AI REPLY:", cleanReply);
+        throw new Error("Nepodařilo se naparsovat žádné otázky. AI nevrátila správný formát.");
       }
 
-      // Uložíme a počkáme na dokončení, než přepneme tab
       await chatState.addTest({ questions });
       ui.updateSubjectSidebar();
       ui.renderSubjectsGrid();
-      document.querySelector('[data-tab="tests"]').click();
-      // Open the test directly to show the questions
+      
+      const testsTab = document.querySelector('[data-tab="tests"]');
+      if(testsTab) testsTab.click();
+      
       ui.openTestDetail(chat.id);
 
     } catch (error) {
       console.error("Chyba při generování testu:", error);
-      ui.addMessage(`⚠️ Nepodařilo se vygenerovat test, zkuste to prosím později. ${console.log(error.message)}`, "assistant");
+      ui.addMessage(`⚠️ Nepodařilo se vygenerovat test: ${error.message}`, "assistant");
     }
   },
 
