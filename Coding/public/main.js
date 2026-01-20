@@ -436,7 +436,6 @@ const api = {
   },
 
   async askAI(userMessage) {
-    const chatTitleEl = DOM.chatTitleEl;
   const subject = subjectState.getActiveSubject();
   const chat = chatState.getCurrent();
   if (!chat) return;
@@ -446,7 +445,7 @@ const api = {
     {
       role: "system",
       content: `Jsi QuizMate AI asistent na předmět ${subject.name} pro úroveň: ${window.quizmateLevel || "stredni"}. 
-      Pomáhej studentovi s tématem: ${chatTitleEl.name}. 
+      Pomáhej studentovi s tématem: ${chat.name}. 
       Pokud jsou v kontextu soubory, čerpej primárně z nich.`
     }
   ];
