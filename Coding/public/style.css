@@ -1325,31 +1325,76 @@ body.dark-mode #levelSelect {
 }
 
 /****************************************************
- * 15. RESPONSIVE DESIGN (Media Queries)
+ * 15. RESPONSIVNÍ DESIGN (MEDIA QUERIES)
  ****************************************************/
 
-/* Tablet and smaller devices (~1024px and below) */
-@media (max-width: 1024px) {
+/* === 1. TABLETY A MENŠÍ NOTEBOOKY (max-width: 1024px) === */
+/* Tady říkáme: Jakmile je šířka menší než 1180px (jako na fotce) nebo 1024px */
+@media screen and (max-width: 1180px) {
+  
+  /* Aplikace se roztáhne na celou obrazovku, zmizí zaoblené rohy */
   .app {
     width: 100%;
     height: 100%;
-    border-radius: 0;
+    border-radius: 0; 
   }
 
+  /* Sidebar uděláme "plovoucí" přes obsah, aby nezabíral místo */
   .sidebar {
-    width: 220px; /* Slightly smaller sidebar */
+    position: absolute;
+    z-index: 100; /* Bude nad ostatním obsahem */
+    height: 100%;
+    box-shadow: 2px 0 15px rgba(0,0,0,0.2);
   }
 
+  /* Když je sidebar zavřený, schováme ho úplně */
   .sidebar.collapsed {
-    width: 70px; /* Slightly smaller collapsed sidebar */
+    width: 0;
+    padding: 0;
+    overflow: hidden; 
   }
 
+  /* Tlačítko hamburgeru musí být vidět vždy */
+  .hamburger {
+    background: var(--card); /* Aby bylo vidět na pozadí */
+    border-radius: 4px;
+    padding: 4px;
+  }
+}
+
+/* === 2. MOBILNÍ TELEFONY (max-width: 667px - jako na fotce od učitele) === */
+@media screen and (max-width: 667px) {
+  
+  /* Na mobilu musíme změnit rozložení chatu */
   .chat-layout {
-    grid-template-columns: 240px 1fr; /* Smaller chat threads panel */
+    /* Místo dvou sloupců (seznam chatů + konverzace) dáme jen jeden */
+    grid-template-columns: 1fr; 
   }
 
-  .topic-grid {
-    /* More flexible grid for notes/flashcards */
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  /* Pro jednoduchost na mobilu skryjeme levý panel s historií chatů, 
+     aby měl uživatel místo na psaní. 
+     (V pokročilejší verzi by to šlo přepínat tlačítkem) */
+  .chat-threads {
+    display: none; 
+  }
+
+  /* Mřížka pro poznámky a testy - dáme karty pod sebe (1 sloupec) */
+  .topic-grid, 
+  .subjects-grid {
+    grid-template-columns: 1fr; 
+  }
+
+  /* Zmenšíme paddingy, aby se obsah vešel */
+  .tab-content {
+    padding: 10px;
+  }
+
+  /* Input pro psaní zprávy */
+  .chat-input {
+    padding: 10px;
+  }
+  
+  .chat-input textarea {
+    font-size: 14px; /* Menší písmo na mobilu */
   }
 }

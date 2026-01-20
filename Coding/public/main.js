@@ -1733,18 +1733,31 @@ const events = {
       const selectedOption = document.querySelector(`input[name="question-${index}"]:checked`);
       const feedbackEl = document.querySelectorAll('.result-feedback')[index];
 
-      if (selectedOption && selectedOption.value === q.correctAnswer) {
-        score++;
-        feedbackEl.textContent = '✅ Správně!';
-        feedbackEl.style.color = 'green';
+      if (selectedOption) {
+        // OPRAVA: Používáme .trim() pro odstranění mezer, které AI občas přidá
+        const userChoice = selectedOption.value.trim();
+        const correctChoice = q.correctAnswer.trim();
+
+        if (userChoice === correctChoice) {
+          score++;
+          feedbackEl.textContent = '✅ Správně!';
+          feedbackEl.style.color = 'green';
+        } else {
+          feedbackEl.textContent = `❌ Špatně. Správná odpověď: ${q.correctAnswer}`;
+          feedbackEl.style.color = 'red';
+        }
       } else {
-        feedbackEl.textContent = `❌ Špatně. Správná odpověď: ${q.correctAnswer}`;
-        feedbackEl.style.color = 'red';
+        feedbackEl.textContent = `⚠️ Nebyla vybrána žádná odpověď. Správně: ${q.correctAnswer}`;
+        feedbackEl.style.color = 'orange';
       }
     });
 
-    document.getElementById('submitTestBtn').disabled = true;
-    DOM.testDetailTitle.textContent = `Výsledek testu: ${score} / ${test.questions.length}`;
+    const submitBtn = document.getElementById('submitTestBtn');
+    if (submitBtn) submitBtn.disabled = true;
+    
+    if (DOM.testDetailTitle) {
+      DOM.testDetailTitle.textContent = `Výsledek testu: ${score} / ${test.questions.length}`;
+    }
   },
 
   async createStandaloneNotes() {
