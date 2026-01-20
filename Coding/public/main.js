@@ -1060,6 +1060,8 @@ const ui = {
     submitBtn.onclick = () => events.submitTest(chatId);
     DOM.testQuestionsContainer.appendChild(submitBtn);
 
+    DOM.submitBtn.classList.add('newBtn');
+
     DOM.testsGrid.classList.add("hidden");
 
     // Add classes to the back button to style it like the others
@@ -1633,7 +1635,7 @@ const events = {
       Options: A) a^2 + b^2 = c^2 B) a + b = c C) a^2 - b^2 = c^2 D) a * b = c
       A: a^2 + b^2 = c^2
 
-      Udělej max 10 otázek.
+      !Udělej min. 5 a max. 20 otázek dle potřeby!.
     `;
 
     const ctx = api.getContextMessages();
