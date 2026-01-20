@@ -1468,14 +1468,21 @@ const events = {
     const prompt = `
       ${levelText}
       Vytvoř přehledné, strukturované a kvalitní výpisky k tématu **${topic}**.
-      Použij nadpisy, odrážky, vysvětlení, ${formulaInstruction}příklady.
-      Vycházej z předchozí konverzace.
-      Piš kapitoly a podkapitoly pomocí: 
-      1.Nadpis
-      1.1.Podnadpis
-      1.1.1.Další úroveň
-      Nedávej tam # jako začátky nadpisů.
-      `;
+      Vycházej z předchozí konverzace a souborů.
+
+      DŮLEŽITÉ PRAVIDLO FORMÁTOVÁNÍ:
+      1. Nepoužívej Markdown nadpisy (nepiš znaky #, ##, ###).
+      2. Strukturu dělej POUZE pomocí číslování a tučného písma.
+      
+      Vzor jak to má vypadat:
+      **1. Hlavní nadpis**
+      Text úvodu...
+      **1.1 Podnadpis**
+      Detailní text...
+      **2. Další nadpis**
+      
+      Použij odrážky, vysvětlení a ${formulaInstruction}příklady.
+    `;
 
     // Get the previous messages and add the new instruction at the end.
     const ctx = api.getContextMessages();
