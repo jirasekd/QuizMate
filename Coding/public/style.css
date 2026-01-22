@@ -1329,57 +1329,48 @@ body.dark-mode #levelSelect {
  ****************************************************/
 
 /* === 1. TABLETY A MENŠÍ NOTEBOOKY (max-width: 1024px) === */
-/* Tady říkáme: Jakmile je šířka menší než 1180px*/
-@media screen and (max-width: 1180px) {
-  
-  /* Aplikace se roztáhne na celou obrazovku, zmizí zaoblené rohy */
-  .app {
-    width: 100%;
-    height: 100%;
-    border-radius: 0; 
-  }
 
-  
-  .sidebar {
-    position: absolute;
-    height: 100%;
-    box-shadow: 2px 0 15px rgba(0,0,0,0.2);
-  }
-}
+@media screen and (max-width: 1024px) {}
 
-/* === 2. MOBILNÍ TELEFONY (max-width: 667px - jako na fotce od učitele) === */
+/* === 2. MOBILY (max-width: 667px) === */
 @media screen and (max-width: 667px) {
-  
-  /* Na mobilu musíme změnit rozložení chatu */
-  .chat-layout {
-    /* Místo dvou sloupců (seznam chatů + konverzace) dáme jen jeden */
-    grid-template-columns: 1fr; 
-  }
+    /* 1. Zrušíme grid vedle sebe a dáme vše pod sebe */
+    .app-container, .chat-layout, .main-content {
+        display: flex;
+        flex-direction: column;
+        height: auto; /* Aby se stránka mohla natahovat dolů */
+        width: 100%;
+    }
 
-  /* Pro jednoduchost na mobilu skryjeme levý panel s historií chatů, 
-     aby měl uživatel místo na psaní. 
-     (V pokročilejší verzi by to šlo přepínat tlačítkem) */
-  .chat-threads {
-    display: none; 
-  }
+    /* 2. Sidebar už nebude brát místo z boku, ale bude nahoře nebo úplně pryč */
+    .sidebar, .chat-threads {
+        width: 100%;
+        height: auto;
+        max-height: 200px; /* Aby historie nezabrala celou obrazovku */
+        border-right: none;
+        border-bottom: 1px solid var(--border-color);
+        overflow-y: auto;
+    }
 
-  /* Mřížka pro poznámky a testy - dáme karty pod sebe (1 sloupec) */
-  .topic-grid, 
-  .subjects-grid {
-    grid-template-columns: 1fr; 
-  }
+    /* 3. Klíč k "roztažení": zrušíme pevné šířky a paddingy */
+    .container, .chat-window {
+        width: 100% !important;
+        max-width: 100vw;
+        padding: 10px;
+        box-sizing: border-box; /* Důležité: padding nebude zvětšovat šířku nad 100% */
+    }
 
-  /* Zmenšíme paddingy, aby se obsah vešel */
-  .tab-content {
-    padding: 10px;
-  }
+    /* 4. Zvětšíme prvky pro prsty (UX) */
+    .message, .thread-item, .btn {
+        width: 100%;
+        margin-left: 0;
+        margin-right: 0;
+        font-size: 16px; /* Zabrání automatickému zoomu na iPhonech při kliknutí */
+    }
 
-  /* Input pro psaní zprávy */
-  .chat-input {
-    padding: 10px;
+    /* 5. Vizuální mřížka předmětů (Dashboard) pod sebou */
+    .topic-grid {
+        grid-template-columns: 1fr !important;
+        gap: 15px;
+    }
   }
-  
-  .chat-input textarea {
-    font-size: 14px; /* Menší písmo na mobilu */
-  }
-}
