@@ -1346,20 +1346,6 @@ body.dark-mode #levelSelect {
     height: 100%;
     box-shadow: 2px 0 15px rgba(0,0,0,0.2);
   }
-
-  /* Když je sidebar zavřený, schováme ho úplně */
-  .sidebar.collapsed {
-    width: 0;
-    padding: 0;
-    overflow: hidden; 
-  }
-
-  /* Tlačítko hamburgeru musí být vidět vždy */
-  .hamburger {
-    background: var(--card); /* Aby bylo vidět na pozadí */
-    border-radius: 4px;
-    padding: 4px;
-  }
 }
 
 /* === 2. MOBILNÍ TELEFONY (max-width: 667px - jako na fotce od učitele) === */

@@ -1430,7 +1430,6 @@ const events = {
 
         for (const file of files) {
           try {
-            // Tady byla ta chyba - musí tu být ui.readFileData
             const content = await ui.readFileData(file); 
             
             const fileData = {
@@ -1665,7 +1664,7 @@ const events = {
 
       const questions = [];
       
-      // OPRAVA PARSOVÁNÍ: Dělíme podle oddělovače ---NEXT---
+      // Dělíme podle oddělovače ---NEXT---
       const blocks = cleanReply.split(/---NEXT---/i).filter(block => block.trim());
 
       for (const block of blocks) {
