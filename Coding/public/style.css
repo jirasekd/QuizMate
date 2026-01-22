@@ -1329,7 +1329,7 @@ body.dark-mode #levelSelect {
  ****************************************************/
 
 /* === 1. TABLETY A MENŠÍ NOTEBOOKY (max-width: 1024px) === */
-/* Tady říkáme: Jakmile je šířka menší než 1180px (jako na fotce) nebo 1024px */
+/* Tady říkáme: Jakmile je šířka menší než 1180px*/
 @media screen and (max-width: 1180px) {
   
   /* Aplikace se roztáhne na celou obrazovku, zmizí zaoblené rohy */
@@ -1339,10 +1339,9 @@ body.dark-mode #levelSelect {
     border-radius: 0; 
   }
 
-  /* Sidebar uděláme "plovoucí" přes obsah, aby nezabíral místo */
+  
   .sidebar {
     position: absolute;
-    z-index: 100; /* Bude nad ostatním obsahem */
     height: 100%;
     box-shadow: 2px 0 15px rgba(0,0,0,0.2);
   }
