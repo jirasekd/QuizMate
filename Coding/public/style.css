@@ -1352,6 +1352,11 @@ body.dark-mode #levelSelect {
     .sidebar-content{
       width: 50% !important;
     }
+
+    .subject-stats {
+      display: none !important;
+    }
+    
     .main-content {
         margin-left: 0 !important; /* Zruší místo pro starý sidebar */
         width: 100% !important;
