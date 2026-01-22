@@ -13,52 +13,33 @@ const util = {
 
   // Markdown → HTML (math-safe)
   markdownToHtml(md) {
-  if (!md) return "";
+    if (!md) return "";
 
-  // 1) Protect block math ($$...$$)
-  const blockMath = [];
-  md = md.replace(/\$\$([\s\S]+?)\$\$/g, (match) => {
-    const key = `__BLOCKMATH_${blockMath.length}__`;
-    blockMath.push(match); 
-    return key;
-  });
+    const blockMath = [];
+    md = md.replace(/\$\$([\s\S]+?)\$\$/g, (match) => {
+      const key = `__BLOCKMATH_${blockMath.length}__`;
+      blockMath.push(match); 
+      return key;
+    });
 
-  // 2) Protect inline math ($...$)
-  const inlineMath = [];
-  md = md.replace(/\$([^\$]+?)\$/g, (match) => {
-    const key = `__INLINEMATH_${inlineMath.length}__`;
-    inlineMath.push(match);
-    return key;
-  });
+    const inlineMath = [];
+    md = md.replace(/\$([^\$]+?)\$/g, (match) => {
+      const key = `__INLINEMATH_${inlineMath.length}__`;
+      inlineMath.push(match);
+      return key;
+    });
 
-  // 3) Convert markdown WITHOUT breaking math
-  let html = md
+    let html = md
+      .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+      .replace(/\*(.+?)\*/g, "<em>$1</em>")
+      .replace(/`(.+?)`/g, "<code>$1</code>");
 
-    // bold
-    .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+    html = html.replace(/\n/g, "<br>");
+    blockMath.forEach((m, i) => html = html.replace(`__BLOCKMATH_${i}__`, m));
+    inlineMath.forEach((m, i) => html = html.replace(`__INLINEMATH_${i}__`, m));
 
-    // italic
-    .replace(/\*(.+?)\*/g, "<em>$1</em>")
-
-    // code
-    .replace(/`(.+?)`/g, "<code>$1</code>");
-
-  // 4) Replace newlines with <br>, but math placeholders won't break
-  html = html.replace(/\n/g, "<br>");
-
-  // 5) Restore math blocks
-  blockMath.forEach((m, i) => {
-    html = html.replace(`__BLOCKMATH_${i}__`, m);
-  });
-
-  // 6) Restore inline math
-  inlineMath.forEach((m, i) => {
-    html = html.replace(`__INLINEMATH_${i}__`, m);
-  });
-
-  return html;
-}
-,
+    return html;
+  },
 
   autoResize(el) { // Temporarily hide scrollbar to get correct scrollHeight
     const originalOverflow = el.style.overflowY;
