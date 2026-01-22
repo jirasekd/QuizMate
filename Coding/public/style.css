@@ -1336,8 +1336,8 @@ body.dark-mode #levelSelect {
 @media screen and (max-width: 800px) {
     body {
         /* Toto simuluje "oddálení" stránky */
-        zoom: 0.85; 
-        transform: scale(0.85);
+        zoom: 0.7; 
+        transform: scale(0.7);
         transform-origin: 0 0;
         width: 117.6%; /* Kompenzace pro transform scale u Firefoxu */
     }
@@ -1349,6 +1349,9 @@ body.dark-mode #levelSelect {
         box-shadow: none !important;
     }
 
+    .sidebar-content{
+      width: 50% !important;
+    }
     .main-content {
         margin-left: 0 !important; /* Zruší místo pro starý sidebar */
         width: 100% !important;
