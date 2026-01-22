@@ -1334,43 +1334,54 @@ body.dark-mode #levelSelect {
 
 /* === 2. MOBILY (max-width: 667px) === */
 @media screen and (max-width: 667px) {
-    /* 1. Zrušíme grid vedle sebe a dáme vše pod sebe */
-    .app-container, .chat-layout, .main-content {
-        display: flex;
-        flex-direction: column;
-        height: auto; /* Aby se stránka mohla natahovat dolů */
-        width: 100%;
+    /* 1. Zrušíme fixní pozicování, které způsobuje to překrývání */
+    .chat-layout {
+        display: flex !important;
+        flex-direction: column !important; /* Všechno pod sebe */
+        height: auto !important;
+        overflow-x: hidden;
     }
 
-    /* 2. Sidebar už nebude brát místo z boku, ale bude nahoře nebo úplně pryč */
+    /* 2. Sidebar už nebude vlevo, ale nahoře jako hlavička */
     .sidebar, .chat-threads {
-        width: 100%;
-        height: auto;
-        max-height: 200px; /* Aby historie nezabrala celou obrazovku */
-        border-right: none;
-        border-bottom: 1px solid var(--border-color);
-        overflow-y: auto;
-    }
-
-    /* 3. Klíč k "roztažení": zrušíme pevné šířky a paddingy */
-    .container, .chat-window {
         width: 100% !important;
-        max-width: 100vw;
+        position: relative !important; /* Už nebude létat nad chatem */
+        left: 0 !important;
+        border-right: none;
+        border-bottom: 2px solid var(--border-color);
+        padding: 15px;
+        display: block !important;
+    }
+
+    /* 3. Oprava těch rozbitých statistik (1 CHATS, 0 NOTES...) */
+    .subject-stats {
+        display: flex;
+        justify-content: space-around;
+        margin-top: 10px;
+    }
+
+    /* 4. Horní menu (Notes, Flashcards...) se musí umět zalomit */
+    .chat-tabs {
+        display: flex;
+        flex-wrap: wrap; /* Pokud se nevejdou, skočí na další řádek */
+        gap: 10px;
+        justify-content: center;
         padding: 10px;
-        box-sizing: border-box; /* Důležité: padding nebude zvětšovat šířku nad 100% */
     }
 
-    /* 4. Zvětšíme prvky pro prsty (UX) */
-    .message, .thread-item, .btn {
-        width: 100%;
-        margin-left: 0;
-        margin-right: 0;
-        font-size: 16px; /* Zabrání automatickému zoomu na iPhonech při kliknutí */
+    /* 5. Samotné zprávy a okno chatu */
+    .main-content {
+        width: 100% !important;
+        padding: 10px;
     }
 
-    /* 5. Vizuální mřížka předmětů (Dashboard) pod sebou */
-    .topic-grid {
-        grid-template-columns: 1fr !important;
-        gap: 15px;
+    .message-container {
+        max-width: 95% !important; /* Aby zprávy nelepily na hrany */
     }
-  }
+
+    /* 6. Fix pro tlačítka a inputy, aby nepřetékaly */
+    input, button, .btn {
+        max-width: 100%;
+        box-sizing: border-box; /* Padding nesežere šířku */
+    }
+}
