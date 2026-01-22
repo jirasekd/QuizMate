@@ -1340,6 +1340,7 @@ body.dark-mode #levelSelect {
         transform: scale(0.7);
         transform-origin: 0 0;
         width: 117.6%; /* Kompenzace pro transform scale u Firefoxu */
+        height: fill-available;
     }
 
     /* Zásadní oprava pro ty překryvy na fotkách */
@@ -1348,15 +1349,20 @@ body.dark-mode #levelSelect {
         height: auto !important;
         box-shadow: none !important;
     }
+    
 
     .sidebar-content{
       width: 50% !important;
     }
 
+    .sidebar-content.hidden {
+      width: 100% !important;
+    }
+
     .subject-stats {
       display: none !important;
     }
-    
+
     .main-content {
         margin-left: 0 !important; /* Zruší místo pro starý sidebar */
         width: 100% !important;
