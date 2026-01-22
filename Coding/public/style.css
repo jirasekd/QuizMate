@@ -1332,8 +1332,8 @@ body.dark-mode #levelSelect {
 
 @media screen and (max-width: 1024px) {}
 
-/* === 2. MOBILY (max-width: 667px) === */
-@media screen and (max-width: 667px) {
+/* === 2. MOBILY (max-width: 800px) === */
+@media screen and (max-width: 800px) {
     body {
         /* Toto simuluje "oddálení" stránky */
         zoom: 0.85; 
@@ -1344,8 +1344,7 @@ body.dark-mode #levelSelect {
 
     /* Zásadní oprava pro ty překryvy na fotkách */
     .sidebar {
-        position: relative !important; /* Přestane létat NAD obsahem */
-        width: 100% !important;
+        width: auto !important;
         height: auto !important;
         box-shadow: none !important;
     }
