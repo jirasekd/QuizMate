@@ -312,12 +312,12 @@
         actionBtn.textContent = 'Login →';
         toggleModeEl.innerHTML = `Don't have an account? <span style="color: var(--primary-1); font-weight: 600;">Register here</span>`;
         document.querySelector('.avatar-options').style.display = 'none';
-        chooseAvatar.style.display = 'none';
+        chooseAvatar.style.display.add("hidden");
       } else {
         actionBtn.textContent = 'Register →';
         toggleModeEl.innerHTML = `Already have an account? <span style="color: var(--primary-1); font-weight: 600;">Login here</span>`;
         document.querySelector('.avatar-options').style.display = 'block';
-        chooseAvatar.style.dsiplay = 'block'
+        chooseAvatar.style.dsiplay.remove("hidden");
       }
     }
 
