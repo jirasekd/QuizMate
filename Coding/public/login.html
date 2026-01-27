@@ -234,7 +234,7 @@
     </div>
 
 
-    <label>Choose avatar:</label>
+    <label id="avatarChooseLabel">Choose avatar:</label>
     <div class="avatar-options">
       <input id="avatarText" type="text" placeholder="e.g. 😊 or U or upload an image below">
 
@@ -261,6 +261,7 @@
     const passwordInput = document.getElementById("password");
     const actionBtn = document.getElementById("actionBtn");
     const toggleModeEl = document.getElementById("toggleMode");
+    const chooseAvatar = document.getElementById("avatarChooseLabel");
 
     let uploadedAvatarBase64 = null;
     let mode = 'login'; // 'login' or 'register'
@@ -311,10 +312,12 @@
         actionBtn.textContent = 'Login →';
         toggleModeEl.innerHTML = `Don't have an account? <span style="color: var(--primary-1); font-weight: 600;">Register here</span>`;
         document.querySelector('.avatar-options').style.display = 'none';
+        chooseAvatar.style.display = 'none';
       } else {
         actionBtn.textContent = 'Register →';
         toggleModeEl.innerHTML = `Already have an account? <span style="color: var(--primary-1); font-weight: 600;">Login here</span>`;
         document.querySelector('.avatar-options').style.display = 'block';
+        chooseAvatar.style.dsiplay = 'block'
       }
     }
 
