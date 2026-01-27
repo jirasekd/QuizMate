@@ -13,52 +13,33 @@ const util = {
 
   // Markdown → HTML (math-safe)
   markdownToHtml(md) {
-  if (!md) return "";
+    if (!md) return "";
 
-  // 1) Protect block math ($$...$$)
-  const blockMath = [];
-  md = md.replace(/\$\$([\s\S]+?)\$\$/g, (match) => {
-    const key = `__BLOCKMATH_${blockMath.length}__`;
-    blockMath.push(match); 
-    return key;
-  });
+    const blockMath = [];
+    md = md.replace(/\$\$([\s\S]+?)\$\$/g, (match) => {
+      const key = `__BLOCKMATH_${blockMath.length}__`;
+      blockMath.push(match); 
+      return key;
+    });
 
-  // 2) Protect inline math ($...$)
-  const inlineMath = [];
-  md = md.replace(/\$([^\$]+?)\$/g, (match) => {
-    const key = `__INLINEMATH_${inlineMath.length}__`;
-    inlineMath.push(match);
-    return key;
-  });
+    const inlineMath = [];
+    md = md.replace(/\$([^\$]+?)\$/g, (match) => {
+      const key = `__INLINEMATH_${inlineMath.length}__`;
+      inlineMath.push(match);
+      return key;
+    });
 
-  // 3) Convert markdown WITHOUT breaking math
-  let html = md
+    let html = md
+      .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+      .replace(/\*(.+?)\*/g, "<em>$1</em>")
+      .replace(/`(.+?)`/g, "<code>$1</code>");
 
-    // bold
-    .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+    html = html.replace(/\n/g, "<br>");
+    blockMath.forEach((m, i) => html = html.replace(`__BLOCKMATH_${i}__`, m));
+    inlineMath.forEach((m, i) => html = html.replace(`__INLINEMATH_${i}__`, m));
 
-    // italic
-    .replace(/\*(.+?)\*/g, "<em>$1</em>")
-
-    // code
-    .replace(/`(.+?)`/g, "<code>$1</code>");
-
-  // 4) Replace newlines with <br>, but math placeholders won't break
-  html = html.replace(/\n/g, "<br>");
-
-  // 5) Restore math blocks
-  blockMath.forEach((m, i) => {
-    html = html.replace(`__BLOCKMATH_${i}__`, m);
-  });
-
-  // 6) Restore inline math
-  inlineMath.forEach((m, i) => {
-    html = html.replace(`__INLINEMATH_${i}__`, m);
-  });
-
-  return html;
-}
-,
+    return html;
+  },
 
   autoResize(el) { // Temporarily hide scrollbar to get correct scrollHeight
     const originalOverflow = el.style.overflowY;
@@ -304,12 +285,27 @@ const subjectState = {
 };
 
 const fileState = {
-  addFile(fileData) {
+  async addFile(fileData) {
     const subject = subjectState.getActiveSubject();
+    
     if (!subject) return;
+    
     if (!subject.files) subject.files = [];
-    subject.files.push(fileData); // TODO: Ukládání souborů přes API
-    // subjectState.saveActiveSubject(); // Až budeme řešit soubory
+
+    const cleanFileData = {
+      name: fileData.name,
+      content: fileData.content,
+      type: fileData.type,
+      size: fileData.size
+    };
+   
+    // Přidáme nový soubor do pole
+    subject.files.push(fileData);
+
+    // Odesílání do DB a čekání na dokončení
+    ui.showFileProcessingLoader("Ukládání do databáze...");
+    await subjectState.saveActiveSubject();
+    ui.renderFiles();
   }
 };
 
@@ -420,49 +416,145 @@ const api = {
     return chat.messages.slice(-this.MAX_CONTEXT);
   },
 
-  async askAI(messages) {
-    const topic = chatState.getCurrent()?.name || "(téma)";
-    const subjectName = subjectState.getActiveSubject()?.name || "všeobecné";
+  async askAI(userMessage) {
     const subject = subjectState.getActiveSubject();
+    const chat = chatState.getCurrent();
+    if (!chat) return;
 
-    let fileContext = "";
-    if (subject && subject.files && subject.files.length > 0) {
-      const fileContents = subject.files.map(f => `Kontext ze souboru "${f.name}":\n${f.content}`).join('\n\n---\n\n');
-      fileContext = `
-      Máš k dispozici následující materiály. Aktivně z nich čerpej a odkazuj se na ně. Nikdy neříkej, že k souborům nemáš přístup. Pokud je použiješ, na začátku odpovědi to stručně zmiň (např. "Podle poskytnutých materiálů...").
-      --- SOUBORY ---
-      ${fileContents}
-      --- KONEC SOUBORŮ ---
-      `;
+    // --- 1. Sestavení pole zpráv (Konstrukce historie) ---
+    
+    // A) Systémová zpráva
+    const rawMessages = [
+      {
+        role: "system",
+        content: `Jsi QuizMate AI asistent na předmět ${subject.name} pro úroveň: ${window.quizmateLevel || "stredni"}. 
+        Pomáhej studentovi s tématem: ${chat.name}. 
+        Pokud jsou v kontextu soubory, čerpej primárně z nich.`
+      }
+    ];
+
+    // B) Přidání kontextu ze SOUBORŮ
+    if (subject.files && subject.files.length > 0) {
+      subject.files.forEach(file => {
+        if (file.content.startsWith("data:image")) {
+          // Obrázek
+          rawMessages.push({
+            role: "user",
+            content: file.content 
+          });
+          rawMessages.push({
+            role: "system",
+            content: `Výše je nahraný obrázek: ${file.name}. Analyzuj ho a měj ho v paměti.`
+          });
+        } else {
+          // Text (TXT, PDF...)
+          rawMessages.push({
+            role: "system",
+            content: `Kontext ze souboru ${file.name}:\n${file.content}`
+          });
+        }
+      });
     }
 
-    // The role should be "system" for system-level instructions.
-    // This helps the model better distinguish instructions from user conversation.
-    const system = {
-      role: "system",
-      content: `Jsi expert na téma **${subjectName}**. Odpovídej na otázky v kontextu tohoto předmětu.
-      Téma chatu je: ${topic}. Odpovídej česky. ${fileContext}`
-    };
+    // C) Přidání historie chatu
+    // Pozor: Zde jen kopírujeme, nečistíme. To uděláme až nakonec.
+    chat.messages.forEach(m => rawMessages.push(m));
 
-    const resp = await fetch("/api/chat", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ messages: [system, ...messages] })
-    });
+    // D) Přidání aktuální zprávy uživatele
+    rawMessages.push({ role: "user", content: userMessage });
 
-    const data = await resp.json();
-    if (data.error) {
-      throw new Error("API error: " + JSON.stringify(data.error));
+    // --- 2. Sanitizace a příprava pro API (Tady opravujeme chybu) ---
+    // Teprve teď, když máme 'rawMessages' plné, uděláme mapování.
+    const cleanedMessages = rawMessages.map(m => ({
+        // Gemini API vyžaduje roli 'model' místo 'assistant'
+        role: m.role === "assistant" ? "model" : (m.role === "system" ? "user" : m.role), 
+        // Zajistíme, že content je String (pokud je to objekt, převedeme na JSON)
+        content: typeof m.content === "string" ? m.content : JSON.stringify(m.content)
+    }));
+
+    // --- 3. Volání backendu ---
+    try {
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages: cleanedMessages }) // Posíláme vyčištěná data
+      });
+
+      if (!response.ok) {
+         const errData = await response.json();
+         throw new Error(errData.error || "AI neodpovídá.");
+      }
+      
+      const data = await response.json();
+      return data.reply;
+
+    } catch (error) {
+      console.error("AskAI Error:", error);
+      throw error; // Vyhodíme chybu výš, aby ji zachytil volající (sendMessage)
     }
-    return data.reply;
   }
 };
+
 
 /****************************************************
  * 4. UI LOGIKA (RENDER FUNKCE)
  ****************************************************/
 const ui = {
-  /**
+  
+  async readFileData(file) {
+    const extension = file.name.split('.').pop().toLowerCase();
+    
+    // Inicializace PDF.js workeru
+    if (window.pdfjsLib) {
+      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+    }
+
+    // TEXT & MARKDOWN
+    if (extension === 'txt' || extension === 'md') {
+      return await file.text();
+    } 
+
+    // WORD (.docx)
+    if (extension === 'docx') {
+      if (!window.mammoth) throw new Error("Knihovna Mammoth.js není načtena v index.html");
+      const arrayBuffer = await file.arrayBuffer();
+      const result = await window.mammoth.extractRawText({ arrayBuffer });
+      return result.value;
+    }
+
+    // PDF
+    if (extension === 'pdf') {
+      if (!window.pdfjsLib) throw new Error("Knihovna PDF.js není načtena v index.html");
+      const arrayBuffer = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      let fullText = "";
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const content = await page.getTextContent();
+        fullText += content.items.map(item => item.str).join(" ") + "\n";
+      }
+      return fullText;
+    }
+
+    // OBRÁZKY (pro Gemini Vision)
+    if (['png', 'jpg', 'jpeg'].includes(extension)) {
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (e) => resolve(e.target.result);
+        reader.readAsDataURL(file);
+      });
+    }
+
+    // PPTX (zatím nepodporováno přímo)
+    if (extension === 'pptx') {
+      throw new Error("Formát .pptx zatím není podporován. Uložte prezentaci jako PDF a nahrajte ji znovu.");
+    }
+
+    throw new Error("Nepodporovaný formát souboru.");
+  },
+  
+
+   /**
    * Renders KaTeX math expressions within a given DOM element.
    * @param {HTMLElement} element The element to scan for math.
    */
@@ -477,6 +569,7 @@ const ui = {
     }
   },
 
+  
   /* SUBJECTS */
   renderSubjects() {
     DOM.subjectList.innerHTML = ""; // Clear existing subjects
@@ -812,20 +905,6 @@ const ui = {
     DOM.fileList.innerHTML = `<div class="file-item typing">${message}</div>`;
   },
 
-  readFileAsText(file) {
-    return new Promise((resolve, reject) => {
-      // Check for large files to prevent browser freeze
-      if (file.size > 5 * 1024 * 1024) { // 5MB limit
-        return reject(new Error("Soubor je příliš velký (limit 5MB)."));
-      }
-
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result);
-      reader.onerror = (error) => reject(error);
-      reader.readAsText(file);
-    });
-  },
-
   /* FLASHCARDS */
   renderDeckGrid() {
     DOM.flashcard.classList.add("hidden");
@@ -932,8 +1011,9 @@ const ui = {
 
     const test = chat.tests[0];
 
-    DOM.testDetailTitle.textContent = `Test: ${chat.name}`;
-    DOM.testQuestionsContainer.innerHTML = "";
+    // Bezpečné nastavení textu (pokud element existuje)
+    if (DOM.testDetailTitle) DOM.testDetailTitle.textContent = `Test: ${chat.name}`;
+    if (DOM.testQuestionsContainer) DOM.testQuestionsContainer.innerHTML = "";
 
     test.questions.forEach((q, index) => {
       const questionEl = document.createElement('div');
@@ -978,24 +1058,36 @@ const ui = {
     submitBtn.onmouseleave = () => { submitBtn.style.opacity = '1'; };
 
 
+    // OPRAVA: Třídy přidáme rovnou zde, ne přes neexistující DOM.submitBtn
+    submitBtn.className = 'submitBtn newBtn'; 
     submitBtn.textContent = 'Submit Test';
     submitBtn.onclick = () => events.submitTest(chatId);
+    
     DOM.testQuestionsContainer.appendChild(submitBtn);
 
-    DOM.testsGrid.classList.add("hidden");
+    // --- ZDE BYLA CHYBA (DOM.submitBtn neexistuje), řádek smazán ---
 
-    // Add classes to the back button to style it like the others
-    DOM.backToTests.classList.add('btn', 'small', 'outline');
+    // Skrývání a zobrazování sekcí
+    if (DOM.testsGrid) DOM.testsGrid.classList.add("hidden");
+    if (DOM.newTestBtn) DOM.newTestBtn.classList.add("hidden");
 
-    DOM.testDetail.classList.remove("hidden");
-    DOM.backToTests.classList.remove("hidden");
-    DOM.newTestBtn.classList.add("hidden");
+    if (DOM.testDetail) {
+        DOM.testDetail.classList.remove("hidden");
+        DOM.testDetail.scrollTop = 0;
+    }
 
-    DOM.testDetail.scrollTop = 0;
+    // Bezpečné zobrazení tlačítka zpět
+    if (DOM.backToTests) {
+        DOM.backToTests.classList.add('btn', 'small', 'outline');
+        DOM.backToTests.classList.remove("hidden");
+    }
 
-    this.renderMathInElement(DOM.testQuestionsContainer);
+    // Renderování matematiky (pokud je funkce dostupná)
+    if (this.renderMathInElement && DOM.testQuestionsContainer) {
+        this.renderMathInElement(DOM.testQuestionsContainer);
+    }
   }
-};
+  };
 
 const flashcards = {
   cards: [],
@@ -1328,37 +1420,38 @@ const events = {
   },
 
   initFileUpload() {
+  if (DOM.upload) {
+    DOM.upload.replaceWith(DOM.upload.cloneNode(true));
+    DOM.upload = document.getElementById("fileUpload");
     if (DOM.upload) {
-      DOM.upload.replaceWith(DOM.upload.cloneNode(true));
-      DOM.upload = document.getElementById("fileUpload");
-      if (DOM.upload) {
-        DOM.upload.addEventListener("change", async (e) => {
-          const files = e.target.files;
-          if (!files.length) return;
+      DOM.upload.addEventListener("change", async (e) => {
+        const files = e.target.files;
+        if (!files.length) return;
 
-          ui.showFileProcessingLoader("Zpracovávám soubory...");
+        ui.showFileProcessingLoader("Zpracovávám soubor...");
 
-          for (const file of files) {
-            try {
-              const content = await ui.readFileAsText(file);
-              const fileData = {
-                id: util.genId(),
-                name: file.name,
-                content: content,
-                size: file.size,
-                type: file.type,
-                uploadedAt: new Date().toISOString()
-              };
-              fileState.addFile(fileData);
-            } catch (error) {
-              alert(`Chyba při nahrávání souboru ${file.name}: ${error.message}`);
-            }
+        for (const file of files) {
+          try {
+            const content = await ui.readFileData(file); 
+            
+            const fileData = {
+              id: util.genId(),
+              name: file.name,
+              content: content,
+              size: file.size,
+              type: file.type,
+              uploadedAt: new Date().toISOString()
+            };
+            await fileState.addFile(fileData);
+          } catch (error) {
+            alert(`Chyba při nahrávání souboru ${file.name}: ${error.message}`);
           }
-          ui.renderFiles();
-        });
-      }
+        }
+        ui.renderFiles();
+      });
     }
-  },
+  }
+},
 
   /* GENERATE NOTES */
   async generateNotes() {
@@ -1388,14 +1481,21 @@ const events = {
     const prompt = `
       ${levelText}
       Vytvoř přehledné, strukturované a kvalitní výpisky k tématu **${topic}**.
-      Použij nadpisy, odrážky, vysvětlení, ${formulaInstruction}příklady.
-      Vycházej z předchozí konverzace.
-      Piš kapitoly a podkapitoly pomocí: 
-      1.Nadpis
-      1.1.Podnadpis
-      1.1.1.Další úroveň
-      Nedávej tam # jako začátky nadpisů.
-      `;
+      Vycházej z předchozí konverzace a souborů.
+
+      DŮLEŽITÉ PRAVIDLO FORMÁTOVÁNÍ:
+      1. Nepoužívej Markdown nadpisy (nepiš znaky #, ##, ###).
+      2. Strukturu dělej POUZE pomocí číslování a tučného písma.
+      
+      Vzor jak to má vypadat:
+      **1. Hlavní nadpis**
+      Text úvodu...
+      **1.1 Podnadpis**
+      Detailní text...
+      **2. Další nadpis**
+      
+      Použij odrážky, vysvětlení a ${formulaInstruction}příklady.
+    `;
 
     // Get the previous messages and add the new instruction at the end.
     const ctx = api.getContextMessages();
@@ -1533,20 +1633,23 @@ const events = {
     else if (window.quizmateLevel === "vysoka") levelText = "pro vysokoškoláky";
     else levelText = "pro žáky základní školy";
 
+    // UPRAVENÝ PROMPT S ODDĚLOVAČEM
     const prompt = `
-      Jsi expert na tvorbu multiple-choice testů. Vytvoř test s ideálním počtem otázek ${levelText} k tématu "${topic}" na základě předchozí konverzace.
-      Vrátí POUZE validní text ve formátu Q:/A: bez jakéhokoliv dalšího textu.
-      Každá otázka na novém řádku, formát:
-      Q: otázka text
+      Jsi expert na tvorbu multiple-choice testů. Vytvoř test s ideálním počtem otázek (min 5, max 10) ${levelText} k tématu "${topic}".
+      
+      DŮLEŽITÉ: Mezi každou otázku vlož oddělovač: ---NEXT---
+      
+      Formát každé otázky:
+      Q: Text otázky
       Options: A) možnost1 B) možnost2 C) možnost3 D) možnost4
-      A: správná odpověď (přesně jedna z možností)
+      A: správná odpověď (celý text odpovědi)
 
       Příklad:
-      Q: Jaký je vzorec pro Pythagorovu větu?
-      Options: A) a^2 + b^2 = c^2 B) a + b = c C) a^2 - b^2 = c^2 D) a * b = c
-      A: a^2 + b^2 = c^2
-
-      Udělej max 10 otázek.
+      Q: Kolik je 2+2?
+      Options: A) 3 B) 4 C) 5 D) 6
+      A: 4
+      ---NEXT---
+      Q: Další otázka...
     `;
 
     const ctx = api.getContextMessages();
@@ -1555,50 +1658,65 @@ const events = {
     try {
       const reply = await api.askAI(messagesForAI);
 
-      // Check for API errors
-      if (reply.includes("error") || reply.includes("503") || reply.includes("unavailable") || reply.includes("overloaded")) {
-        throw new Error("API is overloaded, please try again later.");
+      if (reply.includes("error") || reply.includes("503")) {
+        throw new Error("API is overloaded.");
       }
       
-      // Clean the reply from markdown code blocks
       const cleanReply = reply.replace(/```[\s\S]*?```/g, '').replace(/```\w*\n?/g, '').trim();
 
       const questions = [];
-      const blocks = cleanReply.split('\n\n').filter(block => block.trim());
+      
+      // Dělíme podle oddělovače ---NEXT---
+      const blocks = cleanReply.split(/---NEXT---/i).filter(block => block.trim());
 
       for (const block of blocks) {
-        const lines = block.split('\n').map(l => l.trim());
-        const qLine = lines.find(l => l.startsWith('Q:'));
-        const optionsLine = lines.find(l => l.startsWith('Options:'));
-        const aLine = lines.find(l => l.startsWith('A:'));
+        const lines = block.split('\n').map(l => l.trim()).filter(l => l);
+        
+        const qLine = lines.find(l => l.match(/^Q:/i));
+        const optionsLine = lines.find(l => l.match(/^Options:/i));
+        const aLine = lines.find(l => l.match(/^A:/i));
 
         if (!qLine || !optionsLine || !aLine) continue;
 
-        const text = qLine.substring(2).trim();
-        const optionsStr = optionsLine.substring(8).trim(); // Remove "Options: "
-        const options = optionsStr.split(/ [A-D]\) /).filter(opt => opt.trim()).map(opt => opt.trim());
-        const correctAnswer = aLine.substring(2).trim();
+        const text = qLine.replace(/^Q:\s*/i, '').trim();
+        const optionsStr = optionsLine.replace(/^Options:\s*/i, '').trim();
+        
+        // Robustnější rozdělení možností
+        let options = optionsStr.split(/\s[A-D]\)\s/).filter(opt => opt.trim());
+        // Fix pro první možnost A), která může zůstat přilepená
+        if (options.length === 1 && options[0].includes("B)")) {
+             const parts = optionsStr.split(/[A-D]\)/).filter(p => p.trim());
+             if (parts.length >= 2) options = parts;
+        } else if (optionsStr.includes("A)")) {
+             // Fallback split
+             const parts = optionsStr.split(/[A-D]\)/).filter(p => p.trim());
+             if (parts.length >= 2) options = parts;
+        }
+        
+        const correctAnswer = aLine.replace(/^A:\s*/i, '').trim();
 
-        if (options.length === 4 && correctAnswer) {
+        if (options.length >= 2 && correctAnswer) {
           questions.push({ text, options, correctAnswer });
         }
       }
 
       if (questions.length === 0) {
-        throw new Error("Žádné otázky nebyly vygenerovány.");
+        console.error("RAW AI REPLY:", cleanReply);
+        throw new Error("Nepodařilo se naparsovat žádné otázky. AI nevrátila správný formát.");
       }
 
-      // Uložíme a počkáme na dokončení, než přepneme tab
       await chatState.addTest({ questions });
       ui.updateSubjectSidebar();
       ui.renderSubjectsGrid();
-      document.querySelector('[data-tab="tests"]').click();
-      // Open the test directly to show the questions
+      
+      const testsTab = document.querySelector('[data-tab="tests"]');
+      if(testsTab) testsTab.click();
+      
       ui.openTestDetail(chat.id);
 
     } catch (error) {
       console.error("Chyba při generování testu:", error);
-      ui.addMessage(`⚠️ Nepodařilo se vygenerovat test, zkuste to prosím později. ${console.log(error.message)}`, "assistant");
+      ui.addMessage(`⚠️ Nepodařilo se vygenerovat test: ${error.message}`, "assistant");
     }
   },
 
@@ -1616,18 +1734,31 @@ const events = {
       const selectedOption = document.querySelector(`input[name="question-${index}"]:checked`);
       const feedbackEl = document.querySelectorAll('.result-feedback')[index];
 
-      if (selectedOption && selectedOption.value === q.correctAnswer) {
-        score++;
-        feedbackEl.textContent = '✅ Správně!';
-        feedbackEl.style.color = 'green';
+      if (selectedOption) {
+        // OPRAVA: Používáme .trim() pro odstranění mezer, které AI občas přidá
+        const userChoice = selectedOption.value.trim();
+        const correctChoice = q.correctAnswer.trim();
+
+        if (userChoice === correctChoice) {
+          score++;
+          feedbackEl.textContent = '✅ Správně!';
+          feedbackEl.style.color = 'green';
+        } else {
+          feedbackEl.textContent = `❌ Špatně. Správná odpověď: ${q.correctAnswer}`;
+          feedbackEl.style.color = 'red';
+        }
       } else {
-        feedbackEl.textContent = `❌ Špatně. Správná odpověď: ${q.correctAnswer}`;
-        feedbackEl.style.color = 'red';
+        feedbackEl.textContent = `⚠️ Nebyla vybrána žádná odpověď. Správně: ${q.correctAnswer}`;
+        feedbackEl.style.color = 'orange';
       }
     });
 
-    document.getElementById('submitTestBtn').disabled = true;
-    DOM.testDetailTitle.textContent = `Výsledek testu: ${score} / ${test.questions.length}`;
+    const submitBtn = document.getElementById('submitTestBtn');
+    if (submitBtn) submitBtn.disabled = true;
+    
+    if (DOM.testDetailTitle) {
+      DOM.testDetailTitle.textContent = `Výsledek testu: ${score} / ${test.questions.length}`;
+    }
   },
 
   async createStandaloneNotes() {
@@ -2022,9 +2153,40 @@ const events = {
     });
   }
 
-    
+  // Change level of study
+  const levelSelect = document.getElementById("levelSelect");
+
+  if (levelSelect) {
+    // 1. Načtení aktuální hodnoty z localStorage při otevření modalu
+    const user = JSON.parse(localStorage.getItem("quizmate_current_user") || "{}");
+    if (user.level) {
+        levelSelect.value = user.level;
+        window.quizmateLevel = user.level; // Nastavení globální proměnné
+    }
+
+    // 2. Uložení při změně
+    levelSelect.addEventListener("change", () => {
+        const newLevel = levelSelect.value;
+        
+        // Aktualizace v objektu uživatele
+        const user = JSON.parse(localStorage.getItem("quizmate_current_user") || "{}");
+        user.level = newLevel;
+        localStorage.setItem("quizmate_current_user", JSON.stringify(user));
+        
+        // Důležité: aktualizace globální proměnné, kterou používá AI pro generování
+        window.quizmateLevel = newLevel; 
+        
+        console.log("Level updated to:", newLevel);
+        
+        // Volitelně: vizuální zpětná vazba (dočasná změna barvy okraje)
+        levelSelect.style.borderColor = "var(--primary-1)";
+        setTimeout(() => levelSelect.style.borderColor = "var(--border)", 1000);
+    });
   }
+}
 };
+
+
 
 
 /****************************************************

@@ -12,7 +12,7 @@ dotenv.config();
 
 const app = express();
 
-app.use(express.json({ limit: '50mb' }));
+app.use(express.json({ limit: '16mb' })); //Maximálnáí velikost kterou přijme MongoDB je 16MB
 // Servíruj statické soubory (HTML, CSS, JS) pouze z adresáře 'public'
 app.use(express.static(path.join(__dirname, "public")));
 app.use(cors()); // Povolí komunikaci mezi frontendem a backendem na různých portech (pro vývoj)
@@ -62,22 +62,53 @@ app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
-// Mapování OpenAI-style zpráv na Gemini "contents"
 function toGeminiContents(openAiMessages) {
-  // Gemini role: "user" nebo "model"
-  // OpenAI: 'user' | 'assistant' | 'system'
-  // System zprávy sloučíme na začátek jako user text (nejjednodušší varianta).
-  const contents = [];
-  for (const m of openAiMessages) {
-    let role = m.role === "assistant" ? "model" : "user";
-    const text = typeof m.content === "string" ? m.content : JSON.stringify(m.content);
-    if (!text || !text.trim()) continue; // Skip empty messages
-    contents.push({
-      role,
-      parts: [{ text }]
+  return openAiMessages.map(m => {
+    const parts = [];
+    
+    // Handle content as array (multiple parts like images + text)
+    const contentArray = Array.isArray(m.content) ? m.content : [m.content];
+    
+    contentArray.forEach(content => {
+      // If content is a base64 image string (starts with data:image)
+      if (typeof content === "string" && content.startsWith("data:image")) {
+        const [mimeInfo, base64Data] = content.split(",");
+        const mimeType = mimeInfo.match(/:(.*?);/)[1];
+        
+        parts.push({
+          inline_data: {
+            mime_type: mimeType,
+            data: base64Data
+          }
+        });
+      } else if (typeof content === "string") {
+        // Regular text content
+        parts.push({ text: content });
+      } else if (typeof content === "object" && content !== null) {
+        // Already formatted part (e.g., {type: 'text', text: '...'} or {type: 'image_url', ...})
+        if (content.type === "text" && content.text) {
+          parts.push({ text: content.text });
+        } else if (content.type === "image_url" && content.image_url?.url) {
+          const url = content.image_url.url;
+          if (url.startsWith("data:image")) {
+            const [mimeInfo, base64Data] = url.split(",");
+            const mimeType = mimeInfo.match(/:(.*?);/)[1];
+            parts.push({
+              inline_data: {
+                mime_type: mimeType,
+                data: base64Data
+              }
+            });
+          }
+        }
+      }
     });
-  }
-  return contents;
+
+    return {
+      role: m.role === "assistant" ? "model" : "user",
+      parts: parts.length > 0 ? parts : [{ text: "" }]
+    };
+  });
 }
 
 // Volání Gemini REST API (non-stream)
@@ -98,7 +129,7 @@ async function callGemini(openAiMessages) {
     }
   };
 
-  const url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-preview:generateContent";
+  const url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
   const resp = await fetch(`${url}?key=${encodeURIComponent(API_KEY)}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -113,6 +144,11 @@ async function callGemini(openAiMessages) {
   const data = await resp.json();
   console.log("Gemini response:", JSON.stringify(data, null, 2)); // DEBUG: log full response
 
+  if (data?.candidates?.[0]?.content?.parts) {
+    const text = data.candidates[0].content.parts.map(p => p.text || "").join("");
+    if (text.trim()) return text; // Pokud máme text, vrátíme ho
+}
+  
   // Check for finish reason to see if response was truncated
   if (data?.candidates?.[0]) {
     const cand = data.candidates[0];

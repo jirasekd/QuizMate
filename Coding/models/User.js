@@ -5,15 +5,15 @@ const mongoose = require('mongoose');
 const UserSchema = new mongoose.Schema({
   username: {
     type: String,
-    required: true,
+    required: true,     // Jedinečné jméno uživatele
     unique: true,
   },
   password: {
-    type: String,
+    type: String,       // Hašované heslo
     required: true,
   },
   avatar: {
-    type: String,
+    type: String,       // Cesta k obrázku nebo textová zkratka profilu.
     default: '👤'
   }
 });

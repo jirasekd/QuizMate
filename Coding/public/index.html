@@ -2,7 +2,7 @@
 <html lang="cs">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=1200, initial-scale=0.4, user-scalable=yes"/>
   <title>QuizMate</title>
 
   <!-- Fonts -->
@@ -15,6 +15,10 @@
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
     onload="renderMathInElement(document.body);"></script>
+
+  <!-- PDF.js a Mammoth.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
 </head>
 
 <body>
@@ -272,8 +276,9 @@
             <button id="changeUsernameBtn" class="btn outline">Change username</button>
             <button id="changePasswordBtn" class="btn outline">Change password</button>
               <form id="changePasswordForm" class="hidden settings-form" style="max-width: 300px; margin: 0 auto;">
-                <input type="password" id="oldPasswordInput" placeholder="Old password" required/>
-                <input type="password" id="newPasswordInput" placeholder="New password" required/>
+                <input type="text" style="display: none;" autocomplete="username" />
+                <input type="password" id="oldPasswordInput" placeholder="Old password" autocomplete="current-password" required/>
+                <input type="password" id="newPasswordInput" placeholder="New password" autocomplete="new-password" required/>
                 <div style="display:flex; gap:8px;">
                   <button type="submit" class="btn primary small">Save</button>
                   <button type="button" id="cancelPasswordChange" class="btn outline small">Cancel</button>
@@ -292,6 +297,12 @@
                 <button id="cancelAvatarBtn" class="btn outline small">Cancel</button>
               </div>
             </div>
+            <label for="levelSelect">Study Level:</label>
+              <select id="levelSelect" class="btn outline">
+                  <option value="zakladka">Elementary School</option>
+                  <option value="stredni">High School</option>
+                  <option value="vysoka">University</option>
+              </select>
             <button id="logoutBtn" class="btn outline">Logout</button>
         </div>
     </div>
