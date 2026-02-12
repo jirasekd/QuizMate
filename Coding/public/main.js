@@ -1411,9 +1411,18 @@ const events = {
     util.autoResize(DOM.input);
 
     try {
+      ui.addMessage("Pracuji na vaší odpovědi<span class='typing_dots'></span>", "assistant");
+      
       const ctx = api.getContextMessages();
       const reply = await api.askAI(ctx);
-      ui.addMessage(reply, "assistant");
+      
+      const chat = chatState.getCurrent();
+      chat.messages[chat.messages.length - 1].content = reply;
+
+      ui.renderMessages();
+      await chatState.saveCurrentChat();
+      await subjectState.saveActiveSubject();
+
     } catch (err) {
       ui.addMessage("⚠️ Chyba serveru: " + err.message, "assistant");
     }
