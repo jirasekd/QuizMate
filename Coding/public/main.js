@@ -124,6 +124,7 @@ const DOM = {
     this.testDetailTitle = document.getElementById("testDetailTitle");
     this.testQuestionsContainer = document.getElementById("testQuestionsContainer");
     this.newTestBtn = document.getElementById("newTestBtn");
+    this.testsCount = document.getElementById("testsCount");
 
     // Logout button
     this.logoutBtn = document.getElementById("logoutBtn");
