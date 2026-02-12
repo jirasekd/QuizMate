@@ -629,7 +629,7 @@ const ui = {
 
       const chatsCount = subject.chats ? subject.chats.length : 0;
       const notesCount = subject.chats ? subject.chats.filter(chat => typeof chat.notes === "string" ? chat.notes.trim() !== "" : chat.notes && Object.keys(chat.notes).length > 0).length : 0;
-      const flashcardsCount = subject.flashcards ? subject.flashcards.length : 0;
+      const flashcardsCount = subject.chats ? subject.chats.reduce((total, chat) => total + (Array.isArray(chat.flashcards) ? chat.flashcards.length : 0), 0) : 0;
 
       card.innerHTML = `
         <div class="subject-card-icon">${subject.icon}</div>
@@ -700,8 +700,8 @@ const ui = {
     DOM.subjectDetailTitle.textContent = subject.name;
 
     const chatsCount = subject.chats ? subject.chats.length : 0;
-    const notesCount = subject.notes ? subject.notes.length : 0;
-    const flashcardsCount = subject.flashcards ? subject.flashcards.length : 0;
+    const notesCount = subject.chats ? subject.chats.filter(chat => typeof chat.notes === "string" ? chat.notes.trim() !== "" : chat.notes && Object.keys(chat.notes).length > 0).length : 0;
+    const flashcardsCount = subject.chats ? subject.chats.reduce((total, chat) => total + (Array.isArray(chat.flashcards) ? chat.flashcards.length : 0), 0) : 0;
 
     DOM.chatCount.textContent = chatsCount;
     DOM.notesCount.textContent = notesCount;
