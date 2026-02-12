@@ -1428,7 +1428,6 @@ const events = {
       chat.messages[chat.messages.length - 1].content = reply;
 
       ui.renderMessages();
-      await chatState.saveCurrentChat();
       await subjectState.saveActiveSubject();
 
     } catch (err) {
