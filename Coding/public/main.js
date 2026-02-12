@@ -630,6 +630,7 @@ const ui = {
       const chatsCount = subject.chats ? subject.chats.length : 0;
       const notesCount = subject.chats ? subject.chats.filter(chat => typeof chat.notes === "string" ? chat.notes.trim() !== "" : chat.notes && Object.keys(chat.notes).length > 0).length : 0;
       const flashcardsCount = subject.chats ? subject.chats.filter(chat => Array.isArray(chat.flashcards) && chat.flashcards.length > 0).length : 0;
+      const testsCount = subject.chats ? subject.chats.filter(chat => Array.isArray(chat.tests) && chat.tests.length > 0).length : 0;
 
       card.innerHTML = `
         <div class="subject-card-icon">${subject.icon}</div>
@@ -647,6 +648,9 @@ const ui = {
             <div class="subject-stat-number">${flashcardsCount}</div>
             <div class="subject-stat-label">Cards</div>
           </div>
+          <div class="subject-stat">
+            <div class="subject-stat-number">${testsCount}</div>
+            <div class="subject-stat-label">Tests</div>
         </div>
       `;
 
@@ -702,10 +706,12 @@ const ui = {
     const chatsCount = subject.chats ? subject.chats.length : 0;
     const notesCount = subject.chats ? subject.chats.filter(chat => typeof chat.notes === "string" ? chat.notes.trim() !== "" : chat.notes && Object.keys(chat.notes).length > 0).length : 0;
     const flashcardsCount = subject.chats ? subject.chats.filter(chat => Array.isArray(chat.flashcards) && chat.flashcards.length > 0).length : 0;
+    const testsCount = subject.chats ? subject.chats.filter(chat => Array.isArray(chat.tests) && chat.tests.length > 0).length : 0;
 
     DOM.chatCount.textContent = chatsCount;
     DOM.notesCount.textContent = notesCount;
     DOM.flashcardsCount.textContent = flashcardsCount;
+    DOM.testsCount.textContent = testsCount;
   },
 
   /* THREADS */
