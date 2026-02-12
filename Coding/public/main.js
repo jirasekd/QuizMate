@@ -651,6 +651,7 @@ const ui = {
           <div class="subject-stat">
             <div class="subject-stat-number">${testsCount}</div>
             <div class="subject-stat-label">Tests</div>
+          </div>
         </div>
       `;
 
