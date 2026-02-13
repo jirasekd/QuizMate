@@ -94,7 +94,7 @@ body {
   width: 250px;
   background: var(--muted-bg);
   border-right: 1px solid var(--border);
-  padding: 20px;
+  padding: 5px;
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -754,7 +754,7 @@ body.dark-mode .plus-btn {
 }
 
 #sidebar-detail {
-  padding: 15px;
+  padding: 5px;
 }
 
 .subject-info {
