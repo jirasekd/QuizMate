@@ -1441,19 +1441,7 @@ const events = {
     DOM.input.value = "";
     util.autoResize(DOM.input);
 
-    try {
-      ui.addMessage("Pracuji na vaší odpovědi<span class='typing_dots'></span>", "assistant");
-      
-      const ctx = api.getContextMessages();
-      const reply = await api.askAI(ctx);
-      
-      const chat = chatState.getCurrent();
-      chat.messages[chat.messages.length - 1].content = reply;
-
-      ui.renderMessages();
-      await subjectState.saveActiveSubject();
-
-      // If a generate action is pending, execute it now
+    // If a generate action is pending, execute it now
       if (pendingGenerateAction) {
         const action = pendingGenerateAction;
         pendingGenerateAction = null;
@@ -1466,11 +1454,27 @@ const events = {
         if (action === "notes") await events.generateNotes();
         if (action === "flashcards") await events.generateFlashcards();
         if (action === "test") await events.generateTest();
+      }else {
+        try {
+              ui.addMessage("Pracuji na vaší odpovědi<span class='typing_dots'></span>", "assistant");
+              
+              const ctx = api.getContextMessages();
+              const reply = await api.askAI(ctx);
+              
+              const chat = chatState.getCurrent();
+              chat.messages[chat.messages.length - 1].content = reply;
+
+              ui.renderMessages();
+              await subjectState.saveActiveSubject();
+
+              
+
+            } catch (err) {
+              ui.addMessage("⚠️ Chyba serveru: " + err.message, "assistant");
+            }
       }
 
-    } catch (err) {
-      ui.addMessage("⚠️ Chyba serveru: " + err.message, "assistant");
-    }
+    
   },
 
   initFileUpload() {
