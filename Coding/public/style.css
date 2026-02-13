@@ -72,7 +72,6 @@ body {
   border-radius: calc(var(--radius) + 4px);
   overflow: hidden;  /* Zabrání scrollování kolem app */
   box-shadow: var(--shadow-lg);
-  padding-bottom: 1%; /* Přidá trochu prostoru na spodní straně pro lepší vzhled, zejména když je postranní panel sbalený. */
 }
 
 .avatar {
@@ -194,6 +193,7 @@ body {
 .sidebar-footer {
   margin-top: auto; /* This is the key fix! Pushes the footer to the bottom. */
   padding-top: 8px; /* Reduced padding to move the button up */
+  padding-bottom: 1%;
   border-top: 1px solid var(--border);
   display: flex;
   flex-direction: column;
