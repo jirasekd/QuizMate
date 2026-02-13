@@ -750,11 +750,13 @@ const ui = {
 
             ui.renderThreads();
             ui.renderMessages();
+            ui.renderSubjectsGrid();
           } catch (error) {
             alert("Chyba při mazání chatu: " + error.message);
             // Revert the local change
             activeSubject.chats.push(chatToDelete);
             ui.renderThreads();
+            ui.renderSubjectsGrid();
           }
         }
       });
