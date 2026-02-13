@@ -518,6 +518,7 @@ body.dark-mode .plus-btn {
   display: none;
 }
 
+
 .action-item {
   padding: 8px 12px;
   background: white;
@@ -530,6 +531,12 @@ body.dark-mode .plus-btn {
 
 .action-item:hover {
   background: var(--muted-bg);
+}
+
+.action-item.selected {
+  background: linear-gradient(135deg, var(--primary-1), var(--primary-2));
+  color: white;
+  box-shadow: 0 4px 12px rgba(var(--primary-rgb), 0.4);
 }
 
 .chat-input textarea {

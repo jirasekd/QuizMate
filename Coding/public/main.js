@@ -1183,8 +1183,12 @@ const flashcards = {
 /****************************************************
  * 5. EVENT HANDLERY
  ****************************************************/
+
+// GLOBAL STATE: Pending generate action
+let pendingGenerateAction = null;
+
 const events = {
-  initTabs() {
+    initTabs() {
     // If tabs don't exist yet, try to find them
     if (!DOM.tabs || DOM.tabs.length === 0) {
       DOM.tabs = document.querySelectorAll(".tab-btn");
@@ -1203,6 +1207,7 @@ const events = {
         btn.parentNode.replaceChild(newBtn, btn);
       }
     });
+    
     
     // Re-select tabs after cloning
     DOM.tabs = document.querySelectorAll(".tab-btn");
@@ -1313,11 +1318,29 @@ const events = {
         const act = e.target.dataset.action;
         if (!act) return;
 
-        if (act === "notes") events.generateNotes();
-        if (act === "flashcards") events.generateFlashcards();
-        if (act === "test") events.generateTest();
+        // Files action is immediate (not pending)
         if (act === "files") {
           document.querySelector('.upload-card button').click();
+          return;
+        }
+
+        // Handle generate actions (notes/flashcards/test)
+        const btn = e.target;
+        
+        // Toggle: if already selected, deselect
+        if (pendingGenerateAction === act) {
+          pendingGenerateAction = null;
+          btn.classList.remove("selected");
+        } else {
+          // Deselect previous button if any
+          if (pendingGenerateAction) {
+            const prevBtn = DOM.actionMenu.querySelector(`[data-action="${pendingGenerateAction}"]`);
+            if (prevBtn) prevBtn.classList.remove("selected");
+          }
+          
+          // Select new action
+          pendingGenerateAction = act;
+          btn.classList.add("selected");
         }
       });
     }
@@ -1430,6 +1453,21 @@ const events = {
       ui.renderMessages();
       await subjectState.saveActiveSubject();
 
+      // If a generate action is pending, execute it now
+      if (pendingGenerateAction) {
+        const action = pendingGenerateAction;
+        pendingGenerateAction = null;
+        
+        // Clear visual selection
+        const btn = DOM.actionMenu.querySelector(`[data-action="${action}"]`);
+        if (btn) btn.classList.remove("selected");
+
+        // Execute the pending action
+        if (action === "notes") await events.generateNotes();
+        if (action === "flashcards") await events.generateFlashcards();
+        if (action === "test") await events.generateTest();
+      }
+
     } catch (err) {
       ui.addMessage("⚠️ Chyba serveru: " + err.message, "assistant");
     }
@@ -1477,6 +1515,10 @@ const events = {
 
     ui.addMessage("📝 Generuji výpisky...\n\tBudete přepnuti na záložku notes.", "assistant");
 
+    // Get custom instruction from last user message (if any)
+    const lastMessage = chat.messages[chat.messages.length - 1];
+    const customInstruction = lastMessage?.role === "user" ? lastMessage.content : "";
+
     let levelText = "";
 
     if (window.quizmateLevel === "zakladka") {
@@ -1497,6 +1539,7 @@ const events = {
     const prompt = `
       ${levelText}
       Vytvoř přehledné, strukturované a kvalitní výpisky k tématu **${topic}**.
+      ${customInstruction ? `Uživatelova instrukce: ${customInstruction}\n\n` : ""}
       Vycházej z předchozí konverzace a souborů.
 
       DŮLEŽITÉ PRAVIDLO FORMÁTOVÁNÍ:
@@ -1539,6 +1582,10 @@ const events = {
 
     ui.addMessage("🧠 Generuji flashcards...\n\tPo dokončení budete přepnuti na záložku flashcards.","assistant");
 
+    // Get custom instruction from last user message (if any)
+    const lastMessage = chat.messages[chat.messages.length - 1];
+    const customInstruction = lastMessage?.role === "user" ? lastMessage.content : "";
+
     let levelText = "";
     if (window.quizmateLevel === "zakladka") {
       levelText = "Piš základoškolskou úrovní. Vysvětluj jako pro studenty na základní škole.";
@@ -1554,6 +1601,7 @@ const events = {
       ${levelText}
       Jsi expert na tvorbu vzdělávacích flashcards.
       Tvým úkolem je vytvořit ideální počet flashcards pro téma "${topic}".
+      ${customInstruction ? `Uživatelova instrukce: ${customInstruction}\n\n` : ""}
 
       Vrať flashcards v následujícím formátu:
 
@@ -1644,6 +1692,10 @@ const events = {
 
     ui.addMessage("🧪 Generuji test...\n\tBudete přepnuti na záložku tests.", "assistant");
 
+    // Get custom instruction from last user message (if any)
+    const lastMessage = chat.messages[chat.messages.length - 1];
+    const customInstruction = lastMessage?.role === "user" ? lastMessage.content : "";
+
     let levelText = "";
     if (window.quizmateLevel === "stredni") levelText = "pro středoškoláky";
     else if (window.quizmateLevel === "vysoka") levelText = "pro vysokoškoláky";
@@ -1652,6 +1704,7 @@ const events = {
     // UPRAVENÝ PROMPT S ODDĚLOVAČEM
     const prompt = `
       Jsi expert na tvorbu multiple-choice testů. Vytvoř test s ideálním počtem otázek (min 5, max 10) ${levelText} k tématu "${topic}".
+      ${customInstruction ? `Uživatelova instrukce: ${customInstruction}\n\n` : ""}
       
       DŮLEŽITÉ: Mezi každou otázku vlož oddělovač: ---NEXT---
       
