@@ -1517,7 +1517,7 @@ const events = {
     if (!chat) { ui.renderMessages(); return; }
     const topic = chat.name;
 
-    ui.addMessage("📝 Generuji výpisky...\n\tBudete přepnuti na záložku notes.", "assistant");
+    ui.addMessage("📝 Generuji výpisky<span class='typing_dots'></span>\nBudete přepnuti na záložku notes.", "assistant");
 
     // Get custom instruction from last user message (if any)
     const lastMessage = chat.messages[chat.messages.length - 1];
@@ -1584,7 +1584,7 @@ const events = {
     }
     const topic = chat.name;
 
-    ui.addMessage("🧠 Generuji flashcards...\n\tPo dokončení budete přepnuti na záložku flashcards.","assistant");
+    ui.addMessage("🧠 Generuji flashcards<span class='typing_dots'></span>\nPo dokončení budete přepnuti na záložku flashcards.","assistant");
 
     // Get custom instruction from last user message (if any)
     const lastMessage = chat.messages[chat.messages.length - 1];
@@ -1694,7 +1694,7 @@ const events = {
     if (!chat) return;
     const topic = chat.name;
 
-    ui.addMessage("🧪 Generuji test...\n\tBudete přepnuti na záložku tests.", "assistant");
+    ui.addMessage("🧪 Generuji test<span class='typing_dots'></span>\nBudete přepnuti na záložku tests.", "assistant");
 
     // Get custom instruction from last user message (if any)
     const lastMessage = chat.messages[chat.messages.length - 1];
