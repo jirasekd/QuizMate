@@ -147,7 +147,7 @@ body {
   outline: none ;
   cursor: pointer;
   font-size: 20px;
-  transition: opacity 0.2s ease; /* Plynulý přechod při skrytí. */
+  transition: opacity 0.1s ease; /* Plynulý přechod při skrytí. */
 }
 
 /* New Subject Button */
