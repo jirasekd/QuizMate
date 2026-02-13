@@ -192,6 +192,7 @@ body {
 
 .sidebar-footer {
   margin-top: auto; /* This is the key fix! Pushes the footer to the bottom. */
+  margin-bottom: 2%;
   padding-top: 8px; /* Reduced padding to move the button up */
   padding-bottom: 4%;
   border-top: 1px solid var(--border);
