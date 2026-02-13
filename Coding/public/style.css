@@ -98,7 +98,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 16px;
-  transition: width 0.2s ease, padding 0.2s ease; /* Animace pro plynulé sbalení a rozbalení postranního panelu. */
+  transition: width 0.25s ease, padding 0.25s ease; /* Animace pro plynulé sbalení a rozbalení postranního panelu. */
 }
 
 .main {
@@ -1153,8 +1153,6 @@ body.dark-mode .plus-btn {
 /****************************************************
  * 12. THEME TOGGLER
  ****************************************************/
-
-/* theme-toggle.css */
 
 /* The switch - the box around the slider */
 #theme-toggle-button {
