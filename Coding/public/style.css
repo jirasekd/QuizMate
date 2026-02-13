@@ -119,6 +119,7 @@ body {
   align-items: center;
   gap: 10px; 
   position: relative; /* Nastavuje kontext pro absolutní pozicování hamburger menu uvnitř. */
+  padding-right: 5px;
 }
 
 .avatar {
