@@ -1,7 +1,7 @@
 /* Pro mobily (do 768px) */
 @media screen and (max-width: 768px) {
   .app {
-    padding-bottom: 100px; /* Menší padding, 200px už nebude potřeba, když nic neujíždí */
+    transform: scale(1.1);
   }
 
   .modal-overlay:not(.hidden) .modal-content {
