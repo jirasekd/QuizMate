@@ -1354,7 +1354,7 @@ body.dark-mode #levelSelect {
 }
 
 /* Kladivo na mobily (všechno pod 768px, což jsou iPhony a Androidy) */
-@media screen and (max-width: 500px) {
+@media screen and (max-width: 768px) {
   /* Úplně schováme celou appku */
   .app {
     display: none !important;
