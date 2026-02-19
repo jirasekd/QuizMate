@@ -2,9 +2,7 @@
 @media screen and (max-width: 440px) {
   body {
     min-height: 100vh;
-    display: flex;
-    justify-content: flex-start;
-    align-items: flex-start;
+    display: block;
   }
 
   .app {
@@ -58,9 +56,26 @@
     transform: none;
   }
 
+  .subjects-header {
+    flex-direction: column;
+    gap: 12px;
+    align-items: flex-start;
+    margin-bottom: 16px;
+  }
+
+  .subjects-header h1 {
+    font-size: 20px;
+    margin: 0;
+  }
+
+  .subjects-header .btn {
+    width: 100%;
+  }
+
   .tabs {
     padding: 8px 12px;
     gap: 4px;
+    flex-wrap: wrap;
   }
 
   .tab-btn {
@@ -129,6 +144,11 @@
     font-size: 11px;
   }
 
+  .subjects-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
   .subject-card {
     padding: 12px;
   }
@@ -147,6 +167,8 @@
 
   .subject-detail-header {
     padding: 12px;
+    flex-direction: column;
+    gap: 8px;
   }
 
   .subject-detail-header h1 {
@@ -187,6 +209,9 @@
 
   body {
     padding: 10px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
   }
 
   .sidebar {
@@ -210,7 +235,7 @@
     padding: 16px;
   }
 
-  .subject-grid {
+  .subjects-grid {
     grid-template-columns: repeat(2, 1fr);
     gap: 12px;
   }
@@ -223,6 +248,27 @@
     width: 75%;
     max-width: 600px;
     margin: 0 auto;
+  }
+}
+
+/* Pro desktop (1180px+) */
+@media screen and (min-width: 1180px) {
+  body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+  }
+
+  .app {
+    width: 95%;
+    height: 90%;
+    border-radius: calc(var(--radius) + 4px);
+    box-shadow: var(--shadow-lg);
+  }
+
+  .subjects-grid {
+    grid-template-columns: repeat(4, 1fr);
   }
 }
 
@@ -282,11 +328,10 @@ body {
   background: var(--bg);
   color: var(--text-color);
   min-height: 100vh;
-  display: flex;
-  justify-content: center; /* Vystředí hlavní kontejner .app na stránce */
-  align-items: center;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  margin: 0;
+  padding: 0;
 }
 
 /****************************************************
@@ -294,12 +339,12 @@ body {
  ****************************************************/
 .app { /* Hlavní kontejner aplikace, používá Flexbox pro rozdělení na postranní panel a hlavní obsah. */
   display: flex;
-  width: 95%;
-  height: 90%;
+  width: 100%;
+  height: 100vh;
   background: var(--card);
-  border-radius: calc(var(--radius) + 4px);
+  border-radius: 0;
   overflow: hidden;  /* Zabrání scrollování kolem app */
-  box-shadow: var(--shadow-lg);
+  box-shadow: none;
 }
 
 .avatar {
