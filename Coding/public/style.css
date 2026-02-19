@@ -1,29 +1,31 @@
+/* Pro mobily (do 768px) */
 @media screen and (max-width: 768px) {
   .app {
-    padding-bottom: 200px;
-    transform: scale(1.2);
-    transform-origin: center center;
+    padding-bottom: 100px; /* Menší padding, 200px už nebude potřeba, když nic neujíždí */
   }
 
-  .modal-overlay:not(.hidden) .modal-content{
-    transform: scale(3);
-    transform-origin: center center;
+  .modal-overlay:not(.hidden) .modal-content {
+    /* Místo scale(3) raději nastavíme šířku v procentech, aby se to na mobilu vešlo */
+    width: 90%;
+    max-width: 400px; 
+    margin: 0 auto; /* Vycentrování */
   }
 }
 
-@media screen and (min-width: 770px) and (max-width: 1180px){
+/* Pro tablety (iPad) (770px - 1180px) */
+@media screen and (min-width: 770px) and (max-width: 1180px) {
   .app {
-    padding-bottom: 200px;
-    transform: scale(1.1);
-    transform-origin: center center;
+    padding-bottom: 100px;
   }
 
-  .modal-overlay:not(.hidden) .modal-content{
-    transform: scale(2);
-    transform-origin: center center;
+  .modal-overlay:not(.hidden) .modal-content {
+    /* Místo scale(2) dáme rozumnou šířku pro tablet */
+    width: 70%;
+    max-width: 600px;
+    margin: 0 auto;
   }
-
 }
+
 /****************************************************
  * 1. ROOT & BASE STYLES
  ****************************************************/
