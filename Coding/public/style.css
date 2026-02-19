@@ -1,39 +1,226 @@
 /* Pro mobily (do 440px) */
 @media screen and (max-width: 440px) {
+  body {
+    min-height: 100vh;
+    display: flex;
+    justify-content: flex-start;
+    align-items: flex-start;
+  }
+
   .app {
-    transform: scale(0.99);
+    width: 100%;
+    height: 100vh;
+    border-radius: 0;
   }
   
   .sidebar {
-    transform:scale(0.7);
+    width: 60px;
+    padding: 5px 2px;
+    gap: 8px;
   }
-  
+
+  .sidebar.collapsed {
+    width: 60px;
+  }
+
+  .sidebar:not(.collapsed) .username {
+    margin-right: 0;
+  }
+
+  .profile {
+    padding-right: 0;
+  }
+
+  .new-subject-btn .btn-text {
+    display: none;
+  }
+
+  .new-subject-btn {
+    justify-content: center;
+    padding: 8px;
+  }
+
+  .subject .subject-text {
+    display: none;
+  }
+
+  .subject {
+    justify-content: center;
+    padding: 10px 6px;
+    font-size: 12px;
+  }
+
+  .subject .icon {
+    font-size: 18px;
+  }
+
   .main {
-    transform: scale(0.7);
+    transform: none;
+  }
+
+  .tabs {
+    padding: 8px 12px;
+    gap: 4px;
+  }
+
+  .tab-btn {
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+
+  .tab-content {
+    padding: 12px;
+  }
+
+  .chat-layout {
+    grid-template-columns: 1fr;
+    height: 100%;
+  }
+
+  .chat-threads {
+    display: none;
+  }
+
+  .threads-header {
+    display: none;
+  }
+
+  .chat-pane {
+    border-left: none;
+  }
+
+  .chat-header {
+    padding: 10px 12px;
+    font-size: 14px;
+  }
+
+  .chat-messages {
+    padding: 12px 8px;
+    gap: 8px;
+  }
+
+  .msg .bubble {
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+
+  .msg .avatar {
+    width: 28px;
+    height: 28px;
+    font-size: 12px;
+  }
+
+  .chat-input {
+    padding: 8px;
+  }
+
+  .chat-input textarea {
+    padding: 8px;
+    font-size: 13px;
+  }
+
+  .btn {
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+
+  .btn.small {
+    padding: 6px 10px;
+    font-size: 11px;
+  }
+
+  .subject-card {
+    padding: 12px;
+  }
+
+  .subject-card-title {
+    font-size: 13px;
+  }
+
+  .subject-stat-number {
+    font-size: 16px;
+  }
+
+  .subject-stat-label {
+    font-size: 10px;
+  }
+
+  .subject-detail-header {
+    padding: 12px;
+  }
+
+  .subject-detail-header h1 {
+    font-size: 18px;
   }
 
   .modal-overlay:not(.hidden) .modal-content {
-    /* Místo scale(3) raději nastavíme šířku v procentech, aby se to na mobilu vešlo */
-    width: 90%;
-    max-width: 400px; 
-    margin: 0 auto; /* Vycentrování */
+    width: 95%;
+    max-width: 380px; 
+    margin: 0 auto;
+    padding: 16px;
+  }
+
+  .upload-card {
+    padding: 12px;
+  }
+
+  .flashcard {
+    padding: 20px;
+    font-size: 14px;
+  }
+
+  .form-group {
+    margin-bottom: 12px;
+  }
+
+  input, textarea, select {
+    font-size: 16px;
   }
 }
 
 /* Pro tablety (iPad) (770px - 1180px) */
 @media screen and (min-width: 770px) and (max-width: 1180px) {
   .app {
-    transform: scale(0.97);
-  }
-  
-  .sidebar {
-    transform:scale(0.97);
+    width: 98%;
+    height: 95%;
   }
 
+  body {
+    padding: 10px;
+  }
+
+  .sidebar {
+    width: 200px;
+  }
+
+  .main {
+    transform: none;
+  }
+
+  .chat-layout {
+    grid-template-columns: 240px 1fr;
+  }
+
+  .tab-btn {
+    padding: 10px 14px;
+    font-size: 14px;
+  }
+
+  .tab-content {
+    padding: 16px;
+  }
+
+  .subject-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+
+  .subject-card {
+    padding: 14px;
+  }
 
   .modal-overlay:not(.hidden) .modal-content {
-    /* Místo scale(2) dáme rozumnou šířku pro tablet */
-    width: 70%;
+    width: 75%;
     max-width: 600px;
     margin: 0 auto;
   }
