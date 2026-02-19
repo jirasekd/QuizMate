@@ -1,4 +1,4 @@
-/* Pro mobily (do 440px) */
+/* Pro mobily (do 768px) */
 @media screen and (max-width: 440px) {
   body {
     min-height: 100vh;
@@ -244,46 +244,13 @@
 /* Pro tablety (iPad) (770px - 1180px) */
 @media screen and (min-width: 770px) and (max-width: 1180px) {
   .app {
-    width: 98%;
-    height: 95%;
+    transform: scale(0.97);
   }
-
-  body {
-    padding: 10px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-  }
-
+  
   .sidebar {
-    width: 200px;
+    transform:scale(0.97);
   }
 
-  .main {
-    transform: none;
-  }
-
-  .chat-layout {
-    grid-template-columns: 240px 1fr;
-  }
-
-  .tab-btn {
-    padding: 10px 14px;
-    font-size: 14px;
-  }
-
-  .tab-content {
-    padding: 16px;
-  }
-
-  .subjects-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
-  }
-
-  .subject-card {
-    padding: 14px;
-  }
 
   .modal-overlay:not(.hidden) .modal-content {
     width: 75%;
