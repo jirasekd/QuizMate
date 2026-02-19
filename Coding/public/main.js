@@ -897,14 +897,15 @@ const ui = {
       fileEl.className = 'file-item';
       fileEl.innerHTML = `
         <span>📄 ${file.name} (${Math.round(file.size / 1024)} KB)</span>
-        <button class="delete-item-btn" data-id="${file.id}">🗑️</button>
+        <button class="delete-item-btn" data-id="${file._id || file.id}">🗑️</button>
       `;
 
       fileEl.querySelector('.delete-item-btn').addEventListener('click', (e) => {
         e.stopPropagation();
         if (confirm(`Opravdu chcete smazat soubor "${file.name}"?`)) {
-          activeSubject.files = activeSubject.files.filter(f => f.id !== file.id);
-          subjectState.saveActiveSubject().then(() => this.renderFiles());
+          const targetId = file._id || file.id;
+          activeSubject.files = activeSubject.files.filter(f => (f._id || f.id) !== targetId);
+          this.renderFiles();
         }
       });
 
