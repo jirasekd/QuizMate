@@ -1343,3 +1343,45 @@ body.dark-mode #levelSelect {
   position: absolute;
   left: -9999px;
 }
+
+/****************************************************
+ * 15. MOBILE BLOCKER
+ ****************************************************/
+
+ /* Ve výchozím stavu (PC, Tablet) hlášku schováme */
+.mobile-blocker {
+  display: none;
+}
+
+/* Kladivo na mobily (všechno pod 768px, což jsou iPhony a Androidy) */
+@media screen and (max-width: 500px) {
+  /* Úplně schováme celou appku */
+  .app {
+    display: none !important;
+  }
+
+  /* Ukážeme stopku přes celou obrazovku */
+  .mobile-blocker {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100dvh; /* dvh pro jistotu kvůli Apple lištám */
+    width: 100vw;
+    background-color: var(--bg, #1a1a2e); /* Tvoje barva pozadí */
+    color: var(--text-color, #ffffff);
+    text-align: center;
+    padding: 20px;
+    box-sizing: border-box;
+  }
+
+  .mobile-blocker h2 {
+    font-size: 24px;
+    margin-bottom: 15px;
+  }
+
+  .mobile-blocker p {
+    font-size: 16px;
+    color: var(--muted, #a0a0b0);
+  }
+}
