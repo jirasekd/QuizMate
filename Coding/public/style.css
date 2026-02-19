@@ -1,4 +1,4 @@
-/* Pro mobily (do 768px) */
+/* Pro mobily (do 440px) */
 @media screen and (max-width: 440px) {
   .app {
     transform: scale(0.99);
@@ -23,8 +23,13 @@
 /* Pro tablety (iPad) (770px - 1180px) */
 @media screen and (min-width: 770px) and (max-width: 1180px) {
   .app {
-    transform: scale(0.99);
+    transform: scale(0.97);
   }
+  
+  .sidebar {
+    transform:scale(0.97);
+  }
+
 
   .modal-overlay:not(.hidden) .modal-content {
     /* Místo scale(2) dáme rozumnou šířku pro tablet */
