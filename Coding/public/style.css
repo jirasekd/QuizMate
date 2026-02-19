@@ -9,7 +9,7 @@
   }
   
   .main {
-    transfom: scale(0.9);
+    transform: scale(0.9);
   }
 
   .modal-overlay:not(.hidden) .modal-content {
