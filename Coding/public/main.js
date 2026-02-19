@@ -210,7 +210,8 @@ const subjectState = {
         const updatedSubjectWithMappedIds = { 
           ...updatedSubjectFromServer, 
           id: updatedSubjectFromServer._id, 
-          chats: updatedSubjectFromServer.chats ? updatedSubjectFromServer.chats.map(c => ({...c, id: c._id})) : []
+          chats: updatedSubjectFromServer.chats ? updatedSubjectFromServer.chats.map(c => ({...c, id: c._id})) : [],
+          files: updatedSubjectFromServer.files ? updatedSubjectFromServer.files.map(f => ({...f, id: f._id})) : []
         };
         this.subjects[subjectIndex] = updatedSubjectWithMappedIds;
         return updatedSubjectWithMappedIds; // Vrátíme aktualizovaná data S IDs!
@@ -902,8 +903,8 @@ const ui = {
       fileEl.querySelector('.delete-item-btn').addEventListener('click', (e) => {
         e.stopPropagation();
         if (confirm(`Opravdu chcete smazat soubor "${file.name}"?`)) {
-          activeSubject.files = activeSubject.files.filter(f => f.id !== file.id); // TODO: Ukládání přes API
-          this.renderFiles();
+          activeSubject.files = activeSubject.files.filter(f => f.id !== file.id);
+          subjectState.saveActiveSubject().then(() => this.renderFiles());
         }
       });
 
