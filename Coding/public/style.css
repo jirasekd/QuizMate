@@ -54,6 +54,7 @@
 
   .main {
     transform: none;
+    overflow-y: auto;
   }
 
   .subjects-header {
@@ -64,12 +65,14 @@
   }
 
   .subjects-header h1 {
-    font-size: 20px;
+    font-size: 18px;
     margin: 0;
   }
 
   .subjects-header .btn {
     width: 100%;
+    padding: 10px 12px;
+    font-size: 14px;
   }
 
   .tabs {
@@ -80,11 +83,12 @@
 
   .tab-btn {
     padding: 8px 12px;
-    font-size: 13px;
+    font-size: 12px;
   }
 
   .tab-content {
     padding: 12px;
+    overflow-y: auto;
   }
 
   .chat-layout {
@@ -117,21 +121,25 @@
   .msg .bubble {
     padding: 8px 12px;
     font-size: 13px;
+    max-width: 85vw;
   }
 
   .msg .avatar {
     width: 28px;
     height: 28px;
     font-size: 12px;
+    flex-shrink: 0;
   }
 
   .chat-input {
     padding: 8px;
+    flex-shrink: 0;
   }
 
   .chat-input textarea {
     padding: 8px;
-    font-size: 13px;
+    font-size: 16px;
+    min-height: 40px;
   }
 
   .btn {
@@ -146,29 +154,27 @@
 
   .subjects-grid {
     grid-template-columns: 1fr;
-    gap: 8px;
+    gap: 12px;
   }
 
   .subject-card {
-    padding: 12px;
+    padding: 16px;
   }
 
   .subject-card-title {
-    font-size: 13px;
-  }
-
-  .subject-stat-number {
     font-size: 16px;
   }
 
+  .subject-stat-number {
+    font-size: 18px;
+  }
+
   .subject-stat-label {
-    font-size: 10px;
+    font-size: 11px;
   }
 
   .subject-detail-header {
     padding: 12px;
-    flex-direction: column;
-    gap: 8px;
   }
 
   .subject-detail-header h1 {
@@ -180,6 +186,8 @@
     max-width: 380px; 
     margin: 0 auto;
     padding: 16px;
+    max-height: 90vh;
+    overflow-y: auto;
   }
 
   .upload-card {
@@ -197,6 +205,39 @@
 
   input, textarea, select {
     font-size: 16px;
+  }
+
+  .topic-card {
+    padding: 12px;
+  }
+
+  .note-detail {
+    padding: 12px;
+  }
+
+  #noteDetailContent {
+    font-size: 14px;
+  }
+
+  #noteDetailContent h1 {
+    font-size: 1.4em;
+  }
+
+  #noteDetailContent h2 {
+    font-size: 1.2em;
+  }
+
+  .test-question {
+    padding: 12px;
+  }
+
+  .question-text {
+    font-size: 14px;
+  }
+
+  .test-option {
+    padding: 10px;
+    font-size: 13px;
   }
 }
 
@@ -310,6 +351,9 @@ body.dark-mode {
   --input-bg: #374151;
   --bubble-assistant-bg: #374151;
   --bubble-assistant-text: #f9fafb;
+  .hamburger {
+    color: #ffffff;
+  }
 }
 
 * {
