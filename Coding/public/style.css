@@ -1,7 +1,7 @@
 /* Pro mobily (do 768px) */
 @media screen and (max-width: 768px) {
   .app {
-    transform: scale(1.1);
+    transform: scale(0.7);
   }
 
   .modal-overlay:not(.hidden) .modal-content {
