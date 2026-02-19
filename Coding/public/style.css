@@ -8,6 +8,16 @@
   }
 }
 
+@media screen and (max-width: 820px) and (max-width: 1180px){
+  .body{
+    padding-bottom: 20px;
+  }
+
+  #settings-modal {
+    scale: 2;
+  }
+
+}
 /****************************************************
  * 1. ROOT & BASE STYLES
  ****************************************************/
