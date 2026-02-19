@@ -5,7 +5,7 @@
   }
   
   .sidebar {
-    width: 125px;
+    transform:scale(0.7);
   }
   
   .main {
