@@ -23,7 +23,7 @@
 /* Pro tablety (iPad) (770px - 1180px) */
 @media screen and (min-width: 770px) and (max-width: 1180px) {
   .app {
-    padding-bottom: 100px;
+    transform: scale(0.99);
   }
 
   .modal-overlay:not(.hidden) .modal-content {
