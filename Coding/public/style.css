@@ -1,7 +1,15 @@
 /* Pro mobily (do 768px) */
 @media screen and (max-width: 768px) {
   .app {
-    transform: scale(0.7);
+    transform: scale(0.99);
+  }
+  
+  .sidebar {
+    width: 125px;
+  }
+  
+  .main {
+    transfom: scale(0.9);
   }
 
   .modal-overlay:not(.hidden) .modal-content {
