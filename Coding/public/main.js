@@ -294,13 +294,6 @@ const fileState = {
     
     if (!subject.files) subject.files = [];
 
-    const cleanFileData = {
-      name: fileData.name,
-      content: fileData.content,
-      type: fileData.type,
-      size: fileData.size
-    };
-   
     // Přidáme nový soubor do pole
     subject.files.push(fileData);
 
@@ -318,7 +311,6 @@ const chatState = {
     // Chat state now initializes based on the active subject
     this.username = username;
     const key = `quizmate_current_chat_${username}`;
-    const activeSubject = subjectState.getActiveSubject();
     this.currentChatId = localStorage.getItem(key) || subjectState.getActiveSubject()?.chats[0]?.id || null;
 
     if(this.currentChatId) localStorage.setItem(key, this.currentChatId);
@@ -1131,8 +1123,6 @@ const flashcards = {
     flashNav.classList.remove("hidden");
 
     const card = this.cards[this.index];
-    console.log('[FLASHCARD] Rendering card', this.index, 'Total cards:', this.cards.length);
-    console.log('[FLASHCARD] Card object:', card);
 
     if (!card) {
       console.error('[FLASHCARD] Card is null/undefined!');
@@ -1142,11 +1132,8 @@ const flashcards = {
     const htmlFront = util.markdownToHtml(card.q);
     const htmlBack = util.markdownToHtml(card.a);
     
-    console.log('[FLASHCARD] Setting innerHTML on freshly fetched element');
     flashFront.innerHTML = htmlFront;
     flashBack.innerHTML = htmlBack;
-
-    console.log('[FLASHCARD] After setting innerHTML, flashFront is in DOM:', document.contains(flashFront));
 
     flashIndex.textContent = `${this.index + 1} / ${this.cards.length}`;
 
@@ -1458,20 +1445,17 @@ const events = {
         if (action === "notes") await events.generateNotes();
         if (action === "flashcards") await events.generateFlashcards();
         if (action === "test") await events.generateTest();
-      }else {
+      } else {
         try {
               ui.addMessage("Pracuji na vaší odpovědi<span class='typing_dots'></span>", "assistant");
               
-              const ctx = api.getContextMessages();
-              const reply = await api.askAI(ctx);
+              const reply = await api.askAI(text);
               
               const chat = chatState.getCurrent();
               chat.messages[chat.messages.length - 1].content = reply;
 
               ui.renderMessages();
               await subjectState.saveActiveSubject();
-
-              
 
             } catch (err) {
               ui.addMessage("⚠️ Chyba serveru: " + err.message, "assistant");

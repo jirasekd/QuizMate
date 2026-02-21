@@ -1023,7 +1023,7 @@ body.dark-mode .plus-btn {
 }
 
 #testQuestionContainer .submitBtn {
-  display: relative;
+  position: relative;
   margin-bottom: 10px;
   background: linear-gradient(135deg, var(--primary-1), var(--primary-2));
   color: white;
@@ -1040,12 +1040,7 @@ body.dark-mode .plus-btn {
   opacity: 0.96;
 }
 
-.flash-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 16px 20px;
-}
+/* (Duplicate .flash-header rule removed — see section 9) */
 
 .test-question {
   background: var(--card);
@@ -1127,7 +1122,7 @@ body.dark-mode .plus-btn {
 .test-detail {
   display: block;
   overflow-y: auto;
-  padding-right: 10px;;
+  padding-right: 10px;
 }
 
 #testDetail {
@@ -1477,35 +1472,33 @@ body.dark-mode #levelSelect {
     overflow: visible;
   }
 
-  /* Apply same animations as desktop to mobile toggle */
-  /* night sky background */
-  #mobileToggle:checked + svg #container {
-    fill: #2b4360;
+  /* Mobile theme toggle transitions (mirrors desktop #theme-toggle-button animations) */
+  .mt-container,
+  .mt-patches,
+  .mt-stars,
+  .mt-button,
+  .mt-sun,
+  .mt-moon,
+  .mt-cloud {
+    transition-property: all;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 0.25s;
   }
 
-  /* move button to right when checked */
-  #mobileToggle:checked + svg #button {
-    transform: translate(28px, 2.333px);
-  }
+  #mobileToggle:checked + svg .mt-container { fill: #2b4360; }
+  #mobileToggle:checked + svg .mt-button { transform: translate(28px, 2.333px); }
 
-  /* show/hide sun and moon based on checkbox state */
-  #mobileToggle:checked + svg #sun {
-    opacity: 0;
-  }
+  .mt-sun { opacity: 1; }
+  #mobileToggle:checked + svg .mt-sun { opacity: 0; }
 
-  #mobileToggle:checked + svg #moon {
-    opacity: 1;
-  }
+  .mt-moon { opacity: 0; }
+  #mobileToggle:checked + svg .mt-moon { opacity: 1; }
 
-  /* show or hide background items on checkbox state */
-  #mobileToggle:checked + svg #cloud {
-    opacity: 0;
-  }
+  .mt-cloud { opacity: 1; }
+  #mobileToggle:checked + svg .mt-cloud { opacity: 0; }
 
-  #mobileToggle:checked + svg #stars {
-    opacity: 1;
-  }
-
+  .mt-stars { opacity: 0; }
+  #mobileToggle:checked + svg .mt-stars { opacity: 1; }
 
   /* --- MAIN CONTENT --- */
   .main {
