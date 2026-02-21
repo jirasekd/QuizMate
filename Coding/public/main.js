@@ -2395,14 +2395,14 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // Update mobile title based on current view
   function updateMobileTitle(text) {
-    if (mobileTitle) user.username;
+    if (mobileTitle) userName;
   }
 
   // Patch showSubjectsOverview to update title on mobile
   const origShowOverview = ui.showSubjectsOverview.bind(ui);
   ui.showSubjectsOverview = function() {
     origShowOverview();
-    updateMobileTitle('My Subjects');
+    updateMobileTitle(userName);
   };
 
   // Patch selectSubject to update title on mobile
@@ -2410,7 +2410,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   ui.selectSubject = function(subjectId) {
     origSelectSubject(subjectId);
     const subject = subjectState.getActiveSubject();
-    if (subject) updateMobileTitle(subject.name);
+    if (subject) updateMobileTitle(userName);
   };
 
   // Chat threads toggle on mobile
