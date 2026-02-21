@@ -8,24 +8,25 @@ function applyTheme(theme) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    const themeToggleButton = document.getElementById('theme-toggle-button');
-    if (!themeToggleButton) return;
-
-    const toggleInput = themeToggleButton.querySelector('input[type="checkbox"]');
     const savedTheme = localStorage.getItem('quizmate_theme') || 'light';
-
-    // Apply the theme on initial load
     applyTheme(savedTheme);
-    if (toggleInput) {
-      toggleInput.checked = (savedTheme === 'dark');
-    }
 
-    // Add event listener to the toggle
-    if (toggleInput) {
-        toggleInput.addEventListener('change', () => {
-            const newTheme = toggleInput.checked ? 'dark' : 'light';
+    // Gather all theme toggle checkboxes (sidebar + mobile topbar)
+    const desktopToggle = document.querySelector('#theme-toggle-button input[type="checkbox"]');
+    const mobileToggle = document.getElementById('mobileToggle');
+    const allToggles = [desktopToggle, mobileToggle].filter(Boolean);
+
+    // Set initial state on all toggles
+    allToggles.forEach(t => t.checked = (savedTheme === 'dark'));
+
+    // When any toggle changes, sync all others and apply
+    allToggles.forEach(toggle => {
+        toggle.addEventListener('change', () => {
+            const newTheme = toggle.checked ? 'dark' : 'light';
             localStorage.setItem('quizmate_theme', newTheme);
             applyTheme(newTheme);
+            // Sync the other toggle(s)
+            allToggles.forEach(t => { if (t !== toggle) t.checked = toggle.checked; });
         });
-    }
+    });
 });

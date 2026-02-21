@@ -2021,6 +2021,10 @@ const events = {
           if (userNameEl) userNameEl.textContent = data.username;
         }
 
+        // Update mobile title with new username
+        const mobileTitle = document.getElementById('mobileTitle');
+        if (mobileTitle) mobileTitle.textContent = data.username;
+
         alert("Username changed");
         closeSettingsModal();
       } catch (err) {
@@ -2393,16 +2397,19 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   }
 
-  // Update mobile title based on current view
-  function updateMobileTitle(text) {
-    if (mobileTitle) userName;
+  // Update mobile title to always show username
+  function updateMobileTitle() {
+    if (mobileTitle) {
+      mobileTitle.textContent = user.username || "User";
+    }
   }
+  updateMobileTitle(); // Set on initial load
 
   // Patch showSubjectsOverview to update title on mobile
   const origShowOverview = ui.showSubjectsOverview.bind(ui);
   ui.showSubjectsOverview = function() {
     origShowOverview();
-    updateMobileTitle(userName);
+    updateMobileTitle();
   };
 
   // Patch selectSubject to update title on mobile
@@ -2410,7 +2417,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   ui.selectSubject = function(subjectId) {
     origSelectSubject(subjectId);
     const subject = subjectState.getActiveSubject();
-    if (subject) updateMobileTitle(userName);
+    if (subject) updateMobileTitle();
   };
 
   // Chat threads toggle on mobile
