@@ -2395,7 +2395,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // Update mobile title based on current view
   function updateMobileTitle(text) {
-    if (mobileTitle) mobileTitle.textContent = text || 'My Subjects';
+    if (mobileTitle) user.username;
   }
 
   // Patch showSubjectsOverview to update title on mobile
