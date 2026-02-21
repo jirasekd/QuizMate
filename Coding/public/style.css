@@ -1347,6 +1347,20 @@ body.dark-mode #levelSelect {
 /****************************************************
  * 15. MOBILE RESPONSIVE
  ****************************************************/
+
+/* Hide mobile-only elements on desktop (MUST be before the media query so it can be overridden) */
+.mobile-topbar {
+  display: none;
+}
+
+.sidebar-backdrop {
+  display: none;
+}
+
+.mobile-threads-toggle {
+  display: none;
+}
+
 @media screen and (max-width: 768px) {
 
   /* --- APP SHELL --- */
@@ -1660,17 +1674,4 @@ body.dark-mode #levelSelect {
   .action-menu {
     min-width: 180px;
   }
-}
-
-/* Hide mobile-only elements on desktop */
-.mobile-topbar {
-  display: none;
-}
-
-.sidebar-backdrop {
-  display: none;
-}
-
-.mobile-threads-toggle {
-  display: none;
 }

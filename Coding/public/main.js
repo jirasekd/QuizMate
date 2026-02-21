@@ -2386,28 +2386,11 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
   syncMobileAvatar();
 
-  // Open sidebar overlay on mobile
-  function openMobileSidebar() {
-    if (!isMobile() || !sidebar) return;
-    sidebar.classList.add('mobile-open');
-    if (sidebarBackdrop) sidebarBackdrop.classList.add('visible');
-  }
-
-  // Close sidebar overlay on mobile
-  function closeMobileSidebar() {
-    if (!sidebar) return;
-    sidebar.classList.remove('mobile-open');
-    if (sidebarBackdrop) sidebarBackdrop.classList.remove('visible');
-  }
-
-  // Tap mobile avatar to open sidebar
-  if (mobileAvatar) {
-    mobileAvatar.addEventListener('click', openMobileSidebar);
-  }
-
-  // Tap backdrop to close sidebar
-  if (sidebarBackdrop) {
-    sidebarBackdrop.addEventListener('click', closeMobileSidebar);
+  // Tap mobile avatar to open settings modal (same as desktop avatar behavior)
+  if (mobileAvatar && DOM.settingsModal) {
+    mobileAvatar.addEventListener('click', () => {
+      DOM.settingsModal.classList.remove('hidden');
+    });
   }
 
   // Update mobile title based on current view
@@ -2415,19 +2398,17 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (mobileTitle) mobileTitle.textContent = text || 'My Subjects';
   }
 
-  // Patch showSubjectsOverview to close sidebar & update title on mobile
+  // Patch showSubjectsOverview to update title on mobile
   const origShowOverview = ui.showSubjectsOverview.bind(ui);
   ui.showSubjectsOverview = function() {
     origShowOverview();
-    closeMobileSidebar();
     updateMobileTitle('My Subjects');
   };
 
-  // Patch selectSubject to close sidebar & update title on mobile
+  // Patch selectSubject to update title on mobile
   const origSelectSubject = ui.selectSubject.bind(ui);
   ui.selectSubject = function(subjectId) {
     origSelectSubject(subjectId);
-    closeMobileSidebar();
     const subject = subjectState.getActiveSubject();
     if (subject) updateMobileTitle(subject.name);
   };
