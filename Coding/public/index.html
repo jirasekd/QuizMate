@@ -32,6 +32,15 @@
     </defs>
   </svg>
   <div class="app">
+    <!-- SIDEBAR BACKDROP (mobile overlay) -->
+    <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
+    <!-- MOBILE TOP BAR -->
+    <div class="mobile-topbar" id="mobileTopbar">
+      <div class="avatar" id="mobileAvatar">U</div>
+      <span class="mobile-title" id="mobileTitle">My Subjects</span>
+    </div>
+
     <!-- SIDEBAR -->
     <aside class="sidebar">
       <!-- SUBJECT OVERVIEW SIDEBAR -->
@@ -169,6 +178,7 @@
             <!-- Chat conversation -->
             <div class="chat-pane">
               <div class="chat-header">
+                <button class="mobile-threads-toggle" id="mobileThreadsToggle">☰ Chats</button>
                 <h2 id="chatTitle"></h2>
               </div>
 

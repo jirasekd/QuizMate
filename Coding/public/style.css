@@ -1345,43 +1345,332 @@ body.dark-mode #levelSelect {
 }
 
 /****************************************************
- * 15. MOBILE BLOCKER
+ * 15. MOBILE RESPONSIVE
  ****************************************************/
+@media screen and (max-width: 768px) {
 
- /* Ve výchozím stavu (PC, Tablet) hlášku schováme */
-.mobile-blocker {
+  /* --- APP SHELL --- */
+  html, body {
+    overflow: auto;
+  }
+
+  body {
+    align-items: stretch;
+    justify-content: stretch;
+  }
+
+  .app {
+    width: 100%;
+    height: 100dvh;
+    border-radius: 0;
+    box-shadow: none;
+    flex-direction: column;
+  }
+
+  /* --- SIDEBAR: hidden by default, overlay when toggled --- */
+  .sidebar {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 280px;
+    height: 100dvh;
+    z-index: 900;
+    box-shadow: 4px 0 20px rgba(0,0,0,0.2);
+    border-right: 1px solid var(--border);
+    background: var(--muted-bg);
+  }
+
+  .sidebar.mobile-open {
+    display: flex;
+  }
+
+  /* Dim overlay behind sidebar */
+  .sidebar-backdrop {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.4);
+    z-index: 899;
+  }
+
+  .sidebar-backdrop.visible {
+    display: block;
+  }
+
+  /* Mobile top bar (visible when sidebar is hidden) */
+  .mobile-topbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 16px;
+    background: var(--muted-bg);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .mobile-topbar .avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary-1), var(--primary-2));
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    flex-shrink: 0;
+    background-size: cover;
+    background-position: center;
+  }
+
+  .mobile-topbar .mobile-title {
+    font-weight: 600;
+    color: var(--text-color);
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* --- MAIN CONTENT --- */
+  .main {
+    height: 0;
+    flex: 1;
+    min-height: 0;
+  }
+
+  /* --- SUBJECTS OVERVIEW --- */
+  .subjects-overview {
+    padding: 16px;
+    overflow-y: auto;
+  }
+
+  .subjects-header {
+    flex-direction: column;
+    gap: 12px;
+    align-items: stretch;
+    margin-bottom: 20px;
+  }
+
+  .subjects-header h1 {
+    text-align: center;
+    font-size: 22px;
+  }
+
+  .subjects-header .btn.primary {
+    width: 100%;
+    text-align: center;
+    padding: 12px;
+  }
+
+  .subjects-grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .subject-card {
+    padding: 20px;
+  }
+
+  /* --- SUBJECT DETAIL --- */
+  .subject-detail-header {
+    padding: 12px 16px;
+    gap: 10px;
+  }
+
+  .subject-detail-header h1 {
+    font-size: 18px;
+  }
+
+  /* --- TABS: horizontal scroll --- */
+  .tabs {
+    padding: 8px 12px;
+    gap: 4px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    flex-shrink: 0;
+  }
+
+  .tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .tab-btn {
+    padding: 8px 12px;
+    font-size: 13px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  /* --- TAB CONTENT --- */
+  .tab-content {
+    padding: 12px;
+    min-height: 0;
+  }
+
+  .tab-content.active {
+    min-height: 0;
+  }
+
+  /* --- CHAT LAYOUT: single column --- */
+  .chat-layout {
+    grid-template-columns: 1fr;
+    position: relative;
+  }
+
+  /* Hide threads by default on mobile; show via toggle */
+  .chat-threads {
+    display: none;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 50;
+    background: var(--bg);
+    border-right: none;
+  }
+
+  .chat-threads.mobile-open {
+    display: flex;
+  }
+
+  /* Mobile button to toggle chat threads */
+  .mobile-threads-toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 6px 10px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-color-secondary);
+  }
+
+  /* Chat pane adjustments */
+  .chat-header {
+    padding: 10px 12px;
+    gap: 8px;
+  }
+
+  .chat-messages {
+    padding: 12px 10px;
+  }
+
+  .chat-input {
+    padding: 10px 12px;
+    gap: 8px;
+  }
+
+  .chat-input textarea {
+    min-height: 40px;
+    font-size: 14px;
+    padding: 10px 12px;
+  }
+
+  .msg .bubble {
+    max-width: 85vw;
+    font-size: 14px;
+    padding: 10px 12px;
+  }
+
+  .msg .avatar {
+    width: 28px;
+    height: 28px;
+    flex: 0 0 28px;
+    font-size: 12px;
+  }
+
+  /* --- TOPIC GRIDS (Notes, Flashcards, Tests) --- */
+  .topic-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    padding-top: 12px;
+  }
+
+  .topic-card {
+    min-height: 80px;
+    padding: 12px;
+  }
+
+  /* --- FLASHCARD --- */
+  .flashcard {
+    width: 95%;
+    max-width: 340px;
+    height: 220px;
+    margin: 24px auto;
+  }
+
+  /* --- FILE UPLOAD --- */
+  .upload-card {
+    padding: 24px 16px;
+    margin: 16px auto;
+  }
+
+  /* --- NOTES DETAIL --- */
+  .note-detail {
+    padding: 14px;
+  }
+
+  #noteDetailContent {
+    font-size: 15px;
+  }
+
+  /* --- TESTS --- */
+  .test-question {
+    padding: 14px;
+  }
+
+  .question-text {
+    font-size: 15px;
+  }
+
+  /* --- SIDEBAR DETAIL (when sidebar is open on mobile) --- */
+  #sidebar-detail {
+    padding: 16px;
+  }
+
+  .subject-stats {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .stat-number {
+    font-size: 20px;
+  }
+
+  /* --- SETTINGS MODAL --- */
+  .modal-content {
+    width: 95%;
+    padding: 20px;
+  }
+
+  /* --- ACTION MENU --- */
+  .action-menu {
+    min-width: 180px;
+  }
+}
+
+/* Hide mobile-only elements on desktop */
+.mobile-topbar {
   display: none;
 }
 
-/* Kladivo na mobily (všechno pod 768px, což jsou iPhony a Androidy) */
-@media screen and (max-width: 768px) {
-  /* Úplně schováme celou appku */
-  .app {
-    display: none !important;
-  }
+.sidebar-backdrop {
+  display: none;
+}
 
-  /* Ukážeme stopku přes celou obrazovku */
-  .mobile-blocker {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    height: 100dvh; /* dvh pro jistotu kvůli Apple lištám */
-    width: 100vw;
-    background-color: var(--bg, #1a1a2e); /* Tvoje barva pozadí */
-    color: var(--text-color, #ffffff);
-    text-align: center;
-    padding: 20px;
-    box-sizing: border-box;
-  }
-
-  .mobile-blocker h2 {
-    font-size: 24px;
-    margin-bottom: 15px;
-  }
-
-  .mobile-blocker p {
-    font-size: 16px;
-    color: var(--muted, #a0a0b0);
-  }
+.mobile-threads-toggle {
+  display: none;
 }

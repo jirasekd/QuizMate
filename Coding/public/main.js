@@ -2361,4 +2361,90 @@ document.addEventListener("DOMContentLoaded", async () => {
       window.location.href = "/login";
     });
   }
+
+  // =============================================
+  //  MOBILE RESPONSIVE LOGIC
+  // =============================================
+  const isMobile = () => window.innerWidth <= 768;
+
+  const mobileAvatar = document.getElementById('mobileAvatar');
+  const mobileTitle = document.getElementById('mobileTitle');
+  const sidebarBackdrop = document.getElementById('sidebarBackdrop');
+  const mobileThreadsToggle = document.getElementById('mobileThreadsToggle');
+  const chatThreadsEl = document.querySelector('.chat-threads');
+
+  // Sync mobile topbar avatar with user data
+  function syncMobileAvatar() {
+    if (!mobileAvatar) return;
+    if (user.avatar && user.avatar.startsWith("data:image")) {
+      mobileAvatar.style.backgroundImage = `url(${user.avatar})`;
+      mobileAvatar.textContent = "";
+    } else {
+      mobileAvatar.style.backgroundImage = "";
+      mobileAvatar.textContent = user.avatar || "U";
+    }
+  }
+  syncMobileAvatar();
+
+  // Open sidebar overlay on mobile
+  function openMobileSidebar() {
+    if (!isMobile() || !sidebar) return;
+    sidebar.classList.add('mobile-open');
+    if (sidebarBackdrop) sidebarBackdrop.classList.add('visible');
+  }
+
+  // Close sidebar overlay on mobile
+  function closeMobileSidebar() {
+    if (!sidebar) return;
+    sidebar.classList.remove('mobile-open');
+    if (sidebarBackdrop) sidebarBackdrop.classList.remove('visible');
+  }
+
+  // Tap mobile avatar to open sidebar
+  if (mobileAvatar) {
+    mobileAvatar.addEventListener('click', openMobileSidebar);
+  }
+
+  // Tap backdrop to close sidebar
+  if (sidebarBackdrop) {
+    sidebarBackdrop.addEventListener('click', closeMobileSidebar);
+  }
+
+  // Update mobile title based on current view
+  function updateMobileTitle(text) {
+    if (mobileTitle) mobileTitle.textContent = text || 'My Subjects';
+  }
+
+  // Patch showSubjectsOverview to close sidebar & update title on mobile
+  const origShowOverview = ui.showSubjectsOverview.bind(ui);
+  ui.showSubjectsOverview = function() {
+    origShowOverview();
+    closeMobileSidebar();
+    updateMobileTitle('My Subjects');
+  };
+
+  // Patch selectSubject to close sidebar & update title on mobile
+  const origSelectSubject = ui.selectSubject.bind(ui);
+  ui.selectSubject = function(subjectId) {
+    origSelectSubject(subjectId);
+    closeMobileSidebar();
+    const subject = subjectState.getActiveSubject();
+    if (subject) updateMobileTitle(subject.name);
+  };
+
+  // Chat threads toggle on mobile
+  if (mobileThreadsToggle && chatThreadsEl) {
+    mobileThreadsToggle.addEventListener('click', () => {
+      chatThreadsEl.classList.toggle('mobile-open');
+    });
+
+    // Close threads panel when a chat is selected (on mobile)
+    const origSelectChat = chatState.selectChat.bind(chatState);
+    chatState.selectChat = function(id) {
+      origSelectChat(id);
+      if (isMobile()) {
+        chatThreadsEl.classList.remove('mobile-open');
+      }
+    };
+  }
 });
