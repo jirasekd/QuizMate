@@ -740,10 +740,6 @@ body.dark-mode .plus-btn {
   flex-direction: column;
 }
 
-.sidebar-content.hidden {
-  display: none;
-}
-
 #sidebar-detail {
   padding: 5px;
 }
@@ -1458,12 +1454,14 @@ body.dark-mode #levelSelect {
   }
 
   .mobile-theme-toggle {
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     flex-shrink: 0;
     font-size: 14px;
     position: relative;
     width: 4em;
-    height: 2.7em;
+    height: 2.5em;
     cursor: pointer;
   }
 
@@ -1478,6 +1476,45 @@ body.dark-mode #levelSelect {
     height: 100%;
     overflow: visible;
   }
+
+  /* Animations for mobile theme toggle */
+  .mobile-theme-toggle svg [data-name="Component 15 – 1"] {
+    transition-property: all;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 0.25s;
+  }
+
+  .mobile-theme-toggle svg [data-name="Component 15 – 1"] g {
+    transition-property: all;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 0.25s;
+  }
+
+  /* Mobile toggle state transitions */
+  #mobileToggle:checked + svg [data-name="Component 15 – 1"] rect {
+    fill: #2b4360;
+  }
+
+  #mobileToggle:checked + svg [data-name="Component 15 – 1"] #button {
+    transform: translate(28px, 2.333px);
+  }
+
+  #mobileToggle:checked + svg [data-name="Component 15 – 1"] [data-name="sun"] {
+    opacity: 0;
+  }
+
+  #mobileToggle:checked + svg [data-name="Component 15 – 1"] [data-name="moon"] {
+    opacity: 1;
+  }
+
+  #mobileToggle:checked + svg [data-name="Component 15 – 1"] [data-name="cloud"] {
+    opacity: 0;
+  }
+
+  #mobileToggle:checked + svg [data-name="Component 15 – 1"] #stars {
+    opacity: 1;
+  }
+
 
   /* --- MAIN CONTENT --- */
   .main {
