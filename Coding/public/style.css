@@ -1701,3 +1701,19 @@ body.dark-mode #levelSelect {
     min-width: 180px;
   }
 }
+
+
+@media screen and (min-width: 769px) and (max-width: 1180px) {
+  .thread-list {
+    padding: 6px;
+  }
+
+  .thread-item {
+    padding: 8px 10px;
+    font-size: 14px;
+  }
+
+  .chat-layout {
+    grid-template-columns: 220px minmax(0, 2000px);
+  }
+}
