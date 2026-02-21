@@ -1477,41 +1477,32 @@ body.dark-mode #levelSelect {
     overflow: visible;
   }
 
-  /* Animations for mobile theme toggle */
-  .mobile-theme-toggle svg [data-name="Component 15 – 1"] {
-    transition-property: all;
-    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-    transition-duration: 0.25s;
-  }
-
-  .mobile-theme-toggle svg [data-name="Component 15 – 1"] g {
-    transition-property: all;
-    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-    transition-duration: 0.25s;
-  }
-
-  /* Mobile toggle state transitions */
-  #mobileToggle:checked + svg [data-name="Component 15 – 1"] rect {
+  /* Apply same animations as desktop to mobile toggle */
+  /* night sky background */
+  #mobileToggle:checked + svg #container {
     fill: #2b4360;
   }
 
-  #mobileToggle:checked + svg [data-name="Component 15 – 1"] #button {
+  /* move button to right when checked */
+  #mobileToggle:checked + svg #button {
     transform: translate(28px, 2.333px);
   }
 
-  #mobileToggle:checked + svg [data-name="Component 15 – 1"] [data-name="sun"] {
+  /* show/hide sun and moon based on checkbox state */
+  #mobileToggle:checked + svg #sun {
     opacity: 0;
   }
 
-  #mobileToggle:checked + svg [data-name="Component 15 – 1"] [data-name="moon"] {
+  #mobileToggle:checked + svg #moon {
     opacity: 1;
   }
 
-  #mobileToggle:checked + svg [data-name="Component 15 – 1"] [data-name="cloud"] {
+  /* show or hide background items on checkbox state */
+  #mobileToggle:checked + svg #cloud {
     opacity: 0;
   }
 
-  #mobileToggle:checked + svg [data-name="Component 15 – 1"] #stars {
+  #mobileToggle:checked + svg #stars {
     opacity: 1;
   }
 
