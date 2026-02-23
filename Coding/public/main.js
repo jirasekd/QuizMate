@@ -781,7 +781,10 @@ const ui = {
         avatar.textContent = user.avatar || "U";
       }
     } else {
-      avatar.textContent = "AI";
+      avatar = document.createElement("img");
+      avatar.src = "/Coding/public/Logo_only.png";
+      avatar.alt = "AI";
+      avatar.className = "avatar-img";
     }
     
     const bubble = document.createElement("div");
