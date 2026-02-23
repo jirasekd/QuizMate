@@ -781,10 +781,10 @@ const ui = {
         avatar.textContent = user.avatar || "U";
       }
     } else {
-      avatar = document.createElement("img");
-      avatar.src = "/Coding/public/Logo_only.png";
-      avatar.alt = "AI";
-      avatar.className = "avatar-img";
+      avatar.style.backgroundImage = "url('/Logo_only.png')"; 
+      avatar.style.backgroundSize = "cover";
+      avatar.style.backgroundPosition = "center";
+      avatar.textContent = "AI";
     }
     
     const bubble = document.createElement("div");
