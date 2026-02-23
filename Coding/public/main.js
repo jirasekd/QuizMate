@@ -1695,7 +1695,7 @@ const events = {
 
     // UPRAVENÝ PROMPT S ODDĚLOVAČEM
     const prompt = `
-      Jsi expert na tvorbu multiple-choice testů. Vytvoř test s ideálním počtem otázek (min 10, max 25) ${levelText} k tématu "${topic}".
+      Jsi expert na tvorbu multiple-choice testů. Vytvoř test s ideálním počtem otázek (min 10, max) ${levelText} k tématu "${topic}".
       ${customInstruction ? `Uživatelova instrukce: ${customInstruction}\n\n` : ""}
       
       DŮLEŽITÉ: Mezi každou otázku vlož oddělovač: ---NEXT---
@@ -1741,7 +1741,19 @@ const events = {
 
         const text = qLine.replace(/^Q:\s*/i, '').trim();
         const optionsStr = optionsLine.replace(/^Options:\s*/i, '').trim();
-        const options = optionsStr.split(/[A-D]\)/).map(o => o.trim()).filter(Boolean);
+        
+        // Robustnější rozdělení možností
+        let options = optionsStr.split(/\s[A-D]\)\s/).filter(opt => opt.trim());
+        // Fix pro první možnost A), která může zůstat přilepená
+        if (options.length === 1 && options[0].includes("B)")) {
+             const parts = optionsStr.split(/[A-D]\)/).filter(p => p.trim());
+             if (parts.length >= 2) options = parts;
+        } else if (optionsStr.includes("A)")) {
+             // Fallback split
+             const parts = optionsStr.split(/[A-D]\)/).filter(p => p.trim());
+             if (parts.length >= 2) options = parts;
+        }
+        
         const correctAnswer = aLine.replace(/^A:\s*/i, '').trim();
 
         if (options.length >= 2 && correctAnswer) {
