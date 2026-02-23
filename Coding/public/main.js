@@ -1041,7 +1041,7 @@ const ui = {
     // Add submit button
     const submitBtn = document.createElement('button');
     submitBtn.id = 'submitTestBtn';
-    submitBtn.className = 'submitBtn';
+    submitBtn.className = 'submitBtn newBtn';
     
     submitBtn.style.cssText = `
         position: relative;
@@ -1063,7 +1063,6 @@ const ui = {
 
 
     // OPRAVA: Třídy přidáme rovnou zde, ne přes neexistující DOM.submitBtn
-    submitBtn.className = 'submitBtn newBtn'; 
     submitBtn.textContent = 'Submit Test';
     submitBtn.onclick = () => events.submitTest(chatId);
     
