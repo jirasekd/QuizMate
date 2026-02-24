@@ -784,6 +784,7 @@ const ui = {
       avatar.style.backgroundImage = "url('/Logo_only.png')"; 
       avatar.style.backgroundSize = "cover";
       avatar.style.backgroundPosition = "center";
+      avatar.style.scale = "1.1";
       avatar.textContent = "";
     }
     
