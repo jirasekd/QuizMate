@@ -784,7 +784,7 @@ const ui = {
       avatar.style.backgroundImage = "url('/Logo_only.png')"; 
       avatar.style.backgroundSize = "cover";
       avatar.style.backgroundPosition = "center";
-      avatar.textContent = "AI";
+      avatar.textContent = "";
     }
     
     const bubble = document.createElement("div");
