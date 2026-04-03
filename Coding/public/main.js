@@ -1020,28 +1020,10 @@ const ui = {
     const test = chat.tests[0];
 
     // Bezpečné nastavení textu (pokud element existuje)
-    if (DOM.testDetailTitle) {
-      DOM.testDetailTitle.textContent = `Test: ${chat.name}`;
-      DOM.testDetailTitle.style.marginTop = "20px";
-      DOM.testDetailTitle.style.marginBottom = "20px";
-    }
+    if (DOM.testDetailTitle) DOM.testDetailTitle.textContent = `\nTest: ${chat.name}\n`;
     if (DOM.testQuestionsContainer) DOM.testQuestionsContainer.innerHTML = "";
 
-    let lastContext = null;
-
     test.questions.forEach((q, index) => {
-      // Vykreslení výchozího textu, pokud ho otázka má a je nový oproti minulé otázce
-      if (q.contextText && q.contextText !== lastContext) {
-        const contextEl = document.createElement('div');
-        contextEl.className = 'test-context-box';
-        contextEl.style.cssText = 'background: var(--muted-bg); padding: 16px; border-left: 4px solid var(--primary-1); margin-bottom: 20px; border-radius: 4px; font-style: italic;';
-        contextEl.innerHTML = util.escapeHtml(q.contextText).replace(/\n/g, '<br>');
-        DOM.testQuestionsContainer.appendChild(contextEl);
-        lastContext = q.contextText;
-      } else if (!q.contextText) {
-        lastContext = null; // Pokud otázka už kontext nemá, vyčistíme to
-      }
-
       const questionEl = document.createElement('div');
       questionEl.className = 'test-question';
       
@@ -1716,48 +1698,28 @@ const events = {
     else levelText = "pro žáky základní školy";
 
     let minQuestions = 10;
-    let maxQuestions = 70;
+    let maxQuestions = 60;
 
     // UPRAVENÝ PROMPT S ODDĚLOVAČEM
     const prompt = `
       Jsi expert na tvorbu multiple-choice testů. Vytvoř test s ideálním počtem otázek (Minimálně: ${minQuestions}, Maximálně: ${maxQuestions}) ${levelText} k tématu "${topic}".
       ${customInstruction ? `Uživatelova instrukce: ${customInstruction}\n\n` : ""}
 
-      Uživatelovy instrukce mají přednost. Běžně tvoříš klasické testy (jen otázky a odpovědi). 
-      POKUD ale uživatel žádá "didaktický test" (nebo pokud otázky nutně vyžadují úryvky, tabulky či výchozí texty), můžeš před skupinu otázek vložit blok s kontextem.
+      Uživatelovy instrukce mají přednost.
       
       DŮLEŽITÉ: Mezi každou otázku vlož oddělovač: ---NEXT---
       
-      Pravidla pro formát:
-      1) Běžná otázka (blok):
+      Formát každé otázky:
       Q: Text otázky
       Options: A) možnost1 B) možnost2 C) možnost3 D) možnost4
       A: správná odpověď (celý text odpovědi)
-
-      2) Pokud potřebuješ přidat výchozí text pro následující otázky, vytvoř samostatný blok:
-      Context:
-      TEXT 1: [Text ukázky]
-      
-      3) Pokud už další otázky nemají z předchozího kontextu vycházet, zruš ho samostatným blokem:
-      ClearContext
 
       Příklad:
       Q: Kolik je 2+2?
       Options: A) 3 B) 4 C) 5 D) 6
       A: 4
       ---NEXT---
-      Context:
-      TEXT 1: Byl pozdní večer, první máj...
-      ---NEXT---
-      Q: Jaké je roční období v textu?
-      Options: A) Jaro B) Léto C) Podzim D) Zima
-      A: Jaro
-      ---NEXT---
-      ClearContext
-      ---NEXT---
-      Q: Kdo napsal Babičku?
-      Options: A) Němcová B) Erben C) Mácha D) Čapek
-      A: Němcová
+      Q: Další otázka...
     `;
 
     const ctx = api.getContextMessages();
@@ -1777,24 +1739,8 @@ const events = {
       // Dělíme podle oddělovače ---NEXT---
       const blocks = cleanReply.split(/---NEXT---/i).filter(block => block.trim());
 
-      let currentContextText = null;
-
       for (const block of blocks) {
-        const trimmedBlock = block.trim();
-        
-        // Zpracování bloku s kontextem
-        if (trimmedBlock.match(/^Context:/i)) {
-          currentContextText = trimmedBlock.replace(/^Context:\s*/i, '').trim();
-          continue; // Toto nebyla otázka, jdeme na další blok
-        }
-        
-        // Vyčištění kontextu
-        if (trimmedBlock.match(/^ClearContext/i)) {
-          currentContextText = null;
-          continue;
-        }
-
-        const lines = trimmedBlock.split('\n').map(l => l.trim()).filter(l => l);
+        const lines = block.split('\n').map(l => l.trim()).filter(l => l);
         
         const qLine = lines.find(l => l.match(/^Q:/i));
         const optionsLine = lines.find(l => l.match(/^Options:/i));
@@ -1820,7 +1766,7 @@ const events = {
         const correctAnswer = aLine.replace(/^A:\s*/i, '').trim();
 
         if (options.length >= 2 && correctAnswer) {
-          questions.push({ text, options, correctAnswer, contextText: currentContextText });
+          questions.push({ text, options, correctAnswer });
         }
       }
 
