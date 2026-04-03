@@ -1697,10 +1697,15 @@ const events = {
     else if (window.quizmateLevel === "vysoka") levelText = "pro vysokoškoláky";
     else levelText = "pro žáky základní školy";
 
+    let minQuestions = 10;
+    let maxQuestions = 60;
+
     // UPRAVENÝ PROMPT S ODDĚLOVAČEM
     const prompt = `
-      Jsi expert na tvorbu multiple-choice testů. Vytvoř test s ideálním počtem otázek (min 10, max 60) ${levelText} k tématu "${topic}".
+      Jsi expert na tvorbu multiple-choice testů. Vytvoř test s ideálním počtem otázek (Minimálně: ${minQuestions}, Maximálně: ${maxQuestions}) ${levelText} k tématu "${topic}".
       ${customInstruction ? `Uživatelova instrukce: ${customInstruction}\n\n` : ""}
+
+      Uživatelovy instrukce mají přednost.
       
       DŮLEŽITÉ: Mezi každou otázku vlož oddělovač: ---NEXT---
       
