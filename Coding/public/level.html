@@ -75,9 +75,24 @@
   <script src="theme.js"></script>
   <script>
     document.querySelectorAll("button").forEach(btn => {
-      btn.addEventListener("click", () => {
+      btn.addEventListener("click", async () => {
         const user = JSON.parse(localStorage.getItem("quizmate_current_user") || "{}");
+        const token = localStorage.getItem("authToken");
         user.level = btn.dataset.level;
+        
+        // Uložení na server
+        if (token) {
+          try {
+            await fetch("/api/user/level", {
+              method: "PUT",
+              headers: { "Content-Type": "application/json", "x-auth-token": token },
+              body: JSON.stringify({ level: user.level })
+            });
+          } catch (err) {
+            console.error("Chyba při ukládání levelu:", err);
+          }
+        }
+
         localStorage.setItem("quizmate_current_user", JSON.stringify(user));
         window.location.href = "/";
       });

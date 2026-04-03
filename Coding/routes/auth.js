@@ -68,7 +68,7 @@ router.post('/login', async (req, res) => {
       res.json({
         token,
         // Přidáme i data o uživateli, aby je frontend mohl zobrazit
-        user: { username: user.username, avatar: user.avatar }
+        user: { username: user.username, avatar: user.avatar, level: user.level }
       });
     });
 

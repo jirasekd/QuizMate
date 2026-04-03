@@ -15,6 +15,10 @@ const UserSchema = new mongoose.Schema({
   avatar: {
     type: String,       // Cesta k obrázku nebo textová zkratka profilu.
     default: '👤'
+  },
+  level: {
+    type: String,
+    default: ''         // Prázdné, dokud si uživatel nevybere
   }
 });
 

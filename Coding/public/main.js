@@ -2239,7 +2239,7 @@ const events = {
     }
 
     // 2. Uložení při změně
-    levelSelect.addEventListener("change", () => {
+    levelSelect.addEventListener("change", async () => {
         const newLevel = levelSelect.value;
         
         // Aktualizace v objektu uživatele
@@ -2250,7 +2250,21 @@ const events = {
         // Důležité: aktualizace globální proměnné, kterou používá AI pro generování
         window.quizmateLevel = newLevel; 
         
-        console.log("Level updated to:", newLevel);
+        // Uložení na server
+        const token = localStorage.getItem("authToken");
+        if (token) {
+          try {
+            const res = await fetch("/api/user/level", {
+              method: "PUT",
+              headers: { "Content-Type": "application/json", "x-auth-token": token },
+              body: JSON.stringify({ level: newLevel })
+            });
+            if (!res.ok) throw new Error("Chyba uložení levelu na server");
+            console.log("Level updated and saved to server:", newLevel);
+          } catch (err) {
+            console.error(err);
+          }
+        }
         
         // Volitelně: vizuální zpětná vazba (dočasná změna barvy okraje)
         levelSelect.style.borderColor = "var(--primary-1)";
