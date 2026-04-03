@@ -1698,7 +1698,7 @@ const events = {
 
     // UPRAVENÝ PROMPT S ODDĚLOVAČEM
     const prompt = `
-      Jsi expert na tvorbu multiple-choice testů. Vytvoř test s ideálním počtem otázek (min 10, max 25) ${levelText} k tématu "${topic}".
+      Jsi expert na tvorbu multiple-choice testů. Vytvoř test s ideálním počtem otázek (min 10, max 60) ${levelText} k tématu "${topic}".
       ${customInstruction ? `Uživatelova instrukce: ${customInstruction}\n\n` : ""}
       
       DŮLEŽITÉ: Mezi každou otázku vlož oddělovač: ---NEXT---
