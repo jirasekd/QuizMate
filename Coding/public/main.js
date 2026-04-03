@@ -1492,6 +1492,7 @@ const events = {
               uploadedAt: new Date().toISOString()
             };
             await fileState.addFile(fileData);
+            ui.addMessage(`Soubor ${file.name} byl nahrán.`, "assistant");
           } catch (error) {
             alert(`Chyba při nahrávání souboru ${file.name}: ${error.message}`);
           }
@@ -2253,8 +2254,6 @@ const events = {
   }
 }
 };
-
-
 
 
 /****************************************************
