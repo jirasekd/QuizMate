@@ -1,3 +1,5 @@
+const { copy } = require("../routes/auth");
+
 /****************************************************
  * 1. KONSTANTY A UTILITY FUNKCE
  ****************************************************/
@@ -1973,7 +1975,8 @@ const events = {
   const supportBtn = document.getElementById("supportBtn");
   if (supportBtn) {
     supportBtn.addEventListener("click", () => {
-      window.location.href = "mailto:dallmeyerdavid@gmail.com?subject=QuizMate Support";
+      copyToClipboard("dallmeyerdavid@gmail.com");
+      alert("Email: dallmeyerdavid@gmail.com byl zkopírován do schránky");
     });
   }
 
