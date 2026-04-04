@@ -19,6 +19,10 @@ const UserSchema = new mongoose.Schema({
   level: {
     type: String,
     default: ''         // Prázdné, dokud si uživatel nevybere
+  },
+  lastIp: {
+    type: String,
+    default: ''         // Sem budeme ukládat IP adresu z posledního přihlášení
   }
 });
 
