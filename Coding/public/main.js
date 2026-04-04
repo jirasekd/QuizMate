@@ -1971,10 +1971,18 @@ const events = {
   }
 
   const supportBtn = document.getElementById("supportBtn");
+
   if (supportBtn) {
     supportBtn.addEventListener("click", () => {
-      copyToClipboard("dallmeyerdavid@gmail.com");
-      alert("Email: dallmeyerdavid@gmail.com byl zkopírován do schránky");
+      const email = "dallmeyerdavid@gmail.com";
+      
+      // Modern Clipboard API
+      navigator.clipboard.writeText(email).then(() => {
+        // confirm() might be better replaced by alert() since you aren't checking for true/false
+        alert(`Email na podporu: ${email} byl zkopírován do schránky`);
+      }).catch(err => {
+        console.error('Chyba při kopírování: ', err);
+      });
     });
   }
 
