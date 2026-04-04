@@ -71,4 +71,25 @@ router.put('/avatar', auth, async (req, res) => {
   }
 });
 
+// @route   PUT api/user/level
+// @desc    Změnit studijní level uživatele
+// @access  Private
+router.put('/level', auth, async (req, res) => {
+  const { level } = req.body;
+
+  if (!level) return res.status(400).json({ msg: 'Chybí level k uložení' });
+
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ msg: 'Uživatel nenalezen' });
+
+    user.level = level;
+    await user.save();
+    res.json({ level: user.level });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Chyba serveru');
+  }
+});
+
 module.exports = router;
