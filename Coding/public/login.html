@@ -360,8 +360,12 @@
           localStorage.setItem('authToken', data.token);
           localStorage.setItem('quizmate_current_user', JSON.stringify(data.user));
 
-          // Přesměrujeme na výběr úrovně
-          window.location.href = "/level.html";
+          // Pokud uživatel nemá level, pošleme ho vybrat, jinak rovnou do aplikace
+          if (!data.user.level) {
+            window.location.href = "/level";
+          } else {
+            window.location.href = "/";
+          }
 
         } catch (error) {
           messageEl.innerHTML = `<span style="color: red;">${error.message}</span>`;
