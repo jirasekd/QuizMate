@@ -1,6 +1,6 @@
 # 📚 QuizMate - Uč se chytřeji pomocí AI
 
-Vítej v QuizMate! Tvůj osobní AI učitel, který ti pomůže se učit lépe a rychleji. 🚀
+Vítej v QuizMate! Tvůj osobní AI pomocník, který ti pomůže se učit lépe a rychleji. 🚀
 
 ## 🎯 Co je QuizMate?
 
