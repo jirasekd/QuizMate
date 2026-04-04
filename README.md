@@ -1,10 +1,10 @@
-# 📚 QuizMate - Nauč se chytře pomocí AI
+# 📚 QuizMate - Uč se chytřeji pomocí AI
 
 Vítej v QuizMate! Tvůj osobní AI učitel, který ti pomůže se učit lépe a rychleji. 🚀
 
 ## 🎯 Co je QuizMate?
 
-QuizMate je **online aplikace na učení** kde si můžeš procvičovat znalosti na různých úrovních obtížnosti. **AI asistent** ti pomáhá s vysvětlováním, odpovídá na otázky a přizpůsobuje se tvému tempu učení.
+QuizMate je **online aplikace na učení**, kde si můžeš procvičovat znalosti na různých úrovních obtížnosti. **AI asistent** ti pomáhá s vysvětlováním, odpovídá na otázky a přizpůsobuje se tvému tempu učení.
 
 ## 🚀 Jak začít?
 
@@ -81,7 +81,7 @@ A: Ano! QuizMate je zcela zdarma. 🎁
 A: Bohužel ne, aplikace vyžaduje připojení k internetu.
 
 **Q: Jak vás mohu kontaktovat, když mám problém?**
-A: Napiš nám na email - zjistíš ho v nastavení pod tlačítkem "Support".
+A: Napiš nám na e-mail – zjistíš ho v nastavení pod tlačítkem "Support".
 
 ## 🎓 Máš nějaký názor?
 
