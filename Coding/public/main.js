@@ -1976,9 +1976,7 @@ const events = {
     supportBtn.addEventListener("click", () => {
       const email = "dallmeyerdavid@gmail.com";
       
-      // Modern Clipboard API
       navigator.clipboard.writeText(email).then(() => {
-        // confirm() might be better replaced by alert() since you aren't checking for true/false
         alert(`Email na podporu byl zkopírován do schránky`);
       }).catch(err => {
         console.error('Chyba při kopírování: ', err);
