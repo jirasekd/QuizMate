@@ -129,6 +129,9 @@ const DOM = {
     // Logout button
     this.logoutBtn = document.getElementById("logoutBtn");
 
+    // Support button
+    this.supportBtn = document.getElementById("supportBtn");
+
     // Settings Modal
     this.settingsModal = document.getElementById("settings-modal");
     this.closeModalButton = this.settingsModal?.querySelector(".close-button");
@@ -1964,6 +1967,13 @@ const events = {
       localStorage.removeItem("quizmate_current_user");
       localStorage.removeItem("authToken");
       window.location.href = "/login";
+    });
+  }
+
+  const supportBtn = document.getElementById("supportBtn");
+  if (supportBtn) {
+    supportBtn.addEventListener("click", () => {
+      window.location.href = "mailto:dallmeyerdavid@gmail.com?subject=QuizMate Support";
     });
   }
 
