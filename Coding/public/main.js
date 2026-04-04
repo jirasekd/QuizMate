@@ -1979,7 +1979,7 @@ const events = {
       // Modern Clipboard API
       navigator.clipboard.writeText(email).then(() => {
         // confirm() might be better replaced by alert() since you aren't checking for true/false
-        alert(`Email na podporu: ${email} byl zkopírován do schránky`);
+        alert(`Email na podporu byl zkopírován do schránky`);
       }).catch(err => {
         console.error('Chyba při kopírování: ', err);
       });
