@@ -2289,6 +2289,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     return; // STOP running initialization
   }
 
+  // Přesměrujeme na výběr úrovně, pokud si ji uživatel ještě nevybral
+  if (!user.level) {
+    window.location.href = "/level";
+    return;
+  }
+
   // Initialize DOM FIRST so elements exist
   DOM.init();
 
