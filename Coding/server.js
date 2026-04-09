@@ -12,6 +12,8 @@ dotenv.config();
 
 const app = express();
 
+const auth = require('./middleware/auth'); // Náš "strážník" pro ověřování tokenů
+
 app.use(express.json({ limit: '16mb' })); //Maximálnáí velikost kterou přijme MongoDB je 16MB
 // Servíruj statické soubory (HTML, CSS, JS) pouze z adresáře 'public'
 app.use(express.static(path.join(__dirname, "public")));
@@ -180,7 +182,7 @@ async function callGemini(openAiMessages) {
 }
 
 // API endpoint pro chat
-app.post("/api/chat", async (req, res) => {
+app.post("/api/chat", auth, async (req, res) => {
   try {
     const { messages } = req.body || {};
     if (!Array.isArray(messages) || messages.length === 0) {

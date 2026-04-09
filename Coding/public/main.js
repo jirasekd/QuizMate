@@ -471,9 +471,14 @@ const api = {
 
     // --- 3. Volání backendu ---
     try {
+      const token = localStorage.getItem('authToken');
+
       const response = await fetch("/api/chat", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+                    "Content-Type": "application/json",
+                    "x-auth-token": token 
+                  },
         body: JSON.stringify({ messages: cleanedMessages }) // Posíláme vyčištěná data
       });
 
