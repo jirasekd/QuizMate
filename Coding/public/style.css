@@ -313,6 +313,7 @@ body {
   background: var(--bg);
   display: flex;
   flex-direction: column;
+  overflow-y: auto;
 }
 
 .threads-header {
@@ -1610,6 +1611,7 @@ body.dark-mode #levelSelect {
     z-index: 50;
     background: var(--bg);
     border-right: none;
+    overflow-y: auto;
   }
 
   .chat-threads.mobile-open {
