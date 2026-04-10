@@ -1322,6 +1322,7 @@ const events = {
 
         // Files action is immediate (not pending)
         if (act === "files") {
+          document.getElementById("fileUpload").dataset.fromActionMenu = "true";
           document.querySelector('.upload-card button').click();
           return;
         }
@@ -1485,6 +1486,9 @@ const events = {
         const files = e.target.files;
         if (!files.length) return;
 
+        const fromActionMenu = DOM.upload.dataset.fromActionMenu === "true";
+        delete DOM.upload.dataset.fromActionMenu; // Reset flag
+
         ui.showFileProcessingLoader("Zpracovávám soubor...");
 
         for (const file of files) {
@@ -1500,7 +1504,11 @@ const events = {
               uploadedAt: new Date().toISOString()
             };
             await fileState.addFile(fileData);
-            ui.addMessage(`Soubor ${file.name} byl nahrán.`, "assistant");
+            
+            // Zobrazit zprávu POUZE pokud je upload z action menu
+            if (fromActionMenu) {
+              ui.addMessage(`Soubor ${file.name} byl nahrán.`, "assistant");
+            }
           } catch (error) {
             alert(`Chyba při nahrávání souboru ${file.name}: ${error.message}`);
           }
