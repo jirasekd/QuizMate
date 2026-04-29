@@ -837,9 +837,9 @@ body.dark-mode .plus-btn {
 }
 
 .flashcard {
-  width: 90%;
-  max-width: 400px;
-  height: 250px;
+  width: 85%;
+  max-width: 700px;
+  height: 500px;
   margin: 40px auto; 
   position: relative;
   perspective: 1000px; /* Vytváří 3D prostor pro otáčecí animaci. */
@@ -860,9 +860,14 @@ body.dark-mode .plus-btn {
   align-items: center;
   justify-content: center;
   text-align: center; /* Center the text inside the card */
+  padding: 40px 30px;
+  font-size: 18px;
+  line-height: 1.6;
   backface-visibility: hidden; /* Skryje odvrácenou stranu karty během animace. */
   transition: transform 0.3s; /* Definuje plynulost otáčecí animace. */
   color: var(--text-color);
+  word-wrap: break-word;
+  overflow-y: auto;
 }
 
 .flashcard .front {
@@ -1681,10 +1686,11 @@ body.dark-mode #levelSelect {
 
   /* --- FLASHCARD --- */
   .flashcard {
-    width: 95%;
-    max-width: 340px;
-    height: 220px;
+    width: 90%;
+    max-width: 400px;
+    height: 380px;
     margin: 24px auto;
+    font-size: 12px;
   }
 
   /* --- FILE UPLOAD --- */

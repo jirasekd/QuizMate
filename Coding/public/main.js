@@ -1080,6 +1080,23 @@ const ui = {
     
     DOM.testQuestionsContainer.appendChild(submitBtn);
 
+    // Vytvoření kontejneru pro výsledek testu
+    const resultContainer = document.createElement('div');
+    resultContainer.id = 'testResultContainer';
+    resultContainer.style.cssText = `
+        margin-top: 30px;
+        padding: 20px;
+        border-radius: 8px;
+        background: var(--muted-bg);
+        text-align: center;
+        font-size: 18px;
+        font-weight: 600;
+        color: var(--text-color);
+        display: none;
+    `;
+    resultContainer.textContent = '';
+    DOM.testQuestionsContainer.appendChild(resultContainer);
+
     // --- ZDE BYLA CHYBA (DOM.submitBtn neexistuje), řádek smazán ---
 
     // Skrývání a zobrazování sekcí
@@ -1525,7 +1542,9 @@ const events = {
     if (!chat) { ui.renderMessages(); return; }
     const topic = chat.name;
 
-    ui.addMessage("📝 Generuji výpisky<span class='typing_dots'></span>\nBudete přepnuti na záložku Notes.", "assistant");
+    // Zapamatujeme si index zprávy, kterou právě přidáme
+    const messageIndexBefore = chat.messages.length;
+    ui.addMessage("📝 Generuji výpisky<span class='typing_dots'></span>\n", "assistant");
 
     // Get custom instruction from last user message (if any)
     const lastMessage = chat.messages[chat.messages.length - 1];
@@ -1579,6 +1598,19 @@ const events = {
     ui.updateSubjectSidebar();
     ui.renderSubjectsGrid();
     
+    // Nahradíme zprávu o generování zprávou o dokončení (asistentova role)
+    const chatUpdated = chatState.getCurrent();
+    if (chatUpdated && messageIndexBefore < chatUpdated.messages.length) {
+      const generatingMsg = chatUpdated.messages[messageIndexBefore];
+      if (generatingMsg) {
+        generatingMsg.content = "✅ Generování poznámek dokončeno! Budete přepnuti na záložku Notes.";
+        ui.renderMessages();
+      }
+    }
+    
+    // Počkáme 2.5 sekundy, aby to uživatel viděl
+    await new Promise(resolve => setTimeout(resolve, 2500));
+    
     document.querySelector('[data-tab="notes"]').click();
   },
 
@@ -1592,7 +1624,9 @@ const events = {
     }
     const topic = chat.name;
 
-    ui.addMessage("🧠 Generuji flashcards<span class='typing_dots'></span>\nPo dokončení budete přepnuti na záložku Flashcards.","assistant");
+    // Zapamatujeme si index zprávy, kterou právě přidáme
+    const messageIndexBefore = chat.messages.length;
+    ui.addMessage("🧠 Generuji flashcards<span class='typing_dots'></span>\n", "assistant");
 
     // Get custom instruction from last user message (if any)
     const lastMessage = chat.messages[chat.messages.length - 1];
@@ -1692,6 +1726,20 @@ const events = {
     // === UI - AŽ POTÉ! ===
     ui.updateSubjectSidebar();
     ui.renderSubjectsGrid();
+    
+    // Nahradíme zprávu o generování zprávou o dokončení (asistentova role)
+    const chatFlashUpdated = chatState.getCurrent();
+    if (chatFlashUpdated && messageIndexBefore < chatFlashUpdated.messages.length) {
+      const generatingMsg = chatFlashUpdated.messages[messageIndexBefore];
+      if (generatingMsg) {
+        generatingMsg.content = "✅ Generování kartiček dokončeno! Budete přepnuti na záložku Flashcards.";
+        ui.renderMessages();
+      }
+    }
+    
+    // Počkáme 2.5 sekundy, aby to uživatel viděl
+    await new Promise(resolve => setTimeout(resolve, 2500));
+    
     document.querySelector('[data-tab="flashcards"]').click();
     ui.openDeckDetail(chat.id);
   },
@@ -1702,7 +1750,9 @@ const events = {
     if (!chat) return;
     const topic = chat.name;
 
-    ui.addMessage("🧪 Generuji test<span class='typing_dots'></span>\nBudete přepnuti na záložku Tests.", "assistant");
+    // Zapamatujeme si index zprávy, kterou právě přidáme
+    const messageIndexBefore = chat.messages.length;
+    ui.addMessage("🧪 Generuji test<span class='typing_dots'></span>\n", "assistant");
 
     // Get custom instruction from last user message (if any)
     const lastMessage = chat.messages[chat.messages.length - 1];
@@ -1795,6 +1845,19 @@ const events = {
       ui.updateSubjectSidebar();
       ui.renderSubjectsGrid();
       
+      // Nahradíme zprávu o generování zprávou o dokončení (asistentova role)
+      const chatTestUpdated = chatState.getCurrent();
+      if (chatTestUpdated && messageIndexBefore < chatTestUpdated.messages.length) {
+        const generatingMsg = chatTestUpdated.messages[messageIndexBefore];
+        if (generatingMsg) {
+          generatingMsg.content = "✅ Generování testu dokončeno! Budete přepnuti na záložku Tests.";
+          ui.renderMessages();
+        }
+      }
+      
+      // Počkáme 2.5 sekundy, aby to uživatel viděl
+      await new Promise(resolve => setTimeout(resolve, 2500));
+      
       const testsTab = document.querySelector('[data-tab="tests"]');
       if(testsTab) testsTab.click();
       
@@ -1842,8 +1905,11 @@ const events = {
     const submitBtn = document.getElementById('submitTestBtn');
     if (submitBtn) submitBtn.disabled = true;
     
-    if (DOM.testDetailTitle) {
-      DOM.testDetailTitle.textContent = `Výsledek testu: ${score} / ${test.questions.length}`;
+    // Zobrazení výsledku v kontejneru pod tlačítkem
+    const resultContainer = document.getElementById('testResultContainer');
+    if (resultContainer) {
+      resultContainer.textContent = `Výsledek: ${score} / ${test.questions.length} bodů`;
+      resultContainer.style.display = 'block';
     }
   },
 
