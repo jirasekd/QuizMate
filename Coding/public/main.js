@@ -893,6 +893,10 @@ const ui = {
   /* FILES */
   renderFiles() {
     DOM.fileList.innerHTML = "";
+    DOM.fileList.style.maxHeight = "400px";
+    DOM.fileList.style.overflowY = "auto";
+    DOM.fileList.style.paddingRight = "8px";
+    
     const activeSubject = subjectState.getActiveSubject();
     if (!activeSubject || !activeSubject.files) return;
 
@@ -1454,9 +1458,23 @@ const events = {
 
   async sendMessage() {
     const text = DOM.input.value.trim();
-    if (!text) return;
+    
+    // Allow sending if there's pending generate action, even if text is empty
+    if (!text && !pendingGenerateAction) return;
 
-    ui.addMessage(text, "user");
+    // Only add user message if there's actual text
+    if (text) {
+      ui.addMessage(text, "user");
+    } else if (pendingGenerateAction) {
+      // Add placeholder message for generate actions
+      const placeholders = {
+        "notes": "📝 Generate Notes",
+        "flashcards": "🧠 Generate Flashcards",
+        "test": "🧪 Generate Test"
+      };
+      const placeholderText = placeholders[pendingGenerateAction] || "Generate";
+      ui.addMessage(placeholderText, "user");
+    }
 
     DOM.input.value = "";
     util.autoResize(DOM.input);
